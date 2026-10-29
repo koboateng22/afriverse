@@ -1,0 +1,17 @@
+# Supabase CLI config. Anything not listed uses the CLI defaults.
+project_id = "afriversity"
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/auth/callback"]
+
+[auth.email]
+enable_confirmations = true
+
+# Paystack signs its webhooks (HMAC-SHA512); it never sends a Supabase JWT.
+[functions.paystack-webhook]
+verify_jwt = false
+
+# Called by the scheduler with the service-role key as the bearer token.
+[functions.subscription-cron]
+verify_jwt = true

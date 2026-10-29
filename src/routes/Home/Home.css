@@ -1,0 +1,79 @@
+@layer components {
+  .home { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+
+  .home__header {
+    position: relative;
+    padding-block: var(--space-6) var(--space-2);
+  }
+  .home__header-text { display: grid; gap: var(--space-2); will-change: transform; }
+  .home__title {
+    font-size: var(--step-3);
+    max-inline-size: 15ch;
+    hyphens: auto;
+    @media (min-width: 720px) { font-size: var(--step-4); }
+  }
+
+  .home__sentinel { block-size: 1px; margin-block-end: -1px; }
+
+  /* Sticky filter bar — bleeds to the screen edges, turns to glass when pinned. */
+  .home__filters {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--z-sticky);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-3) var(--gutter);
+    border-block-end: 1px solid transparent;
+    transition: background-color var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out),
+      border-color var(--dur-mid) var(--ease-out);
+
+    &[data-stuck] {
+      background: var(--glass-fill-strong);
+      -webkit-backdrop-filter: var(--glass-filter);
+      backdrop-filter: var(--glass-filter);
+      border-block-end-color: var(--glass-edge);
+      box-shadow: var(--shadow-float);
+    }
+  }
+
+  .home__filters-scroll {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    padding-block: 2px;
+    &::-webkit-scrollbar { display: none; }
+    & > * { scroll-snap-align: start; }
+  }
+
+  /* ── Bento grid ───────────────────────────────────────────────────
+     Column count is set by container queries here and read back by
+     useGridColumns(), so the JS packer always matches the CSS.
+     Rows are `minmax(floor, auto)`: tiles share a rhythm but any tile
+     whose text needs more room grows its row instead of clipping. */
+  .home__feed {
+    container-type: inline-size;
+    container-name: feed;
+  }
+
+  .bento {
+    --bento-row: 172px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(var(--bento-row), auto);
+    gap: var(--space-3);
+
+    & > [data-size='featured'] { grid-column: span 2; grid-row: span 2; }
+    & > [data-size='wide'] { grid-column: span 2; }
+    & > [data-size='tall'] { grid-row: span 2; }
+    /* Empty / error states take the full row. */
+    & > :not(.opp-card, .skeleton-tile) { grid-column: 1 / -1; }
+  }
+
+  @container feed (min-width: 600px) {
+    .bento { --bento-row: 196px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  }
+  @container feed (min-width: 880px) {
+    .bento { --bento-row: 212px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-5); }
+  }
+}

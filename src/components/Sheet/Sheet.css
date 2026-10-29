@@ -1,0 +1,165 @@
+/* ──────────────────────────────────────────────────────────────
+   Sheet — the deepest glass layer in the app.
+
+   Depth stack: page → scrim (dim + light blur) → sheet (heavy frost,
+   strong ink tint, rim light, long floating shadow). The tint is
+   stronger than on cards because the sheet carries long-form text
+   and forms; contrast must not depend on what is behind it.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .sheet-root {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-sheet);
+    display: grid;
+    align-items: end;
+    justify-items: center;
+
+    @media (min-width: 720px) { align-items: center; }
+  }
+
+  .sheet-scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 80% at 50% 110%, color-mix(in oklab, var(--emerald) 14%, transparent), transparent 60%),
+      color-mix(in oklab, var(--ink) 62%, transparent);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+    backdrop-filter: blur(8px) saturate(1.2);
+  }
+
+  .sheet {
+    position: relative;
+    isolation: isolate;
+    inline-size: min(100%, var(--container));
+    max-block-size: min(88dvh, 760px);
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background:
+      radial-gradient(140% 70% at 0% 0%, color-mix(in oklab, var(--emerald) 12%, transparent), transparent 55%),
+      var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge-strong);
+    border-block-end: 0;
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-sheet-up);
+    padding-block-end: var(--safe-bottom);
+    touch-action: none;
+
+    /* Rim light along the top edge only (the edge facing the light). */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline: var(--space-6);
+      inset-block-start: -1px;
+      block-size: 1px;
+      z-index: var(--z-card-fx);
+      background: linear-gradient(90deg, transparent, var(--glass-highlight) 20%, var(--glass-catch) 50%, var(--glass-highlight) 80%, transparent);
+      pointer-events: none;
+    }
+
+    @media (min-width: 720px) {
+      border-radius: var(--radius-lg);
+      border-block-end: 1px solid var(--glass-edge-strong);
+      box-shadow: var(--glass-inset), var(--shadow-sheet);
+    }
+
+    &:focus-visible { outline: none; }
+  }
+
+  .sheet__grabber {
+    inline-size: 44px;
+    block-size: 5px;
+    margin: var(--space-3) auto 0;
+    border-radius: var(--radius-pill);
+    background: var(--glass-edge-strong);
+    box-shadow: inset 0 1px 0 var(--shade-soft);
+    @media (min-width: 720px) { display: none; }
+  }
+
+  .sheet__header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6) var(--space-2);
+  }
+  .sheet__title { font-size: var(--step-2); }
+
+  .sheet__close {
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    margin-inline-end: calc(-1 * var(--space-3));
+    border-radius: 50%;
+    color: var(--text-2);
+    flex: none;
+    background: var(--glass-wash);
+    border: 1px solid var(--glass-edge);
+    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+    &:hover { background: var(--glass-wash-hover); color: var(--text); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    & svg { inline-size: 20px; block-size: 20px; }
+  }
+
+  .sheet__body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: var(--space-2) var(--space-6) var(--space-6);
+  }
+
+  .sheet__footer {
+    padding: var(--space-4) var(--space-6) var(--space-5);
+    border-block-start: 1px solid var(--glass-edge);
+  }
+
+  .sheet__heading { display: grid; gap: var(--space-1); min-inline-size: 0; }
+  .sheet__desc { font-size: var(--step--1); color: var(--text-3); }
+
+  /* ── Slide-over panel ───────────────────────────────────────────── */
+  .sheet-root[data-variant='side'] {
+    align-items: stretch;
+    justify-items: end;
+  }
+  .sheet[data-variant='side'] {
+    inline-size: min(100%, 600px);
+    block-size: 100dvh;
+    max-block-size: none;
+    border-radius: 0;
+    border: 0;
+    border-inline-start: 1px solid var(--glass-edge-strong);
+    background:
+      radial-gradient(120% 60% at 100% 0%, color-mix(in oklab, var(--emerald) 16%, transparent), transparent 60%),
+      var(--glass-fill-strong);
+    box-shadow: var(--glass-inset), var(--shadow-panel);
+    padding-block-end: 0;
+    touch-action: auto;
+    &::before { display: none; }
+    @media (min-width: 720px) { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+
+    & .sheet__header {
+      padding-block: calc(var(--space-5) + env(safe-area-inset-top, 0px)) var(--space-4);
+      border-block-end: 1px solid var(--glass-edge);
+    }
+    & .sheet__body { flex: 1; padding-block-start: var(--space-5); }
+    & .sheet__footer {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding-block-end: calc(var(--space-5) + var(--safe-bottom));
+      background: var(--glass-tint-strong);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sheet { background: var(--glass-solid); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .sheet, .sheet[data-variant='side'] { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+}

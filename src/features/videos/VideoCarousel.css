@@ -1,0 +1,63 @@
+@layer components {
+  .video-carousel { display: grid; gap: var(--space-4); min-inline-size: 0; }
+
+  .video-carousel__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 260px);
+    gap: var(--space-3);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-block-end: var(--space-1);
+    list-style: none;
+    padding-inline: 0;
+    &::-webkit-scrollbar { display: none; }
+  }
+  .video-carousel__slide { scroll-snap-align: start; display: grid; gap: var(--space-2); }
+  .video-carousel__empty { font-size: var(--step--1); color: var(--text-3); }
+
+  .video-card {
+    display: grid;
+    gap: var(--space-2);
+    text-align: start;
+    border-radius: var(--radius-sm);
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &[data-active] .video-card__thumb { box-shadow: 0 0 0 2px var(--gold); }
+    &:hover .video-card__play { transform: scale(1.08); }
+  }
+  .video-card__thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    & img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+  }
+  .video-card__play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    display: grid;
+    place-items: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--ink) 70%, transparent);
+    color: var(--cream);
+    transition: transform var(--dur-mid) var(--ease-spring);
+    & svg { inline-size: 18px; block-size: 18px; margin-inline-start: 2px; }
+  }
+  .video-card__title {
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .video-card__channel { font-size: var(--step--2); color: var(--text-3); }
+}

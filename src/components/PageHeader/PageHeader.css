@@ -1,0 +1,69 @@
+@layer components {
+  /* Deliberately NOT a stacking context (no isolation/z-index): the art's
+     z-index -1 then resolves against <main>, painting below every piece of
+     page content — including plain text that follows the header. */
+  .page-header {
+    position: relative;
+    display: grid;
+    padding-block: var(--space-4) var(--space-2);
+  }
+  .page-header__inner { display: grid; gap: var(--space-3); will-change: transform; }
+  .page-header__row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--space-3) var(--space-4); }
+  .page-header__text { flex: 1 1 16rem; display: grid; gap: var(--space-2); min-inline-size: 0; }
+  .page-header__title { font-size: var(--step-3); max-inline-size: 18ch; overflow-wrap: anywhere; hyphens: auto; }
+  .page-header__lede { max-inline-size: 46ch; }
+
+  .page-header__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    margin-inline-start: calc(-1 * var(--space-2));
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    color: var(--text-2);
+    font-weight: 600;
+    font-size: var(--step--1);
+    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+    & svg { inline-size: 18px; block-size: 18px; transition: transform var(--dur-fast) var(--ease-out); }
+    &:hover { color: var(--text); background: var(--glass-wash); & svg { transform: translateX(-3px); } }
+  }
+
+  /* ── Header image (parallax) ──────────────────────────────────────
+     Bleeds to the viewport edges (.screen clips overflow-x) and up to
+     the top of the screen; fades out before the content below it. */
+  .header-art {
+    position: absolute;
+    z-index: -1;
+    inset-inline: calc(50% - 50vw);
+    inset-block: calc(-1 * (var(--space-6) + var(--space-4))) -15%;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+  }
+  .header-art__layer { position: absolute; inset: 0; will-change: transform; }
+  .header-art__aurora {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 90% at 18% 0%, color-mix(in oklab, var(--emerald) 30%, transparent), transparent 70%),
+      radial-gradient(45% 70% at 88% 10%, color-mix(in oklab, var(--gold) 13%, transparent), transparent 70%),
+      radial-gradient(40% 60% at 60% 60%, color-mix(in oklab, var(--deep-green) 30%, transparent), transparent 75%);
+  }
+  .header-art__emblem {
+    position: absolute;
+    inset-block-start: 8%;
+    inset-inline-end: max(var(--gutter), calc(50vw - var(--container-wide) / 2));
+    block-size: clamp(140px, 28vw, 260px);
+    inline-size: auto;
+    opacity: 0.07;
+    rotate: -10deg;
+    filter: grayscale(0.2) blur(0.5px);
+  }
+  .header-art[data-tone='gold'] .header-art__aurora {
+    background:
+      radial-gradient(60% 90% at 50% 0%, color-mix(in oklab, var(--gold) 16%, transparent), transparent 70%),
+      radial-gradient(50% 80% at 15% 20%, color-mix(in oklab, var(--emerald) 22%, transparent), transparent 75%);
+  }
+}

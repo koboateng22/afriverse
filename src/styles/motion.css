@@ -1,0 +1,130 @@
+/* ──────────────────────────────────────────────────────────────
+   motion.css — every CSS @keyframes in the app lives here.
+   Framer Motion handles orchestration (page transitions, stagger,
+   layoutId, springs); CSS handles ambient + micro effects.
+   ────────────────────────────────────────────────────────────── */
+
+/* Ambient drift for decorative shapes (adinkra marks, hero orbs). */
+@keyframes float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%      { transform: translate3d(0, -10px, 0) rotate(2deg); }
+}
+
+/* Background orbs: slow, out-of-phase drifts (transform only). */
+@keyframes orb-drift-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(8vmax, 6vmax, 0) scale(1.08); }
+  100% { transform: translate3d(14vmax, -4vmax, 0) scale(0.96); }
+}
+@keyframes orb-drift-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-10vmax, 8vmax, 0) scale(1.12); }
+  100% { transform: translate3d(-4vmax, 16vmax, 0) scale(1); }
+}
+@keyframes orb-drift-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(12vmax, -8vmax, 0) scale(0.95); }
+  100% { transform: translate3d(-6vmax, -14vmax, 0) scale(1.1); }
+}
+
+/* Skeleton loading sweep. */
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to   { background-position: -50% 0; }
+}
+
+/* Film-grain jitter — stepped so the noise flickers, not slides. */
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-3%, 2%); }
+  40%      { transform: translate(2%, -3%); }
+  60%      { transform: translate(-2%, -1%); }
+  80%      { transform: translate(3%, 3%); }
+}
+
+/* Expanding ring — loaders, live indicators, the heart-pop burst. */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.6); opacity: 0.7; }
+  80%  { opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Slow pan across an oversized gradient mesh. */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* Save heart: squash, overshoot, settle. */
+@keyframes heart-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.72); }
+  60%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+/* Card glow bloom on save. a/b are identical; alternating the name restarts the animation. */
+@keyframes save-glow-a {
+  0%   { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  28%  { box-shadow: var(--card-shadow), 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent); }
+  100% { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+@keyframes save-glow-b {
+  0%   { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  28%  { box-shadow: var(--card-shadow), 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent); }
+  100% { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+
+/* Skeleton sweep: a highlight band travels across (transform only = GPU-cheap). */
+@keyframes shimmer-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* Typing indicator: each dot swells, brightens and glows in turn. */
+@keyframes typing-glow {
+  0%, 70%, 100% { transform: translateY(0) scale(0.7); opacity: 0.45; box-shadow: 0 0 0 0 transparent; }
+  35%           { transform: translateY(-3px) scale(1); opacity: 1; box-shadow: 0 0 12px 2px color-mix(in oklab, var(--emerald) 70%, transparent); }
+}
+
+/* AI bubble rim: the emerald→gold border slowly travels around. */
+@keyframes rim-travel {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* Paywall: slow aurora drift (transform only). */
+@keyframes vip-drift {
+  0%   { transform: translate3d(-6%, -4%, 0) rotate(0deg) scale(1); }
+  50%  { transform: translate3d(5%, 6%, 0) rotate(12deg) scale(1.12); }
+  100% { transform: translate3d(-3%, 3%, 0) rotate(-6deg) scale(1.04); }
+}
+
+/* Pro card halo: breathes and turns. */
+@keyframes halo-breathe {
+  0%, 100% { transform: scale(0.96) rotate(0deg); opacity: 0.55; }
+  50%      { transform: scale(1.04) rotate(180deg); opacity: 0.8; }
+}
+
+/* See .screen[data-leaving] in layout.css. */
+@keyframes screen-leave-failsafe {
+  to { visibility: hidden; opacity: 0; }
+}
+
+/* Progress-ring draw-in on the profile screen. */
+@keyframes ring-draw {
+  from { stroke-dashoffset: var(--ring-circumference, 300); }
+}
+
+/* ── Reduced motion: kill ambient + transitional motion globally.
+      Framer Motion is separately wrapped in <MotionConfig reducedMotion="user">. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

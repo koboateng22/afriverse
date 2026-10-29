@@ -1,0 +1,99 @@
+@layer components {
+  .btn {
+    --btn-bg: var(--accent);
+    --btn-fg: var(--text-on-emerald);
+    --btn-border: transparent;
+    --btn-shadow: var(--shadow-bloom);
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-5);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--btn-border);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    font-weight: 700;
+    font-size: var(--step-0);
+    line-height: 1.2;
+    /* Long labels (e.g. "Pay Application Fee · GHS 250") wrap instead of overflowing on 320px screens. */
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
+    padding-block: var(--space-2);
+    max-inline-size: 100%;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      box-shadow var(--dur-mid) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out);
+
+    & svg { inline-size: 1.15em; block-size: 1.15em; flex: none; }
+
+    @media (hover: hover) {
+      /* translateY(-4px) lift is driven by Framer (whileHover) so it
+         composes with the press scale instead of fighting inline transforms. */
+      &:hover:not(:disabled) { box-shadow: var(--btn-shadow); }
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &[data-loading] { cursor: progress; }
+
+    &[data-size='lg'] { min-block-size: 56px; padding-inline: var(--space-7); font-size: var(--step-1); }
+    &[data-size='sm'] { min-block-size: 36px; padding-inline: var(--space-4); font-size: var(--step--1); }
+    &[data-block] { inline-size: 100%; }
+
+    &[data-variant='gold'] {
+      --btn-bg: var(--gold);
+      --btn-fg: var(--text-on-gold);
+      --btn-shadow: var(--shadow-bloom-gold);
+    }
+
+    &[data-variant='secondary'] {
+      --btn-bg: var(--surface-2);
+      --btn-fg: var(--text);
+      --btn-border: var(--line-strong);
+      --btn-shadow: var(--shadow-md);
+      &:hover:not(:disabled) { --btn-bg: var(--surface-3); }
+    }
+
+    &[data-variant='quiet'] {
+      --btn-bg: transparent;
+      --btn-fg: var(--text-2);
+      --btn-shadow: none;
+      padding-inline: var(--space-3);
+      &:hover:not(:disabled) { --btn-fg: var(--text); }
+    }
+  }
+
+  /* Loading sweep: clipped to the pill, under the label. */
+  .btn[data-loading] { overflow: hidden; isolation: isolate; }
+  .btn__shimmer {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    overflow: hidden;
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0 -40%;
+      background: var(--shimmer);
+      transform: translateX(-100%);
+      animation: shimmer-sweep 1.1s var(--ease-out) infinite;
+    }
+  }
+}
+
+@layer components {
+  .btn__label { min-inline-size: 0; overflow-wrap: anywhere; }
+}

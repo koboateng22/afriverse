@@ -1,0 +1,5 @@
+@layer components {
+  .not-found { display: grid; gap: var(--space-4); justify-items: start; padding-block-start: var(--space-10); }
+  .not-found h1 { font-size: var(--step-3); max-inline-size: 16ch; }
+  .not-found__mark { display: block; animation: float 6s var(--ease-out) infinite; }
+}

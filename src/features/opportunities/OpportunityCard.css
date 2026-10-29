@@ -1,0 +1,252 @@
+/* ──────────────────────────────────────────────────────────────
+   Opportunity card — one component, five shapes:
+     row      full-width list card (default, outside the bento)
+     featured 2×2 hero tile: aurora art, display-size title
+     wide     2×1: classic row layout, every tag
+     tall     1×2: stacked header, longer summary
+     square   1×1: monogram, heart, title, countdown — nothing else
+   Every shape is a flex column with the tags pinned to the bottom,
+   so tiles sharing a grid row line up. Heights are never fixed:
+   rows are `minmax(min, auto)`, so text can't be clipped or overlap.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .opp-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-inline-size: 0;
+    block-size: 100%;
+    will-change: transform;
+
+    &[data-status='closed'] { opacity: 0.72; }
+
+    /* Spotlight / featured: brand-gradient rim, bigger title. */
+    &[data-spotlight] {
+      --card-rim: linear-gradient(140deg, var(--emerald), var(--gold) 50%, color-mix(in oklab, var(--terracotta) 70%, transparent) 80%, transparent);
+      padding: var(--space-6);
+      & .opp-card__title { font-size: var(--step-2); }
+      & .opp-card__summary { -webkit-line-clamp: 3; line-clamp: 3; }
+    }
+
+    /* Glow bloom on save. Two identical keyframes alternate so the
+       animation restarts on every save (changing animation-name restarts it). */
+    &[data-glow='1'] { animation: save-glow-a 900ms var(--ease-out); }
+    &[data-glow='0'] { animation: save-glow-b 900ms var(--ease-out); }
+  }
+
+  /* ── Decorative layer (aurora, ripples) — clipped, under all text ─── */
+  .opp-card__fx {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-card-fx);
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .opp-card__ripple {
+    position: absolute;
+    inline-size: 260%;
+    aspect-ratio: 1;
+    margin: 0;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in oklab, var(--cream) 10%, transparent) 0%,
+      color-mix(in oklab, var(--emerald) 30%, transparent) 40%,
+      color-mix(in oklab, var(--emerald) 10%, transparent) 62%,
+      transparent 72%
+    );
+    &[data-saving] {
+      background: radial-gradient(
+        closest-side,
+        color-mix(in oklab, var(--gold) 26%, transparent) 0%,
+        color-mix(in oklab, var(--terracotta) 26%, transparent) 32%,
+        color-mix(in oklab, var(--emerald) 16%, transparent) 58%,
+        transparent 72%
+      );
+    }
+  }
+
+  .opp-card__aurora {
+    position: absolute;
+    inset: -30% -30% auto auto;
+    inline-size: 90%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(closest-side, color-mix(in oklab, var(--gold) 22%, transparent), transparent 70%),
+      radial-gradient(closest-side at 30% 70%, color-mix(in oklab, var(--emerald) 34%, transparent), transparent 80%);
+    animation: float 9s var(--ease-out) infinite;
+  }
+
+  /* ── Header row ─────────────────────────────────────────────────── */
+  .opp-card__top {
+    display: flex;
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .opp-card__mono {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: var(--step--1);
+    font-weight: 800;
+    color: var(--ink);
+    background: linear-gradient(150deg, color-mix(in oklab, var(--gold) 80%, var(--cream)), var(--gold));
+    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--gold) 60%, transparent);
+  }
+  .opp-card[data-status='open'] .opp-card__mono,
+  .opp-card[data-status='rolling'] .opp-card__mono {
+    background: linear-gradient(150deg, color-mix(in oklab, var(--emerald) 82%, var(--cream)), var(--deep-green));
+    color: var(--cream);
+    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--emerald) 70%, transparent);
+  }
+  .opp-card[data-status='closed'] .opp-card__mono { background: var(--surface-3); color: var(--text-2); box-shadow: var(--glass-inset); }
+
+  .opp-card__heading { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
+
+  .opp-card__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-block-end: var(--space-1);
+    font-size: var(--step--2);
+    font-weight: 800;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--gold);
+    & svg { inline-size: 12px; block-size: 12px; }
+  }
+
+  .opp-card__provider {
+    font-size: var(--step--2);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .opp-card__title {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 700;
+    line-height: var(--leading-snug);
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    text-wrap: pretty;
+  }
+
+  .opp-card__open {
+    text-align: start;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    /* Stretched hit-area sits under the save button (z 1) but over the fx layer. */
+    &::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+    &:focus-visible { outline: none; }
+  }
+
+  .opp-card__summary {
+    font-size: var(--step--1);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  /* Tags pinned to the bottom so tiles in a row align. */
+  .opp-card__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: auto; }
+
+  .opp-card__match {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--2);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-2);
+    border: 1px solid var(--glass-edge-strong);
+    &[data-strong] { color: var(--cream); background: var(--deep-green); border-color: color-mix(in oklab, var(--emerald) 60%, transparent); }
+  }
+
+  .opp-card__reasons {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--deep-green) 40%, transparent);
+    border: 1px solid color-mix(in oklab, var(--emerald) 28%, transparent);
+    & li { display: flex; gap: var(--space-2); font-size: var(--step--1); color: var(--text); }
+    & svg { flex: none; inline-size: 14px; block-size: 14px; margin-block-start: 4px; color: var(--gold); }
+  }
+
+  /* ── Bento shapes ───────────────────────────────────────────────── */
+
+  /* Featured, tall and square stack the header: mono + heart on row one,
+     heading full-width below — the title gets every pixel of width. */
+  .opp-card:is([data-size='featured'], [data-size='tall'], [data-size='square'], [data-spotlight]) {
+    & .opp-card__top { flex-wrap: wrap; justify-content: space-between; }
+    & .opp-card__heading { order: 3; flex-basis: 100%; padding-block-start: var(--space-2); }
+  }
+
+  .opp-card[data-size='featured'] {
+    gap: var(--space-5);
+    & .opp-card__title { font-size: var(--step-3); line-height: var(--leading-tight); letter-spacing: var(--tracking-display); }
+    & .opp-card__summary { font-size: var(--step-0); max-inline-size: 48ch; }
+    & .opp-card__mono { inline-size: 52px; block-size: 52px; font-size: var(--step-0); }
+  }
+
+  .opp-card[data-size='tall'] {
+    & .opp-card__summary { -webkit-line-clamp: 5; line-clamp: 5; }
+  }
+
+  .opp-card[data-size='square'] {
+    gap: var(--space-3);
+    padding: var(--space-4);
+    & .opp-card__mono { inline-size: 38px; block-size: 38px; font-size: var(--step--2); }
+    & .opp-card__heading { padding-block-start: var(--space-1); }
+    & .opp-card__title {
+      font-size: var(--step-0);
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 4;
+      line-clamp: 4;
+      overflow: hidden;
+    }
+    /* Narrow tiles: tags may wrap rather than overflow the tile. */
+    & .tag { white-space: normal; text-align: start; }
+  }
+
+  /* Narrow phones (feed < 420px ≈ 2 columns of ~140px): tighter padding on
+     every non-hero tile so monogram + 44px heart share one row. */
+  @container feed (max-width: 420px) {
+    .bento > .opp-card:not([data-size='featured']) { padding: var(--space-4); gap: var(--space-3); }
+  }
+
+  /* Tile-level: when a card itself is very narrow, scale its type down rather
+     than letting words break mid-letter or tags overflow the tile. */
+  @container (max-width: 200px) {
+    .opp-card__top { gap: var(--space-2); }
+    .opp-card__mono { inline-size: 36px; block-size: 36px; font-size: var(--step--2); }
+    .opp-card__title { font-size: var(--step--1); overflow-wrap: break-word; hyphens: manual; }
+    .opp-card__summary { font-size: var(--step--2); }
+    .opp-card .tag { white-space: normal; text-align: start; max-inline-size: 100%; }
+  }
+
+  @container (min-width: 520px) {
+    .opp-card[data-size='row'] .opp-card__summary,
+    .opp-card[data-size='wide'] .opp-card__summary { -webkit-line-clamp: 3; line-clamp: 3; }
+  }
+}

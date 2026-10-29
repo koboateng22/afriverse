@@ -1,0 +1,17 @@
+@layer components {
+  .progress-dots { display: flex; gap: var(--space-2); list-style: none; padding: 0; }
+
+  .progress-dots__dot {
+    position: relative;
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--line-strong);
+    transition: inline-size var(--dur-mid) var(--ease-out), background-color var(--dur-mid) var(--ease-out);
+
+    &[data-done] { background: color-mix(in oklab, var(--emerald) 70%, transparent); }
+    &[aria-current='step'] { inline-size: 28px; }
+  }
+
+  .progress-dots__active { position: absolute; inset: 0; border-radius: inherit; background: var(--gold); }
+}

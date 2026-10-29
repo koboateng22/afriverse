@@ -1,0 +1,30 @@
+@layer components {
+  .landing { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-10); }
+  .landing__bar { display: flex; align-items: center; justify-content: space-between; }
+
+  .landing__hero { display: grid; gap: var(--space-5); justify-items: start; padding-block-start: var(--space-7); }
+  .landing__title { font-size: var(--step-4); max-inline-size: 13ch; }
+  .landing__lede { font-size: var(--step-1); max-inline-size: 34ch; }
+
+  .landing__accent {
+    background: var(--gradient-brand);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shift 9s var(--ease-out) infinite;
+  }
+
+  .landing__emblem { filter: drop-shadow(0 12px 32px color-mix(in oklab, var(--gold) 30%, transparent)); animation: float 8s var(--ease-out) infinite; }
+
+  .landing__pillars { display: grid; gap: var(--space-6); padding-block-end: var(--space-8); }
+  .landing__pillar {
+    display: grid;
+    gap: var(--space-2);
+    padding-inline-start: var(--space-5);
+    border-inline-start: 2px solid var(--line-strong);
+    & svg { inline-size: 24px; block-size: 24px; color: var(--emerald); margin-block-end: var(--space-2); }
+    & h2 { font-size: var(--step-1); font-weight: 700; }
+    & p { font-size: var(--step--1); max-inline-size: 40ch; }
+  }
+}

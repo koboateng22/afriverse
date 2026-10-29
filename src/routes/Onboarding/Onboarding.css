@@ -1,0 +1,55 @@
+@layer components {
+  .onboarding {
+    display: grid;
+    grid-template-rows: auto 1fr auto auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    min-block-size: calc(100dvh - var(--space-6) - var(--space-9));
+  }
+
+  .onboarding__bar { display: flex; align-items: center; justify-content: space-between; }
+
+  .onboarding__stage { overflow: hidden; margin-inline: calc(-1 * var(--space-2)); padding-inline: var(--space-2); }
+
+  .onboarding__step {
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    align-content: start;
+    padding-block-start: var(--space-8);
+    touch-action: pan-y;
+    cursor: grab;
+    &:active { cursor: grabbing; }
+  }
+
+  .onboarding__title { font-size: var(--step-3); max-inline-size: 14ch; }
+  .onboarding__lede { margin-block-end: var(--space-5); }
+  .onboarding__chips { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .onboarding__answers { cursor: auto; }
+
+  .onboarding__error {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--urgent-soft);
+    color: var(--cream);
+    font-size: var(--step--1);
+  }
+
+  .onboarding__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+  .onboarding__hint { text-align: center; font-size: var(--step--2); color: var(--text-3); @media (hover: hover) { display: none; } }
+
+  /* ── Feed loader ─────────────────────────────────────────────── */
+  .feed-loader__inner { display: grid; justify-items: center; gap: var(--space-7); padding-block-start: var(--space-10); }
+  .feed-loader__orb { position: relative; display: grid; place-items: center; inline-size: 120px; block-size: 120px; }
+  .feed-loader__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--emerald);
+    animation: pulse-ring 2.4s var(--ease-out) infinite;
+    &[data-delay='1'] { animation-delay: 0.8s; border-color: var(--gold); }
+    &[data-delay='2'] { animation-delay: 1.6s; border-color: var(--terracotta); }
+  }
+  .feed-loader__mark { animation: float 3s var(--ease-out) infinite; }
+  .feed-loader__copy { display: grid; gap: var(--space-2); text-align: center; & h1 { font-size: var(--step-3); } }
+  .feed-loader__cards { inline-size: 100%; display: grid; gap: var(--space-3); opacity: 0.8; }
+}

@@ -1,0 +1,44 @@
+@layer components {
+  .renewal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--highlight-soft);
+    border: 1px solid color-mix(in oklab, var(--gold) 35%, transparent);
+    overflow: hidden;
+    &[data-tone='nudge'] { background: var(--surface-1); border-color: var(--line); }
+  }
+  .renewal__icon { flex: none; inline-size: 20px; block-size: 20px; color: var(--gold); }
+  .renewal__text { flex: 1 1 12rem; min-inline-size: 0; font-size: var(--step--1); color: var(--text); }
+  .renewal__cta {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 40px;
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: var(--step--1);
+    transition: box-shadow var(--dur-mid) var(--ease-out);
+    &:hover { box-shadow: var(--shadow-bloom-gold); }
+    &:active { transform: scale(0.97); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .renewal[data-tone='nudge'] .renewal__cta { background: transparent; color: var(--gold); border: 1px solid color-mix(in oklab, var(--gold) 50%, transparent); }
+  .renewal__close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    border-radius: 50%;
+    color: var(--text-3);
+    & svg { inline-size: 16px; block-size: 16px; }
+    &:hover { color: var(--text); background: var(--surface-2); }
+  }
+}

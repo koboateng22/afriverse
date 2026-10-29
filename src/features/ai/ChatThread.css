@@ -1,0 +1,239 @@
+/* ──────────────────────────────────────────────────────────────
+   Chat — "futuristic but legible".
+   AI bubble   frosted glass + 1px emerald→gold rim (mask-drawn, so the
+               fill stays translucent) + a soft emerald/gold under-glow.
+               The latest AI reply's rim slowly travels.
+   User bubble deep-green glass, cream text (≥ 7:1).
+   Typing      three gradient dots that swell and glow in sequence.
+   Decoration is always z-index -1 inside an isolated bubble.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .chat { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+
+  .chat__log { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-content: start; min-block-size: 30dvh; }
+
+  .chat__empty { display: grid; justify-items: center; gap: var(--space-3); padding-block: var(--space-8); text-align: center; }
+  .chat__empty-icon {
+    inline-size: 28px;
+    block-size: 28px;
+    color: var(--gold);
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--gold) 60%, transparent));
+    animation: float 4s var(--ease-out) infinite;
+  }
+  .chat__empty-title { font-weight: 700; color: var(--text); max-inline-size: 30ch; }
+  .chat__suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+  .chat__suggestion {
+    padding: var(--space-2) var(--space-4);
+    min-block-size: 40px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--glass-edge-strong);
+    background: var(--glass-fill);
+    box-shadow: var(--glass-inset);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    color: var(--text-2);
+    font-size: var(--step--1);
+    font-weight: 600;
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+    &:hover { color: var(--text); border-color: color-mix(in oklab, var(--emerald) 60%, transparent); box-shadow: var(--glass-inset), var(--glow-emerald); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  /* ── Rows ───────────────────────────────────────────────────────── */
+  .chat__row {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    &[data-role='user'] { justify-items: end; }
+    /* Reserve the avatar's column so nothing ever slides under it. */
+    &[data-role='assistant'] { padding-inline-start: 42px; }
+  }
+
+  .chat__avatar {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 2px;
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: 50%;
+    color: var(--ink);
+    background: radial-gradient(circle at 30% 25%, color-mix(in oklab, var(--gold) 70%, var(--cream)), var(--gold) 45%, var(--emerald) 100%);
+    box-shadow: var(--glass-inset), 0 0 18px -2px color-mix(in oklab, var(--emerald) 70%, transparent);
+    & svg { inline-size: 15px; block-size: 15px; }
+  }
+
+  /* ── Bubbles ────────────────────────────────────────────────────── */
+  .chat__bubble {
+    position: relative;
+    isolation: isolate;
+    max-inline-size: min(88%, 520px);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
+    background:
+      radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--emerald) 10%, transparent), transparent 60%),
+      var(--glass-fill-strong);
+    border: 1px solid transparent;
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow:
+      var(--glass-inset),
+      0 12px 32px -16px color-mix(in oklab, var(--emerald) 55%, transparent),
+      0 0 28px -14px color-mix(in oklab, var(--gold) 45%, transparent);
+    & p { color: var(--text); white-space: pre-wrap; }
+
+    /* Emerald → gold rim, drawn only in the 1px border ring. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: var(--z-card-fx);
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(120deg, var(--emerald), var(--gold) 35%, color-mix(in oklab, var(--emerald) 60%, transparent) 65%, var(--gold));
+      background-size: 300% 300%;
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+  }
+  /* The newest AI reply's rim drifts slowly — the thread feels alive, not busy. */
+  .chat__row[data-latest] .chat__bubble::before,
+  .chat__row[data-typing] .chat__bubble::before { animation: rim-travel 6s ease-in-out infinite; }
+  .chat__row[data-typing] .chat__bubble::before { animation-duration: 2.4s; }
+
+  .chat__row[data-role='user'] .chat__bubble {
+    border-radius: var(--radius-md) var(--radius-md) 6px var(--radius-md);
+    background:
+      linear-gradient(160deg, color-mix(in oklab, var(--emerald) 55%, var(--deep-green)), var(--deep-green) 70%);
+    border-color: color-mix(in oklab, var(--emerald) 45%, transparent);
+    box-shadow: var(--glass-inset), 0 10px 26px -14px color-mix(in oklab, var(--emerald) 70%, transparent);
+    &::before { display: none; }
+  }
+
+  .chat__source {
+    display: block;
+    margin-block-end: var(--space-1);
+    font-size: var(--step--2);
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  /* ── Typing indicator ───────────────────────────────────────────── */
+  .chat__typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: var(--space-4) var(--space-5);
+  }
+  .chat__dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--cream), var(--gold) 40%, var(--emerald));
+    animation: typing-glow 1.2s var(--ease-out) infinite;
+    &:nth-child(3) { animation-delay: 0.16s; }
+    &:nth-child(4) { animation-delay: 0.32s; }
+  }
+
+  /* ── Composer ───────────────────────────────────────────────────── */
+  .chat__composer {
+    position: sticky;
+    inset-block-end: calc(var(--nav-h) + var(--space-4) + var(--safe-bottom));
+    z-index: var(--z-sticky);
+    isolation: isolate;
+    display: flex;
+    align-items: end;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge-strong);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+    &:focus-within {
+      border-color: color-mix(in oklab, var(--emerald) 70%, transparent);
+      box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-emerald);
+    }
+  }
+  .chat__input {
+    flex: 1;
+    min-block-size: 44px;
+    max-block-size: 160px;
+    padding: var(--space-3);
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    resize: none;
+    field-sizing: content;
+    &::placeholder { color: var(--text-3); }
+    &:focus-visible { outline: none; }
+  }
+  .chat__send {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 25%, color-mix(in oklab, var(--emerald) 80%, var(--cream) 20%), var(--deep-green));
+    color: var(--cream);
+    box-shadow: var(--glass-inset);
+    transition: opacity var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+    & svg { inline-size: 20px; block-size: 20px; }
+    &:hover:not(:disabled) { box-shadow: var(--glass-inset), var(--glow-emerald); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  /* Auto-scroll target: stop short of the sticky composer (~76px) and bottom nav,
+     so a new message / the typing dots never land underneath them. */
+  .chat__end { scroll-margin-block-end: calc(var(--nav-h) + var(--safe-bottom) + 76px + var(--space-8)); }
+  .sheet .chat__end { scroll-margin-block-end: calc(76px + var(--space-4)); }
+
+  /* Inside a sheet there is no bottom nav to clear. */
+  .sheet .chat__composer { inset-block-end: 0; }
+  .sheet .chat__log { min-block-size: 20dvh; }
+
+  .chat__related { display: flex; flex-wrap: wrap; gap: var(--space-2); max-inline-size: min(88%, 520px); }
+  .chat__related-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 36px;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge-strong);
+    box-shadow: var(--glass-inset);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    color: var(--text);
+    font-size: var(--step--1);
+    font-weight: 600;
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+    & svg { flex: none; inline-size: 16px; block-size: 16px; color: var(--gold); }
+    &:hover { border-color: color-mix(in oklab, var(--emerald) 60%, transparent); box-shadow: var(--glass-inset), var(--glow-emerald); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .chat__usage { text-align: center; font-size: var(--step--2); color: var(--text-3); }
+  .chat__upgrade {
+    min-block-size: 36px;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: var(--step--1);
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+}

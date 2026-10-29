@@ -1,0 +1,43 @@
+/*
+ * Pressed (:active) feedback for every tappable surface.
+ * Framer's whileTap scale already runs on motion components; these rules
+ * add a colour/brightness change that still works when the OS asks for
+ * reduced motion (Framer drops the transform then) and on plain elements.
+ */
+@layer states {
+  :where(.btn):active:not(:disabled) { filter: brightness(0.9); }
+  :where(.btn[data-variant='secondary']):active:not(:disabled) { --btn-bg: var(--surface-3); filter: none; }
+  :where(.btn[data-variant='quiet']):active:not(:disabled) { --btn-bg: var(--surface-2); filter: none; }
+
+  :where(
+      .chip,
+      .list-row,
+      .course-card,
+      .mentor-card,
+      .uni-card,
+      .video-card,
+      .opp-card,
+      .app-card__cta,
+      .essay__past,
+      .outline__item,
+      .chat__suggestion,
+      .mentor-dash__next,
+      .pro-guide__cta,
+      .renewal__cta,
+      .file-field__drop,
+      .admin__tab
+    ):active {
+    filter: brightness(1.12);
+  }
+
+  :where(.sheet__close, .renewal__close, .page-header__back, .chat__send, .uni__site, .auth-quiet-link, .admin-lesson-link):active {
+    opacity: 0.7;
+  }
+
+  /* Plain links inside copy */
+  :where(p, li, dd) a:active { opacity: 0.7; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :where(.list-row, .essay__past, .outline__item, .chat__suggestion, .uni-card, .mentor-dash__next):active { transform: scale(0.985); }
+  }
+}

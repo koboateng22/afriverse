@@ -1,0 +1,13 @@
+@layer components {
+  .yt-player {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    inline-size: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--line);
+    & iframe { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; border: 0; }
+  }
+}

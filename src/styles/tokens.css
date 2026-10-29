@@ -1,0 +1,186 @@
+/* ──────────────────────────────────────────────────────────────
+   tokens.css — the only file allowed to contain raw colour values.
+   Every component reads from these custom properties.
+   ────────────────────────────────────────────────────────────── */
+
+@layer tokens {
+  :root {
+    /* ── Brand palette (exact, from the brief) ─────────────────── */
+    --ink: #0A0E0D;
+    --cream: #F7F3EA;
+    --emerald: #0E7C5A;
+    --deep-green: #065440;
+    --gold: #F2B33D;
+    --terracotta: #D96C4A;
+    --clay: #A65D3F;
+    --muted: #6B7A74;
+    /* Near-black for the Pro paywall's "VIP" backdrop (not a brand colour; used nowhere else). */
+    --void: #020504;
+
+    /* ── Radii (exact) ─────────────────────────────────────────── */
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-pill: 999px;
+
+    /* ── Easing + durations (exact) ────────────────────────────── */
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --dur-fast: 180ms;
+    --dur-mid: 320ms;
+    --dur-slow: 600ms;
+
+    /* ── Semantic surfaces (dark default = Ink) ────────────────── */
+    --bg: var(--ink);
+    --surface-1: color-mix(in oklab, var(--cream) 4%, var(--ink));
+    --surface-2: color-mix(in oklab, var(--cream) 7%, var(--ink));
+    --surface-3: color-mix(in oklab, var(--cream) 11%, var(--ink));
+    --surface-glass: color-mix(in oklab, var(--ink) 72%, transparent);
+    --scrim: color-mix(in oklab, var(--ink) 70%, transparent);
+
+    --line: color-mix(in oklab, var(--cream) 9%, transparent);
+    --line-strong: color-mix(in oklab, var(--cream) 18%, transparent);
+
+    /* ── Text ──────────────────────────────────────────────────── */
+    --text: var(--cream);
+    --text-2: color-mix(in oklab, var(--cream) 74%, var(--ink));
+    /* --muted alone is 4.2:1 on ink; lifted toward cream to pass AA */
+    --text-3: color-mix(in oklab, var(--muted) 62%, var(--cream));
+    --text-on-gold: var(--ink);
+    --text-on-emerald: var(--cream);
+
+    /* ── Roles ─────────────────────────────────────────────────── */
+    --accent: var(--emerald);
+    --accent-strong: var(--deep-green);
+    --accent-soft: color-mix(in oklab, var(--emerald) 18%, transparent);
+    --highlight: var(--gold);
+    --highlight-soft: color-mix(in oklab, var(--gold) 16%, transparent);
+    --urgent: var(--terracotta);
+    --urgent-soft: color-mix(in oklab, var(--terracotta) 16%, transparent);
+    --danger: var(--terracotta);
+    --earth: var(--clay);
+
+    /* ── Typography ────────────────────────────────────────────── */
+    --font-display: 'Unbounded', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --step--2: clamp(0.72rem, 0.7rem + 0.1vw, 0.78rem);
+    --step--1: clamp(0.84rem, 0.82rem + 0.12vw, 0.9rem);
+    --step-0: clamp(1rem, 0.97rem + 0.15vw, 1.06rem);
+    --step-1: clamp(1.18rem, 1.12rem + 0.3vw, 1.32rem);
+    --step-2: clamp(1.42rem, 1.3rem + 0.6vw, 1.7rem);
+    --step-3: clamp(1.75rem, 1.5rem + 1.2vw, 2.4rem);
+    --step-4: clamp(2.2rem, 1.7rem + 2.4vw, 3.6rem);
+
+    --leading-tight: 1.1;
+    --leading-snug: 1.3;
+    --leading-body: 1.6;
+    --tracking-display: -0.02em;
+    --tracking-caps: 0.08em;
+
+    /* ── Space (4px base) ──────────────────────────────────────── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 40px;
+    --space-9: 56px;
+    --space-10: 80px;
+    --gutter: clamp(var(--space-4), 4vw, var(--space-7));
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    --container: 560px;
+    --container-wide: 1080px;
+    --nav-h: 76px;
+    --tap: 44px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* ── Elevation ─────────────────────────────────────────────── */
+    --shadow-sm: 0 1px 2px color-mix(in oklab, var(--ink) 60%, transparent);
+    --shadow-md: 0 10px 30px -12px color-mix(in oklab, var(--ink) 80%, transparent);
+    --shadow-lg: 0 24px 60px -20px color-mix(in oklab, var(--ink) 90%, transparent);
+    --shadow-bloom: 0 18px 40px -18px color-mix(in oklab, var(--emerald) 55%, transparent),
+      0 2px 0 0 color-mix(in oklab, var(--cream) 6%, transparent) inset;
+    --shadow-bloom-gold: 0 18px 40px -16px color-mix(in oklab, var(--gold) 50%, transparent);
+
+    /* ── Glass (layered glassmorphism) ─────────────────────────────
+       Four layers per glass surface, back to front:
+         1. backdrop-filter blur + saturate  → frosts whatever is behind
+         2. --glass-tint (ink)               → guarantees text contrast (WCAG AA)
+         3. --glass-sheen (white, diagonal)  → the frosted "milk" of real glass
+         4. 1px edge + inner top highlight   → the light catching the rim
+       Raw rgba() lives here only, per the tokens.css rule. */
+    --glass-blur: 20px;
+    --glass-saturate: 1.5;
+    --glass-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    --glass-tint: color-mix(in oklab, var(--ink) 52%, transparent);
+    --glass-tint-strong: color-mix(in oklab, var(--ink) 74%, transparent);
+    --glass-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 42%, rgba(255, 255, 255, 0.012) 100%);
+    --glass-fill: var(--glass-sheen), var(--glass-tint);
+    --glass-fill-strong: var(--glass-sheen), var(--glass-tint-strong);
+    /* Solid stand-in when backdrop-filter is unsupported or transparency is reduced. */
+    --glass-solid: color-mix(in oklab, var(--cream) 6%, var(--ink));
+
+    --glass-edge: rgba(255, 255, 255, 0.1);
+    --glass-edge-strong: rgba(255, 255, 255, 0.16);
+    --glass-highlight: rgba(255, 255, 255, 0.14);
+    /* Rim gradient: bright top-left catch-light fading to a faint bottom edge. */
+    --glass-rim: linear-gradient(150deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.12));
+    --glass-wash: rgba(255, 255, 255, 0.04);
+    --glass-wash-hover: rgba(255, 255, 255, 0.1);
+    --glass-catch: rgba(255, 255, 255, 0.3);
+    --glass-inset: inset 0 1px 0 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-wash);
+    --shade-soft: rgba(0, 0, 0, 0.2);
+    --shade: rgba(0, 0, 0, 0.3);
+    --shade-deep: rgba(0, 0, 0, 0.65);
+
+    /* Sheets float highest: bottom sheet casts upward, dialog casts all round. */
+    --shadow-sheet-up: 0 -1px 0 0 var(--shade), 0 -24px 80px -20px var(--shade-deep), 0 -8px 24px -12px rgba(0, 0, 0, 0.4);
+    --shadow-sheet: 0 2px 4px var(--shade), 0 24px 48px -16px rgba(0, 0, 0, 0.55), 0 64px 120px -32px rgba(0, 0, 0, 0.7);
+    --shadow-panel: -32px 0 80px -24px var(--shade-deep);
+
+    /* Floating stack: contact shadow → near → mid → far ambient. */
+    --shadow-float:
+      0 1px 1px rgba(0, 0, 0, 0.28),
+      0 4px 8px -2px rgba(0, 0, 0, 0.28),
+      0 14px 28px -10px rgba(0, 0, 0, 0.42),
+      0 36px 72px -24px rgba(0, 0, 0, 0.55);
+    --shadow-float-hover:
+      0 2px 2px rgba(0, 0, 0, 0.26),
+      0 8px 16px -4px rgba(0, 0, 0, 0.3),
+      0 24px 48px -14px rgba(0, 0, 0, 0.5),
+      0 56px 96px -28px rgba(0, 0, 0, 0.6),
+      0 18px 50px -18px color-mix(in oklab, var(--emerald) 55%, transparent);
+    --glow-emerald: 0 0 0 1px color-mix(in oklab, var(--emerald) 55%, transparent), 0 0 32px -4px color-mix(in oklab, var(--emerald) 60%, transparent);
+    --glow-gold: 0 0 40px -6px color-mix(in oklab, var(--gold) 55%, transparent);
+
+    /* Shimmer sweep used by every skeleton. */
+    --shimmer: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.07) 40%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.07) 60%, transparent 80%);
+
+    /* ── Focus ─────────────────────────────────────────────────── */
+    --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--emerald);
+
+    /* ── Brand gradient (emerald → gold → terracotta) ── */
+    --gradient-brand: linear-gradient(120deg, var(--emerald), var(--gold) 55%, var(--terracotta));
+
+    /* ── Grain intensity ───────────────────────────────────────── */
+    --grain-opacity: 0.03;
+
+    /* ── Stacking ──────────────────────────────────────────────── */
+    --z-backdrop: 0;
+    /* Inside an isolated card: decoration (-1) < text (auto) < controls (1). */
+    --z-card-fx: -1;
+    --z-card-control: 1;
+    --z-content: 1;
+    --z-sticky: 20;
+    --z-nav: 40;
+    --z-sheet: 60;
+    --z-toast: 80;
+    --z-grain: 100;
+
+    color-scheme: dark;
+  }
+}

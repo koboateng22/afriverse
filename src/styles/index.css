@@ -1,0 +1,10 @@
+/* Layer order is declared once; component CSS files wrap themselves
+   in @layer components so specificity never fights across files. */
+@layer reset, tokens, base, layout, components, states;
+
+@import './reset.css';
+@import './tokens.css';
+@import './base.css';
+@import './layout.css';
+@import './motion.css';
+@import './states.css';

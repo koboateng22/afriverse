@@ -1,0 +1,81 @@
+@layer components {
+  .bottom-nav {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: var(--z-nav);
+    padding: var(--space-2) var(--gutter) calc(var(--space-3) + var(--safe-bottom));
+    /* Fade content out under the bar so text never sits behind the glass pill. */
+    background: linear-gradient(to top, var(--bg) 45%, color-mix(in oklab, var(--bg) 70%, transparent) 75%, transparent);
+    pointer-events: none;
+  }
+
+  .bottom-nav__list {
+    position: relative;
+    isolation: isolate;
+    pointer-events: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    inline-size: min(100%, 400px);
+    margin-inline: auto;
+    padding: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge-strong);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    backdrop-filter: blur(24px) saturate(1.6);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+
+    /* Rim light along the top edge. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline: 18%;
+      inset-block-start: -1px;
+      block-size: 1px;
+      z-index: var(--z-card-fx);
+      background: linear-gradient(90deg, transparent, var(--glass-catch), transparent);
+      pointer-events: none;
+    }
+  }
+
+  .bottom-nav__link {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-block-size: 52px;
+    border-radius: var(--radius-pill);
+    /* text-2, not text-3: the bar is translucent over moving content, so
+       inactive labels need the extra headroom to stay above 4.5:1. */
+    color: var(--text-2);
+    font-size: var(--step--2);
+    font-weight: 700;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--dur-fast) var(--ease-out);
+
+    &:hover { color: var(--text); }
+    &[aria-current='page'] { color: var(--text-on-emerald); }
+    &[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; &:hover { color: var(--text-2); } }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  .bottom-nav__pill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    /* deep-green base keeps cream label ≥ 4.5:1; emerald only in the highlight */
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--emerald) 85%, var(--cream) 15%), transparent 70%),
+      var(--deep-green);
+    box-shadow: var(--glass-inset), 0 8px 22px -8px color-mix(in oklab, var(--emerald) 80%, transparent);
+  }
+
+  .bottom-nav__icon-wrap, .bottom-nav__icon-pop { display: grid; place-items: center; will-change: transform; }
+  .bottom-nav__icon { inline-size: 22px; block-size: 22px; }
+  .bottom-nav__link[aria-current='page'] .bottom-nav__icon { filter: drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 45%, transparent)); }
+}

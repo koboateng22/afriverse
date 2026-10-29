@@ -1,0 +1,113 @@
+/* ──────────────────────────────────────────────────────────────
+   Card — layered glass surface.
+
+   Paint order inside the card (isolation: isolate keeps it local):
+     background  → frosted fill (sheen + ink tint) over blurred backdrop
+     ::before    → 1px gradient rim (light catching the glass edge)
+     ::after     → pointer-follow spotlight (interactive cards only)
+     children    → text, always above both pseudo layers
+   Pseudo layers sit at z-index -1 and never take pointer events, so
+   no glow, rim or ripple can ever paint over text or steal a tap.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    --card-radius: var(--radius-md);
+    --card-shadow: var(--glass-inset), var(--shadow-float);
+    --card-fill: var(--glass-fill);
+    --card-rim: var(--glass-rim);
+
+    position: relative;
+    isolation: isolate;
+    container-type: inline-size;
+    padding: var(--space-5);
+    border-radius: var(--card-radius);
+    background: var(--card-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--card-shadow);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    transition:
+      box-shadow var(--dur-mid) var(--ease-out),
+      border-color var(--dur-mid) var(--ease-out),
+      background-color var(--dur-mid) var(--ease-out);
+
+    /* 1px gradient rim, drawn only in the border ring via mask-composite. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: var(--z-card-fx);
+      border-radius: inherit;
+      padding: 1px;
+      background: var(--card-rim);
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+
+    /* Tones */
+    &[data-tone='raised'] {
+      --card-fill: var(--glass-fill-strong);
+      --card-shadow: var(--glass-inset), var(--shadow-float), 0 0 0 1px var(--shade-soft);
+    }
+    &[data-tone='outline'] {
+      --card-fill: transparent;
+      --card-shadow: none;
+      border-color: var(--glass-edge-strong);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      &::before { display: none; }
+    }
+
+    /* Interactive: pointer spotlight + deeper float on hover. */
+    &[data-interactive] {
+      cursor: pointer;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: var(--z-card-fx);
+        border-radius: inherit;
+        background: radial-gradient(
+          420px circle at var(--mx, 50%) var(--my, 0%),
+          color-mix(in oklab, var(--emerald) 16%, transparent),
+          transparent 62%
+        );
+        opacity: 0;
+        transition: opacity var(--dur-mid) var(--ease-out);
+        pointer-events: none;
+      }
+
+      @media (hover: hover) {
+        &:hover {
+          --card-shadow: var(--glass-inset), var(--shadow-float-hover);
+          border-color: color-mix(in oklab, var(--emerald) 38%, var(--glass-edge));
+          &::after { opacity: 1; }
+        }
+      }
+    }
+
+    &:has(:focus-visible) {
+      box-shadow: var(--card-shadow), var(--focus-ring);
+    }
+  }
+
+  /* No backdrop-filter support (or the user asked for less transparency):
+     fall back to a solid surface so text contrast never depends on blur. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card:not([data-tone='outline']) { background: var(--glass-solid); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .card:not([data-tone='outline']) {
+      background: var(--glass-solid);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+}

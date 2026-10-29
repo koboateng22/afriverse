@@ -1,0 +1,50 @@
+@layer components {
+  .learn { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
+  .learn__hub { display: grid; gap: var(--space-3); }
+  .learn__courses { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .learn__h2 { font-size: var(--step-1); }
+  .learn__filters {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter);
+    &::-webkit-scrollbar { display: none; }
+  }
+  .learn__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: var(--space-4); }
+
+  .course-card {
+    display: grid;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    transition: box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
+    &:hover { box-shadow: var(--glass-inset), var(--shadow-float-hover); border-color: color-mix(in oklab, var(--emerald) 38%, var(--glass-edge)); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .course-card__media { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-block-end: 1px solid var(--glass-edge); background: var(--surface-2); }
+  /* Oversized (1.18) so the ±7% parallax drift never reveals the frame edge. */
+  .course-card__media { display: block; }
+  .course-card__thumb { inline-size: 100%; block-size: 100%; object-fit: cover; scale: 1.18; transition: scale var(--dur-slow) var(--ease-out); will-change: transform; }
+  .course-card:hover .course-card__thumb { scale: 1.24; }
+  /* Fade the thumbnail into the glass so the edge reads as one surface. */
+  .course-card__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, color-mix(in oklab, var(--ink) 55%, transparent), transparent 45%); pointer-events: none; }
+  .course-card__body { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5) var(--space-5); }
+  .course-card__field { font-size: var(--step--2); font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-3); }
+  .course-card__title { font-size: var(--step-1); }
+  .course-card__summary { font-size: var(--step--1); }
+  .course-card__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: color-mix(in oklab, var(--emerald) 50%, var(--cream));
+    & svg { inline-size: 16px; block-size: 16px; }
+  }
+}

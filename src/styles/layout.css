@@ -1,0 +1,51 @@
+/* Layout primitives — composition only, no visual styling. */
+@layer layout {
+  .container {
+    inline-size: min(100% - 2 * var(--gutter), var(--container));
+    margin-inline: auto;
+  }
+  .container[data-wide] { inline-size: min(100% - 2 * var(--gutter), var(--container-wide)); }
+
+  /* Vertical rhythm: children spaced by --stack-gap. */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap, var(--space-4));
+  }
+  .stack[data-gap='xs'] { --stack-gap: var(--space-2); }
+  .stack[data-gap='sm'] { --stack-gap: var(--space-3); }
+  .stack[data-gap='lg'] { --stack-gap: var(--space-7); }
+  .stack[data-gap='xl'] { --stack-gap: var(--space-9); }
+
+  /* Horizontal wrapping group. */
+  .cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cluster-gap, var(--space-3));
+  }
+  .cluster[data-justify='between'] { justify-content: space-between; }
+  .cluster[data-justify='center'] { justify-content: center; }
+  .cluster[data-gap='xs'] { --cluster-gap: var(--space-2); }
+
+  /* Auto-fitting grid. */
+  .grid {
+    display: grid;
+    gap: var(--grid-gap, var(--space-4));
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min, 260px), 100%), 1fr));
+  }
+
+  /* App screen shell: leaves room for the bottom nav. */
+  .screen {
+    position: relative;
+    z-index: var(--z-content);
+    min-block-size: 100dvh;
+    /* Decorative marks may bleed past the container; never past the viewport. */
+    overflow-x: clip;
+    padding-block: var(--space-6) calc(var(--nav-h) + var(--space-8) + var(--safe-bottom));
+  }
+  .screen[data-bare] { padding-block-end: var(--space-9); }
+  /* Failsafe: a leaving screen (pinned by <PageTransition>) is hidden once its
+     exit should be long over, so two screens' text can never stay overlapped. */
+  .screen[data-leaving] { animation: screen-leave-failsafe 0s linear 700ms forwards; }
+}

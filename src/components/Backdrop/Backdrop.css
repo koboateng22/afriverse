@@ -1,0 +1,104 @@
+@layer components {
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-backdrop);
+    pointer-events: none;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Each orb is a radial gradient (soft edge without a costly filter) that
+     drifts on its own long, out-of-phase loop. */
+  .backdrop__orb {
+    position: absolute;
+    inline-size: var(--orb-size);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--orb-color), transparent);
+    opacity: var(--orb-opacity, 0.5);
+    will-change: transform;
+
+    &[data-orb='emerald'] {
+      --orb-size: max(70vmax, 560px);
+      --orb-color: color-mix(in oklab, var(--emerald) 55%, transparent);
+      inset-block-start: -30vmax;
+      inset-inline-start: -25vmax;
+      animation: orb-drift-a 38s var(--ease-out) infinite alternate;
+    }
+    &[data-orb='gold'] {
+      --orb-size: max(50vmax, 420px);
+      --orb-color: color-mix(in oklab, var(--gold) 34%, transparent);
+      --orb-opacity: 0.35;
+      inset-block-start: 10vmax;
+      inset-inline-end: -25vmax;
+      animation: orb-drift-b 46s var(--ease-out) infinite alternate;
+    }
+    &[data-orb='terracotta'] {
+      --orb-size: max(60vmax, 480px);
+      --orb-color: color-mix(in oklab, var(--terracotta) 36%, transparent);
+      --orb-opacity: 0.32;
+      inset-block-end: -35vmax;
+      inset-inline-start: 5vmax;
+      animation: orb-drift-c 52s var(--ease-out) infinite alternate;
+    }
+    &[data-orb='deep'] {
+      --orb-size: max(45vmax, 380px);
+      --orb-color: color-mix(in oklab, var(--deep-green) 70%, transparent);
+      --orb-opacity: 0.45;
+      inset-block-end: 5vmax;
+      inset-inline-end: -10vmax;
+      animation: orb-drift-a 60s var(--ease-out) infinite alternate-reverse;
+    }
+  }
+
+  .backdrop[data-tone='quiet'] .backdrop__orb { opacity: calc(var(--orb-opacity, 0.5) * 0.6); }
+  .backdrop__orb { transition: opacity 900ms var(--ease-out); }
+  .backdrop[data-tone='vip'] .backdrop__orb { opacity: 0; }
+
+  /* ── VIP (Pro paywall): emerald → black, very slow radial drift ───── */
+  .backdrop__vip {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: radial-gradient(140% 90% at 50% -10%, color-mix(in oklab, var(--deep-green) 55%, var(--void)), var(--void) 65%);
+    opacity: 0;
+    transition: opacity 900ms var(--ease-out);
+  }
+  .backdrop[data-tone='vip'] .backdrop__vip { opacity: 1; }
+
+  .backdrop__aurora {
+    position: absolute;
+    inset: -40%;
+    will-change: transform;
+    &[data-aurora='emerald'] {
+      background: radial-gradient(closest-side at 50% 35%,
+        color-mix(in oklab, var(--emerald) 42%, transparent),
+        color-mix(in oklab, var(--deep-green) 26%, transparent) 45%,
+        transparent 75%);
+      animation: vip-drift 32s ease-in-out infinite alternate;
+    }
+    &[data-aurora='gold'] {
+      background: radial-gradient(closest-side at 70% 75%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 70%);
+      animation: vip-drift 44s ease-in-out infinite alternate-reverse;
+    }
+  }
+
+  /* Keeps the centre of the screen calm so content stays the focal point. */
+  .backdrop__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 45%, color-mix(in oklab, var(--ink) 55%, transparent), transparent 75%);
+  }
+
+  .grain {
+    position: fixed;
+    inset: -50%;
+    inline-size: 200%;
+    block-size: 200%;
+    z-index: var(--z-grain);
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    animation: grain 1.2s steps(5) infinite;
+  }
+}

@@ -1,0 +1,27 @@
+@layer components {
+  .empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    padding: var(--space-9) var(--space-5);
+    text-align: center;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--glass-edge-strong);
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+  }
+  .empty__icon {
+    display: grid;
+    place-items: center;
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--gold);
+    animation: float 5s var(--ease-out) infinite;
+    & svg { inline-size: 26px; block-size: 26px; }
+  }
+  .empty__title { font-size: var(--step-1); }
+  .empty__body { max-inline-size: 38ch; font-size: var(--step--1); }
+}

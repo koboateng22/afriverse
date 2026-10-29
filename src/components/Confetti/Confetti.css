@@ -1,0 +1,20 @@
+@layer components {
+  .confetti {
+    position: absolute;
+    inset-inline: 50%;
+    inset-block-start: 40%;
+    pointer-events: none;
+    z-index: var(--z-toast);
+  }
+  .confetti__bit {
+    position: absolute;
+    inline-size: 8px;
+    block-size: 12px;
+    border-radius: 2px;
+    background: var(--emerald);
+    &[data-wide] { inline-size: 14px; block-size: 6px; }
+    &[data-tone='gold'] { background: var(--gold); }
+    &[data-tone='terracotta'] { background: var(--terracotta); }
+    &[data-tone='cream'] { background: var(--cream); }
+  }
+}

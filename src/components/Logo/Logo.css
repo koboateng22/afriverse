@@ -1,0 +1,22 @@
+@layer components {
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    border-radius: var(--radius-sm);
+  }
+  .logo__mark {
+    block-size: 32px;
+    inline-size: auto;
+    transition: transform var(--dur-mid) var(--ease-spring);
+  }
+  .logo:hover .logo__mark { transform: rotate(-4deg) scale(1.06); }
+  .logo__word {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--step-0);
+    letter-spacing: var(--tracking-display);
+    color: var(--text);
+  }
+}

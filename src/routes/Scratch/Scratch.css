@@ -1,0 +1,8 @@
+@layer components {
+  .scratch { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); padding-block-start: var(--space-6); }
+  .scratch__title { font-size: var(--step-3); }
+  .scratch__section { display: grid; gap: var(--space-4); & > h2 { font-size: var(--step-1); } }
+  .scratch__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+  .scratch__cards { display: grid; gap: var(--space-4); & h3 { margin-block-end: var(--space-2); } }
+  .scratch__dots { padding: var(--space-3); border-radius: var(--radius-sm); &:hover { background: var(--surface-2); } }
+}

@@ -1,0 +1,71 @@
+@layer components {
+  .chip {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 40px;
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--glass-edge-strong);
+    background: var(--glass-fill);
+    box-shadow: var(--glass-inset);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    backdrop-filter: blur(12px) saturate(1.4);
+    color: var(--text-2);
+    font-size: var(--step--1);
+    font-weight: 600;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out);
+
+    & svg { inline-size: 1em; block-size: 1em; }
+
+    @media (hover: hover) {
+      &:hover { color: var(--text); border-color: color-mix(in oklab, var(--cream) 30%, transparent); }
+    }
+
+    &[data-selected] {
+      color: var(--text-on-emerald);
+      border-color: var(--emerald);
+      background: var(--accent-soft);
+    }
+    /* When a sliding highlight is used, it paints the fill instead. */
+    &[data-selected]:has(.chip__highlight) { background: transparent; }
+
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  .chip__highlight {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    /* deep-green base keeps cream text ≥ 4.5:1; emerald glow on top */
+    background: radial-gradient(120% 120% at 50% 0%, color-mix(in oklab, var(--emerald) 90%, var(--cream) 10%), var(--deep-green) 75%);
+    box-shadow: var(--glass-inset), 0 6px 18px -6px color-mix(in oklab, var(--emerald) 75%, transparent);
+  }
+
+  .chip__label { position: relative; }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--2);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--surface-3);
+    color: var(--text-2);
+    white-space: nowrap;
+
+    & svg { inline-size: 1em; block-size: 1em; }
+    &[data-tone='gold'] { background: var(--highlight-soft); color: var(--gold); }
+    &[data-tone='urgent'] { background: var(--urgent-soft); color: color-mix(in oklab, var(--terracotta) 72%, var(--cream)); }
+    &[data-tone='emerald'] { background: var(--accent-soft); color: color-mix(in oklab, var(--emerald) 50%, var(--cream)); }
+  }
+}

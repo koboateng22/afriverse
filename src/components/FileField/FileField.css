@@ -1,0 +1,45 @@
+@layer components {
+  .file-field { display: grid; gap: var(--space-2); }
+
+  .file-field__drop {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 64px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--line-strong);
+    background: var(--surface-1);
+    text-align: start;
+    transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+    &:hover:not(:disabled) { border-color: var(--emerald); background: var(--surface-2); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    &:disabled { cursor: progress; }
+  }
+  .file-field[data-state='done'] .file-field__drop { border-style: solid; border-color: color-mix(in oklab, var(--emerald) 55%, transparent); background: var(--accent-soft); }
+  .file-field[data-invalid] .file-field__drop { border-color: var(--terracotta); }
+
+  .file-field__icon { flex: none; inline-size: 24px; block-size: 24px; color: var(--gold); }
+  .file-field[data-state='done'] .file-field__icon { color: color-mix(in oklab, var(--emerald) 50%, var(--cream)); }
+  /* Uploading: the drop zone itself shimmers (no spinner). */
+  .file-field[data-state='uploading'] .file-field__drop {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0 -40%;
+      z-index: -1;
+      background: var(--shimmer);
+      transform: translateX(-100%);
+      animation: shimmer-sweep 1.3s var(--ease-out) infinite;
+      pointer-events: none;
+    }
+  }
+  .file-field__icon[data-uploading] { color: var(--gold); animation: float 1.6s var(--ease-out) infinite; }
+  .file-field__text { flex: 1; display: grid; gap: 2px; min-inline-size: 0; }
+  .file-field__main { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-field__sub { font-size: var(--step--2); color: var(--text-3); }
+  .file-field__replace { flex: none; inline-size: 18px; block-size: 18px; color: var(--text-3); }
+}

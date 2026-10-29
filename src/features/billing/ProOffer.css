@@ -1,0 +1,157 @@
+/* ──────────────────────────────────────────────────────────────
+   Pro offer — the "VIP club" card.
+   Layers: halo (blurred conic glow, z -1, slowly breathing/turning)
+           → pro-card (strong glass, gold rim, sheen)
+           → content.
+   The card's ink tint is strong, so text contrast never depends on
+   how bright the halo is at any moment of its animation.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .pro-offer { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+
+  .pro-offer__tier {
+    position: relative;
+    isolation: isolate;
+    padding-block: var(--space-2);
+  }
+
+  .pro-offer__halo {
+    position: absolute;
+    inset: -6% 4%;
+    z-index: -1;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      color-mix(in oklab, var(--gold) 85%, transparent),
+      color-mix(in oklab, var(--emerald) 80%, transparent) 25%,
+      color-mix(in oklab, var(--gold) 30%, transparent) 50%,
+      color-mix(in oklab, var(--terracotta) 45%, transparent) 70%,
+      color-mix(in oklab, var(--gold) 85%, transparent)
+    );
+    filter: blur(44px);
+    will-change: transform, opacity;
+    animation: halo-breathe 16s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .pro-offer[data-compact] .pro-offer__halo { inset: 2% 10%; filter: blur(36px); opacity: 0.45; }
+
+  .pro-card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(120% 80% at 100% 0%, color-mix(in oklab, var(--gold) 10%, transparent), transparent 55%),
+      var(--glass-sheen),
+      color-mix(in oklab, var(--void) 78%, transparent);
+    border: 1px solid transparent;
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-gold);
+
+    /* Gold rim (mask-drawn 1px ring). */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: var(--z-card-fx);
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(150deg, var(--gold), color-mix(in oklab, var(--gold) 25%, transparent) 40%, color-mix(in oklab, var(--emerald) 50%, transparent) 70%, var(--gold));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+  }
+
+  .pro-offer__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+  .pro-offer__badge {
+    padding: var(--space-1) var(--space-4);
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, color-mix(in oklab, var(--gold) 70%, var(--cream)), var(--gold) 50%, color-mix(in oklab, var(--gold) 80%, var(--clay)));
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+    box-shadow: var(--glass-inset), 0 6px 18px -6px color-mix(in oklab, var(--gold) 70%, transparent);
+  }
+  .pro-offer__price {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--step-3);
+    letter-spacing: var(--tracking-display);
+    color: var(--cream);
+    /* Metallic gold → cream. Both ends are ≥ 9:1 on the card, so the gradient is decoration, not a contrast risk. */
+    background: linear-gradient(180deg, var(--cream) 10%, color-mix(in oklab, var(--gold) 70%, var(--cream)) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    & small {
+      font-family: var(--font-body);
+      font-size: var(--step--1);
+      font-weight: 600;
+      letter-spacing: 0;
+      -webkit-text-fill-color: var(--text-3);
+      color: var(--text-3);
+    }
+  }
+
+  .pro-offer__features {
+    display: grid;
+    gap: var(--space-3);
+    & li { display: flex; gap: var(--space-3); color: var(--text); font-size: var(--step--1); }
+    & svg {
+      flex: none;
+      inline-size: 18px;
+      block-size: 18px;
+      padding: 3px;
+      margin-block-start: 1px;
+      border-radius: 50%;
+      color: var(--ink);
+      background: var(--gold);
+      box-shadow: 0 0 10px -2px color-mix(in oklab, var(--gold) 70%, transparent);
+    }
+  }
+
+  .pro-offer__methods { display: grid; gap: var(--space-2); }
+  .pay-method {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 64px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    text-align: start;
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+    &:hover { border-color: var(--glass-edge-strong); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .pay-method__ring {
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    border: 2px solid var(--gold);
+    background: color-mix(in oklab, var(--gold) 10%, transparent);
+    box-shadow: var(--glow-gold);
+  }
+  .pay-method__icon { flex: none; inline-size: 22px; block-size: 22px; color: var(--text-2); }
+  .pay-method[data-selected] .pay-method__icon { color: var(--gold); }
+  .pay-method__text { display: grid; gap: 2px; min-inline-size: 0; }
+  .pay-method__title { font-weight: 800; color: var(--text); }
+  .pay-method__detail { font-size: var(--step--2); color: var(--text-2); }
+
+  .pro-offer__cta .btn:not(:focus-visible) { box-shadow: var(--shadow-bloom-gold); }
+  .pro-offer__fine { text-align: center; font-size: var(--step--2); color: var(--text-3); }
+}

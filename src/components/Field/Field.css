@@ -1,0 +1,68 @@
+@layer components {
+  .field {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .field__label {
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--text-2);
+  }
+
+  .field__control {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    &:has(.field__icon) .field__input { padding-inline-start: calc(var(--space-4) + 1.25em + var(--space-2)); }
+  }
+
+  .field__icon {
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    display: grid;
+    color: var(--text-3);
+    pointer-events: none;
+    & svg { inline-size: 1.25em; block-size: 1.25em; }
+  }
+
+  .field__input {
+    inline-size: 100%;
+    min-block-size: 52px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-1);
+    color: var(--text);
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out);
+
+    &::placeholder { color: var(--text-3); }
+    &:hover { border-color: color-mix(in oklab, var(--cream) 28%, transparent); }
+    &:focus-visible {
+      outline: none;
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--emerald) 55%, transparent);
+      background: var(--surface-2);
+    }
+  }
+
+  .field__select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+      linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+    background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+    padding-inline-end: var(--space-8);
+    & option { background: var(--surface-2); color: var(--text); }
+  }
+
+  .field__textarea { min-block-size: 112px; resize: vertical; line-height: var(--leading-body); }
+
+  .field__hint { font-size: var(--step--1); color: var(--text-3); }
+  .field__error { font-size: var(--step--1); color: var(--terracotta); font-weight: 600; }
+
+  .field[data-invalid] .field__input { border-color: var(--terracotta); }
+}

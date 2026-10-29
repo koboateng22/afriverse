@@ -1,0 +1,21 @@
+@layer components {
+  .ring { position: relative; display: inline-grid; place-items: center; flex: none; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring__track { fill: none; stroke: var(--surface-3); }
+  .ring__value {
+    fill: none;
+    stroke: url(#ring-grad);
+    stroke-linecap: round;
+    animation: ring-draw 1.1s var(--ease-out) both;
+  }
+  .ring__stop-a { stop-color: var(--emerald); }
+  .ring__stop-b { stop-color: var(--gold); }
+  .ring__number {
+    position: absolute;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--step-2);
+    font-variant-numeric: tabular-nums;
+    & small { font-size: 0.5em; color: var(--text-3); margin-inline-start: 1px; }
+  }
+}

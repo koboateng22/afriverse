@@ -1,0 +1,23 @@
+@layer components {
+  .magnetic {
+    position: relative;
+    display: grid;
+    will-change: transform;
+
+    /* Sheen that tracks the cursor across the button inside. It sits on the
+       button's own ::after under its label (label is z-index 1). */
+    & .btn { overflow: hidden; isolation: isolate; }
+    & .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background: radial-gradient(160px circle at var(--mx, 50%) var(--my, 50%), var(--glass-catch), transparent 70%);
+      opacity: 0;
+      transition: opacity var(--dur-mid) var(--ease-out);
+      pointer-events: none;
+    }
+    &[data-near] .btn::after { opacity: 0.55; }
+  }
+}

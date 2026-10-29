@@ -1,0 +1,44 @@
+@layer components {
+  .save-btn {
+    position: relative;
+    z-index: var(--z-card-control);
+    display: grid;
+    place-items: center;
+    inline-size: var(--tap);
+    block-size: var(--tap);
+    flex: none;
+    border-radius: 50%;
+    color: var(--text-2);
+    background: var(--glass-wash);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-mid) var(--ease-out);
+
+    &:hover { color: var(--text); background: var(--glass-wash-hover); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+    &[data-saved] {
+      color: var(--terracotta);
+      background: var(--urgent-soft);
+      border-color: color-mix(in oklab, var(--terracotta) 35%, transparent);
+      box-shadow: var(--glass-inset), 0 0 22px -6px color-mix(in oklab, var(--terracotta) 70%, transparent);
+      & .save-btn__icon { fill: currentColor; animation: heart-pop var(--dur-slow) var(--ease-spring); }
+    }
+  }
+
+  .save-btn__icon { inline-size: 20px; block-size: 20px; }
+
+  .save-btn__burst {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--terracotta);
+    pointer-events: none;
+    animation: pulse-ring var(--dur-slow) var(--ease-out) forwards;
+    &[data-late] { border-color: var(--gold); animation-delay: 120ms; opacity: 0; }
+  }
+}

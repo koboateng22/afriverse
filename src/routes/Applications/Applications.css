@@ -1,0 +1,113 @@
+@layer components {
+  .apps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .apps__list { display: grid; gap: var(--space-4); list-style: none; padding: 0; }
+
+  .app-card {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    &[data-status='Offer'] { border-color: color-mix(in oklab, var(--gold) 50%, transparent); }
+  }
+  .app-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: var(--space-3); }
+  .app-card__titles { flex: 1 1 12rem; min-inline-size: 0; }
+  .app-card__uni { font-size: var(--step--2); font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
+  .app-card__program { font-size: var(--step-1); }
+  .app-card__intake { font-size: var(--step--1); }
+  .app-card__status {
+    flex: none;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--cream);
+    font-size: var(--step--2);
+    font-weight: 800;
+    &[data-negative] { background: var(--urgent-soft); color: var(--terracotta); }
+  }
+  .app-card__copy { font-size: var(--step--1); }
+  .app-card__fees {
+    display: grid;
+    gap: var(--space-1);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--glass-edge);
+    & div { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--step--1); }
+    & dt { color: var(--text-3); }
+    & dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+  }
+  .app-card__ref { font-family: ui-monospace, monospace; font-size: var(--step--2); overflow-wrap: anywhere; }
+
+  .timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; list-style: none; padding: 0; }
+  .timeline__step {
+    position: relative;
+    display: grid;
+    grid-auto-rows: max-content;
+    align-content: start;
+    justify-items: center;
+    gap: var(--space-2);
+    text-align: center;
+    /* connector line to the previous step */
+    &:not(:first-child)::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 13px;
+      inset-inline: -50% 50%;
+      block-size: 2px;
+      background: var(--line-strong);
+    }
+    &[data-done]:not(:first-child)::before { background: var(--emerald); }
+  }
+  .timeline__dot {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 50%;
+    background: var(--glass-solid);
+    border: 2px solid var(--glass-edge-strong);
+    & svg { inline-size: 14px; block-size: 14px; }
+  }
+  .timeline__step[data-done] .timeline__dot { background: var(--deep-green); border-color: var(--emerald); color: var(--cream); box-shadow: 0 0 14px -2px color-mix(in oklab, var(--emerald) 70%, transparent); }
+  .timeline__step[data-negative] .timeline__dot { background: var(--terracotta); border-color: var(--terracotta); }
+  .timeline__label { font-size: var(--step--2); color: var(--text-3); font-weight: 700; }
+  .timeline__step[data-done] .timeline__label { color: var(--text); }
+
+  .timeline__date { font-size: var(--step--2); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .app-card__note { font-size: var(--step--1); font-style: italic; color: var(--text); }
+  .app-card__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: 48px;
+    border-radius: var(--radius-pill);
+    background: var(--emerald);
+    color: var(--cream);
+    font-weight: 800;
+    transition: box-shadow var(--dur-mid) var(--ease-out);
+    & svg { inline-size: 18px; block-size: 18px; }
+    &:hover { box-shadow: var(--shadow-bloom); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .app-card__locked {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--highlight-soft);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: var(--step--1);
+    text-align: start;
+    & svg { flex: none; inline-size: 16px; block-size: 16px; }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+}

@@ -1,0 +1,14 @@
+@layer components {
+  .paywall-modal { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .paywall-modal__reason {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: var(--highlight-soft);
+    color: var(--text);
+    font-weight: 600;
+    font-size: var(--step--1);
+    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--gold); margin-block-start: 2px; }
+  }
+}
