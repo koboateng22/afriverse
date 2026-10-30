@@ -1,4 +1,4 @@
-// INTEGRATION: gemini — all model calls happen in the gemini-chat edge function.
+// INTEGRATION: groq — all model calls happen in the `gemini-chat` edge function (name kept from the Gemini era).
 import { invokeFunction } from '../../lib/functions';
 import { getSupabase } from '../../lib/supabase';
 import type { AiConversation, ChatMessage, ChatUsage } from './types';

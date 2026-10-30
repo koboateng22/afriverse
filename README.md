@@ -16,7 +16,7 @@ Revenue, all in **Ghana cedis (GHS)**:
 - **University application fees** — set per university by the admin; after paying, the student fills in a form built from that university's admin-chosen fields and uploads documents.
 - **Mentor sessions** — mentors propose an hourly rate, an admin approves it, students pay it; 75% to the mentor, 25% to Afriversity.
 
-**Stack:** Vite + React 18 + TypeScript · hand-written CSS (no frameworks) · Framer Motion · Supabase (Postgres, Auth, RLS, Edge Functions) · Paystack · Google Gemini · YouTube Data API v3 · Resend.
+**Stack:** Vite + React 18 + TypeScript · hand-written CSS (no frameworks) · Framer Motion · Supabase (Postgres, Auth, RLS, Edge Functions) · Paystack · Groq (OpenAI-compatible chat API) · YouTube Data API v3 · Resend.
 
 ---
 
@@ -57,7 +57,7 @@ There is no admin signup.
 ### Edge functions
 
 ```bash
-npx supabase secrets set PAYSTACK_SECRET_KEY=sk_test_... GEMINI_API_KEY=... \
+npx supabase secrets set PAYSTACK_SECRET_KEY=sk_test_... GROQ_API_KEY=... \
   YOUTUBE_API_KEY=... RESEND_API_KEY=re_... SITE_URL=https://your-domain.com
 
 npx supabase functions deploy paystack-init
@@ -88,13 +88,13 @@ It sends the 3-day and 1-day reminders, marks lapsed plans `expired` and emails 
 | `VITE_POSTHOG_KEY` | `.env` (client) | no | Analytics (optional) |
 | `SUPABASE_SERVICE_ROLE_KEY` | function secret | yes* | Bypasses RLS inside edge functions. *Injected automatically on hosted Supabase. |
 | `PAYSTACK_SECRET_KEY` | function secret | yes | Initialize/verify transactions and check webhook signatures |
-| `GEMINI_API_KEY` | function secret | yes | Career Compass + lesson tutor |
+| `GROQ_API_KEY` | function secret | yes | Career Compass, lesson tutor and essay reviewer (all via the `gemini-chat` function) |
 | `YOUTUBE_API_KEY` | function secret | yes | Day-in-the-life video search |
 | `RESEND_API_KEY` | function secret | yes | Renewal / expiry emails |
 | `SITE_URL` | function secret | recommended | Allowed return URL(s) after Paystack checkout |
-| `GEMINI_MODEL` | function secret | no | Defaults to `gemini-3.8-flash` |
+| `GROQ_MODEL` | function secret | no | Defaults to `openai/gpt-oss-120b` |
 | `RESEND_FROM` | function secret | no | Verified sender; defaults to Resend's test sender |
-| `GEMINI_API_BASE` | function secret | no | Only for pointing tests at a local Gemini-compatible server |
+| `GROQ_API_BASE` | function secret | no | Only for pointing tests at a local OpenAI-compatible server |
 | `PAYSTACK_API_BASE` | function secret | no | Only for CI with an `sk_test_` key; **ignored for live keys**, so production always calls `api.paystack.co` |
 
 No server secret is ever read by the Vite build — only `VITE_` variables reach the browser. A missing secret makes the function fail loudly with `not_configured`; nothing pretends to succeed.
@@ -168,7 +168,7 @@ Amounts are always in pesewas: GH₵60 = `6000`, GH₵250 = `25000`.
 
 ## 6. Known TODOs
 
-- **Google, phone and live Paystack/Gemini/YouTube/Resend calls were not exercised end to end in development** (no keys in the build environment). Their code paths, config errors and webhook handling were tested; run one real test-mode payment and one AI chat after adding keys.
+- **Google, phone and live Paystack/Groq/YouTube/Resend calls were not exercised end to end in development** (no keys in the build environment). Their code paths, config errors and webhook handling were tested; run one real test-mode payment and one AI chat after adding keys.
 - Uploads accept PDF, JPG, PNG, WEBP and HEIC up to 10 MB each.
 - Applications started under v1 that were already paid keep their v1 status; only new payments use the form flow.
 - Phone-only accounts have no email, so Paystack receipts use a placeholder address (`<user-id>@users.afriversity.app`).

@@ -20,7 +20,7 @@ export type ChatMessage = {
   /** Afriversity records the answer drew on (validated server-side). */
   related?: RelatedItem[];
   review?: EssayReview;
-  /** 'library' = Gemini was unavailable and the answer came from the careers table. */
+  /** 'library' = the AI was unavailable and the answer came from the careers table. */
   source?: 'ai' | 'library';
 };
 

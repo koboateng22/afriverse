@@ -21,7 +21,7 @@ const loadCompass = () => import('./routes/CareerCompass/CareerCompass');
 const loadPaywall = () => import('./routes/Paywall/Paywall');
 const Login = lazy(() => import('./routes/auth/Login'));
 const Signup = lazy(() => import('./routes/auth/Signup'));
-const AuthCallback = lazy(() => import('./routes/auth/AuthCallback'));
+const AuthCallback = lazy(() => import('./features/auth/AuthCallback'));
 const Onboarding = lazy(() => import('./routes/Onboarding/Onboarding'));
 const Home = lazy(loadHome);
 const OpportunityDetail = lazy(() => import('./routes/OpportunityDetail/OpportunityDetail'));

@@ -1,14 +1,15 @@
-// INTEGRATION: gemini — three modes, one function:
+// INTEGRATION: groq — three modes, one function (the function keeps its
+// original name, `gemini-chat`, so the frontend and deploy commands don't change):
 //   career  → Career Compass: a concise university counsellor that answers ONLY
 //             from Afriversity's own Supabase data.
-//   lesson  → tutor scoped to one course lesson (lesson record + its video).
+//   lesson  → tutor scoped to one course lesson (the lesson record; Groq can't watch the video).
 //   essay   → AI Essay Reviewer (Pro only).
 // Free students get 3 AI messages a day (app_settings.free_ai_daily_limit);
 // Pro is unlimited, with a short burst limit to stop abuse.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handle, HttpError, json, readJson } from '../_shared/http.ts';
 import { requireUser, serviceClient, userClient } from '../_shared/supabase.ts';
-import { generate, type GeminiContent } from '../_shared/gemini.ts';
+import { generate, type AiContent } from '../_shared/groq.ts';
 import { oneOf, str, uuid } from '../_shared/validate.ts';
 
 type CareerCard = { title: string; field: string; why: string; first_steps: string[]; day_in_life_query: string };
@@ -35,28 +36,29 @@ const HISTORY_TURNS = 10;
 const BURST_PER_MINUTE = 12;
 export const NOT_IN_DATA = "I don't have that in Afriversity's data yet.";
 
+// Standard JSON Schema (sent to the model in the prompt; the handler validates every field).
 const CAREER_SCHEMA = {
-  type: 'OBJECT',
+  type: 'object',
   properties: {
-    reply: { type: 'STRING' },
-    careers: { type: 'ARRAY', items: { type: 'STRING' } },
-    related: { type: 'ARRAY', items: { type: 'STRING' } },
+    reply: { type: 'string' },
+    careers: { type: 'array', items: { type: 'string' } },
+    related: { type: 'array', items: { type: 'string' } },
   },
   required: ['reply', 'careers', 'related'],
 };
 
 const ESSAY_SCHEMA = {
-  type: 'OBJECT',
+  type: 'object',
   properties: {
-    score: { type: 'INTEGER' },
-    summary: { type: 'STRING' },
-    strengths: { type: 'ARRAY', items: { type: 'STRING' } },
-    improvements: { type: 'ARRAY', items: { type: 'STRING' } },
+    score: { type: 'integer' },
+    summary: { type: 'string' },
+    strengths: { type: 'array', items: { type: 'string' } },
+    improvements: { type: 'array', items: { type: 'string' } },
     edits: {
-      type: 'ARRAY',
-      items: { type: 'OBJECT', properties: { original: { type: 'STRING' }, suggestion: { type: 'STRING' } }, required: ['original', 'suggestion'] },
+      type: 'array',
+      items: { type: 'object', properties: { original: { type: 'string' }, suggestion: { type: 'string' } }, required: ['original', 'suggestion'] },
     },
-    fit: { type: 'ARRAY', items: { type: 'STRING' } },
+    fit: { type: 'array', items: { type: 'string' } },
   },
   required: ['score', 'summary', 'strengths', 'improvements', 'edits', 'fit'],
 };
@@ -92,8 +94,8 @@ async function enforceLimits(svc: SupabaseClient, userId: string, a: Allowance) 
   if ((count ?? 0) >= BURST_PER_MINUTE) throw new HttpError(429, 'slow_down', 'Too many messages in a minute — wait a moment and try again.');
 }
 
-function history(messages: ChatMessage[]): GeminiContent[] {
-  return messages.slice(-HISTORY_TURNS).map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
+function history(messages: ChatMessage[]): AiContent[] {
+  return messages.slice(-HISTORY_TURNS).map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', parts: [{ text: m.content }] }));
 }
 
 const clip = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -209,8 +211,8 @@ export const handler = handle(async (req) => {
       reply = { role: 'assistant', content: clip(parsed.reply, 900) || NOT_IN_DATA, at: new Date().toISOString(), careers, related, source: 'ai' };
     } catch (err) {
       if (err instanceof HttpError && err.status === 429) throw err;
-      // Gemini unavailable: answer from the careers library, clearly labelled, without repeating cards.
-      console.error('gemini career fallback:', err instanceof Error ? err.message : err);
+      // AI unavailable: answer from the careers library, clearly labelled, without repeating cards.
+      console.error('ai career fallback:', err instanceof Error ? err.message : err);
       const field = profile?.field_of_interest;
       const shown = new Set(messages.flatMap((m) => (m.careers ?? []).map((c) => c.title)));
       const pool = library.filter((c) => !field || c.field === field);
@@ -237,31 +239,13 @@ export const handler = handle(async (req) => {
     if (!lesson) throw new HttpError(404, 'not_found', 'Lesson not found');
     const course = (Array.isArray(lesson.course) ? lesson.course[0] : lesson.course) as { title: string; field: string } | null;
     const system = [
-      'You are the Afriversity lesson tutor. Answer ONLY about this lesson, using the attached video and the lesson record below.',
+      "You are the Afriversity lesson tutor. Answer ONLY about this lesson, using the lesson record below and well-established knowledge of the lesson's topic.",
       `Course: ${course?.title ?? ''} (${course?.field ?? ''}). Lesson ${lesson.position}: "${lesson.title}" by ${lesson.channel ?? 'unknown'} — ${lesson.summary ?? ''}`,
       `If the question is not about this lesson, reply: "${NOT_IN_DATA}" and suggest one question about the lesson.`,
       'Be concise: at most 4 short sentences or bullet lines starting with "• ". No greetings or filler. Never invent timestamps or quotes.',
     ].join('\n');
-    const prior = history(messages);
-    let answer: string;
-    try {
-      answer = await generate({
-        system,
-        contents: [
-          { role: 'user', parts: [{ fileData: { fileUri: `https://www.youtube.com/watch?v=${lesson.youtube_id}` } }, { text: 'This is the lesson video.' }] },
-          { role: 'model', parts: [{ text: 'Ready.' }] },
-          ...prior,
-          { role: 'user', parts: [{ text }] },
-        ],
-        lowMediaResolution: true,
-        timeoutMs: 40_000,
-        maxOutputTokens: 500,
-      });
-    } catch (err) {
-      if (err instanceof HttpError && err.code === 'not_configured') throw err;
-      console.error('lesson video context failed, retrying text-only:', err instanceof Error ? err.message : err);
-      answer = await generate({ system, contents: [...prior, { role: 'user', parts: [{ text }] }], maxOutputTokens: 500 });
-    }
+    // Groq models can't watch YouTube videos, so the tutor works from the lesson record only.
+    const answer = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], maxOutputTokens: 500 });
     reply = { role: 'assistant', content: answer.slice(0, 1500), at: new Date().toISOString(), source: 'ai' };
   } else {
     // ── Essay Reviewer (Pro) ──
