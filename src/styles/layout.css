@@ -45,6 +45,20 @@
     padding-block: var(--space-6) calc(var(--nav-h) + var(--space-8) + var(--safe-bottom));
   }
   .screen[data-bare] { padding-block-end: var(--space-9); }
+  @media (min-width: 768px) {
+    /* The left sidebar replaces the bottom bar on screens that have one. */
+    body:has(.bottom-nav) .screen { padding-inline-start: var(--sidebar-w); }
+
+    /* Forms, chat and the paywall read best as a centred column… */
+    .container:is(.auth, .auth-callback, .paywall, .checkout, .complete, .compass, .essay, .onboarding, .not-found, .config-error, .feed-loader__inner) {
+      inline-size: min(100% - 2 * var(--gutter), var(--container-narrow));
+    }
+    /* …and long-form detail pages at a comfortable line length. */
+    .container:is(.opp, .uni, .course, .mentor-detail, .profile) {
+      inline-size: min(100% - 2 * var(--gutter), var(--container-reading));
+    }
+  }
+
   /* Failsafe: a leaving screen (pinned by <PageTransition>) is hidden once its
      exit should be long over, so two screens' text can never stay overlapped. */
   .screen[data-leaving] { animation: screen-leave-failsafe 0s linear 700ms forwards; }

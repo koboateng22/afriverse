@@ -4,10 +4,9 @@ import { Check, CreditCard, Smartphone } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Magnetic } from '../../components/Magnetic/Magnetic';
 import { Notice } from '../../components/Notice/Notice';
-import { ProOfferSkeleton } from '../../components/Skeleton/Skeleton';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
-import { riseItem, spring, staggerParent } from '../../lib/motion';
+import { riseItem, staggerParent } from '../../lib/motion';
 import { fetchProPlan } from './api';
 import { startCheckout } from './paystack';
 import type { PlanRow } from './types';
@@ -20,18 +19,46 @@ const METHODS: Array<{ id: Method; title: string; detail: string; icon: typeof C
   { id: 'momo', title: 'Mobile Money', detail: 'MTN, Telecel, AirtelTigo. One month, renew when you like.', icon: Smartphone },
 ];
 
-/** Pro plan + payment method + one gold CTA. Used by /paywall and the paywall modal. */
+// Shown until the plan row arrives (or if it can't be read). Mirrors migration 0010.
+const DEFAULT_FEATURES = [
+  'Unlimited AI counsellor messages',
+  'Scholarship Matcher — ranked by how well you fit',
+  'AI Essay Reviewer',
+  'Application Tracker with full timeline',
+  'Human counsellor on WhatsApp',
+];
+
+/**
+ * Pro plan + payment method + one gold CTA. Used by /paywall and the paywall modal.
+ * Never waits on the plan fetch: paystack-init charges the DB price whatever this
+ * screen shows, so the button works before the price has loaded. No price is
+ * hard-coded here; it appears once it has been read.
+ */
 export function ProOffer({ compact }: { compact?: boolean }) {
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [method, setMethod] = useState<Method>('card');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planFailed, setPlanFailed] = useState(false);
 
   useEffect(() => {
+    let active = true;
     fetchProPlan()
-      .then(setPlan)
-      .catch((e) => setError(errorMessage(e)));
+      .then((row) => {
+        if (!active) return;
+        setPlan(row);
+        setPlanFailed(!row);
+      })
+      .catch(() => {
+        if (active) setPlanFailed(true);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
+
+  const price = plan ? formatMoney(plan.amount_cents, plan.currency) : null;
+  const features = plan && Array.isArray(plan.features) && plan.features.length > 0 ? plan.features : DEFAULT_FEATURES;
 
   const pay = async () => {
     setBusy(true);
@@ -44,8 +71,6 @@ export function ProOffer({ compact }: { compact?: boolean }) {
     }
   };
 
-  if (!plan) return error ? <Notice tone="error">{error}</Notice> : <ProOfferSkeleton />;
-
   return (
     <motion.div className="pro-offer" data-compact={compact || undefined} variants={staggerParent} initial="hidden" animate="show">
       {/* The tier card floats on a slowly breathing halo (decorative, behind the card). */}
@@ -55,12 +80,12 @@ export function ProOffer({ compact }: { compact?: boolean }) {
           <div className="pro-offer__head">
             <span className="pro-offer__badge">Pro</span>
             <p className="pro-offer__price">
-              {formatMoney(plan.amount_cents, plan.currency)}
-              <small> / month</small>
+              {price ?? 'Monthly plan'}
+              {price && <small> / month</small>}
             </p>
           </div>
           <ul className="pro-offer__features" role="list">
-            {plan.features.map((f) => (
+            {features.map((f) => (
               <li key={f}>
                 <Check aria-hidden="true" />
                 {f}
@@ -75,7 +100,7 @@ export function ProOffer({ compact }: { compact?: boolean }) {
           const on = method === id;
           return (
             <button key={id} type="button" role="radio" aria-checked={on} className="pay-method" data-selected={on || undefined} onClick={() => setMethod(id)}>
-              {on && <motion.span className="pay-method__ring" layoutId="pay-method-ring" transition={spring} aria-hidden="true" />}
+              {on && <span className="pay-method__ring" aria-hidden="true" />}
               <Icon className="pay-method__icon" aria-hidden="true" />
               <span className="pay-method__text">
                 <span className="pay-method__title">{title}</span>
@@ -90,10 +115,11 @@ export function ProOffer({ compact }: { compact?: boolean }) {
 
       <Magnetic className="pro-offer__cta">
         <Button variant="gold" size="lg" block loading={busy} onClick={pay}>
-          {method === 'card' ? 'Start Pro' : 'Get 1 month of Pro'} · {formatMoney(plan.amount_cents, plan.currency)}
+          {method === 'card' ? 'Start Pro' : 'Get 1 month of Pro'}
+          {price && ` · ${price}`}
         </Button>
       </Magnetic>
-      <p className="pro-offer__fine">Secured by Paystack. Prices in Ghana cedis.</p>
+      <p className="pro-offer__fine">{planFailed ? 'Secured by Paystack. You’ll see the exact price in Ghana cedis at checkout.' : 'Secured by Paystack. Prices in Ghana cedis.'}</p>
     </motion.div>
   );
 }

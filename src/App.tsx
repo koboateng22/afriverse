@@ -8,6 +8,7 @@ import { PlanProvider } from './features/billing/PlanProvider';
 import { PaywallProvider } from './features/billing/PaywallModal';
 import { Backdrop, GrainOverlay } from './components/Backdrop/Backdrop';
 import { BottomNav, MENTOR_NAV, navMatches, STUDENT_NAV } from './components/BottomNav/BottomNav';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { FullscreenLoader } from './components/FullscreenLoader/FullscreenLoader';
 import Landing from './routes/Landing/Landing';
 
@@ -120,6 +121,7 @@ function AnimatedRoutes() {
             <Route path="/courses/:id" element={student(<CourseDetail />)} />
             <Route path="/mentors" element={student(<Mentors />)} />
             <Route path="/mentors/:id" element={student(<MentorDetail />)} />
+            <Route path="/apply" element={<Navigate to="/apply-university" replace />} />
             <Route path="/apply-university" element={student(<ApplyUniversity />)} />
             <Route path="/apply-university/:id" element={student(<UniversityDetail />)} />
             <Route path="/applications" element={student(<Applications />)} />
@@ -141,7 +143,9 @@ function AnimatedRoutes() {
               path="/admin/*"
               element={
                 <ProtectedRoute roles={['admin']} loginPath="/" denyPath="/">
-                  <AdminLayout />
+                  <ErrorBoundary label="Admin console">
+                    <AdminLayout />
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -150,8 +154,8 @@ function AnimatedRoutes() {
           </Routes>
         </Suspense>
       </AnimatePresence>
-      {showStudentNav && <BottomNav items={STUDENT_NAV} id="student" />}
-      {showMentorNav && <BottomNav items={MENTOR_NAV} id="mentor" />}
+      {showStudentNav && <BottomNav items={STUDENT_NAV} />}
+      {showMentorNav && <BottomNav items={MENTOR_NAV} />}
     </>
   );
 }

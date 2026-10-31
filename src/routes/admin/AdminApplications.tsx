@@ -8,7 +8,7 @@ import { SelectField, TextAreaField } from '../../components/Field/Field';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { adminCall } from '../../features/admin/api';
-import { useAdminData } from '../../features/admin/useAdminData';
+import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import type { Application, ApplicationDocument, ApplicationStatus } from '../../features/applications/types';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
@@ -38,6 +38,7 @@ const kb = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)} MB` :
 export default function AdminApplications() {
   const [filter, setFilter] = useState<ApplicationStatus | 'All'>('Submitted');
   const { data, error, mutate } = useAdminData<Row[]>('applications.list', filter === 'All' ? {} : { status: filter });
+  const rows = asArray(data);
   const [editing, setEditing] = useState<{ row: Row; status: string; note: string } | null>(null);
   const [docs, setDocs] = useState<SignedDoc[] | null>(null);
   const [docsError, setDocsError] = useState<string | null>(null);
@@ -80,17 +81,17 @@ export default function AdminApplications() {
       </div>
       <div className="admin-form__chips" role="radiogroup" aria-label="Filter by status">
         {FILTERS.map((f) => (
-          <Chip key={f} kind="radio" selected={filter === f} onToggle={() => setFilter(f)} layoutGroup="app-filter">
+          <Chip key={f} kind="radio" selected={filter === f} onToggle={() => setFilter(f)}>
             {f}
           </Chip>
         ))}
       </div>
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
-      {data && data.length === 0 && <Notice tone="info">No applications with this status.</Notice>}
-      {data && data.length > 0 && (
+      {data && rows.length === 0 && <Notice tone="info">No applications with this status.</Notice>}
+      {rows.length > 0 && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
-          {data.map((a) => (
+          {rows.map((a) => (
             <motion.li key={a.id} className="admin-row" variants={riseItem}>
               <div className="admin-row__main">
                 <span className="admin-row__title">
@@ -163,7 +164,7 @@ export default function AdminApplications() {
                 {!docs && !docsError && <Skeleton shape="block" height="96px" label="Loading documents" />}
                 {docs && (
                   <ul className="doc-list" role="list">
-                    {docs.map((d) => (
+                    {asArray(docs).map((d) => (
                       <li key={d.key}>
                         <FileText aria-hidden="true" />
                         <span className="doc-list__text">

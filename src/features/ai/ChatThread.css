@@ -29,8 +29,6 @@
     border: 1px solid var(--glass-edge-strong);
     background: var(--glass-fill);
     box-shadow: var(--glass-inset);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     color: var(--text-2);
     font-size: var(--step--1);
     font-weight: 600;
@@ -76,8 +74,6 @@
       radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--emerald) 10%, transparent), transparent 60%),
       var(--glass-fill-strong);
     border: 1px solid transparent;
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     box-shadow:
       var(--glass-inset),
       0 12px 32px -16px color-mix(in oklab, var(--emerald) 55%, transparent),
@@ -93,7 +89,6 @@
       border-radius: inherit;
       padding: 1px;
       background: linear-gradient(120deg, var(--emerald), var(--gold) 35%, color-mix(in oklab, var(--emerald) 60%, transparent) 65%, var(--gold));
-      background-size: 300% 300%;
       -webkit-mask:
         linear-gradient(#000 0 0) content-box,
         linear-gradient(#000 0 0);
@@ -216,7 +211,6 @@
     border: 1px solid var(--glass-edge-strong);
     box-shadow: var(--glass-inset);
     -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     color: var(--text);
     font-size: var(--step--1);
     font-weight: 600;

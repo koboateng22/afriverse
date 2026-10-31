@@ -24,8 +24,6 @@
     background: var(--card-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--card-shadow);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     transition:
       box-shadow var(--dur-mid) var(--ease-out),
       border-color var(--dur-mid) var(--ease-out),
@@ -59,8 +57,6 @@
       --card-fill: transparent;
       --card-shadow: none;
       border-color: var(--glass-edge-strong);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
       &::before { display: none; }
     }
 
@@ -98,16 +94,10 @@
     }
   }
 
-  /* No backdrop-filter support (or the user asked for less transparency):
-     fall back to a solid surface so text contrast never depends on blur. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .card:not([data-tone='outline']) { background: var(--glass-solid); }
-  }
+  /* The user asked for less transparency: a solid surface. */
   @media (prefers-reduced-transparency: reduce) {
     .card:not([data-tone='outline']) {
       background: var(--glass-solid);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
     }
   }
 }

@@ -1,7 +1,8 @@
 /* ──────────────────────────────────────────────────────────────
    motion.css — every CSS @keyframes in the app lives here.
    Framer Motion handles orchestration (page transitions, stagger,
-   layoutId, springs); CSS handles ambient + micro effects.
+   springs); CSS handles ambient + micro effects. Keyframes animate
+   transform and opacity only, so they never trigger layout or paint.
    ────────────────────────────────────────────────────────────── */
 
 /* Ambient drift for decorative shapes (adinkra marks, hero orbs). */
@@ -29,8 +30,8 @@
 
 /* Skeleton loading sweep. */
 @keyframes shimmer {
-  from { background-position: 150% 0; }
-  to   { background-position: -50% 0; }
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
 }
 
 /* Film-grain jitter — stepped so the noise flickers, not slides. */
@@ -49,10 +50,10 @@
   100% { transform: scale(2.2); opacity: 0; }
 }
 
-/* Slow pan across an oversized gradient mesh. */
+/* Gradient text: a slow breath. */
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.78; }
 }
 
 /* Save heart: squash, overshoot, settle. */
@@ -63,16 +64,14 @@
   100% { transform: scale(1); }
 }
 
-/* Card glow bloom on save. a/b are identical; alternating the name restarts the animation. */
+/* Card glow bloom on save (fades .opp-card__glow). a/b are identical; alternating the name restarts the animation. */
 @keyframes save-glow-a {
-  0%   { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
-  28%  { box-shadow: var(--card-shadow), 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent); }
-  100% { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  0%, 100% { opacity: 0; }
+  28%      { opacity: 1; }
 }
 @keyframes save-glow-b {
-  0%   { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
-  28%  { box-shadow: var(--card-shadow), 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent); }
-  100% { box-shadow: var(--card-shadow), 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  0%, 100% { opacity: 0; }
+  28%      { opacity: 1; }
 }
 
 /* Skeleton sweep: a highlight band travels across (transform only = GPU-cheap). */
@@ -81,16 +80,16 @@
   to   { transform: translateX(100%); }
 }
 
-/* Typing indicator: each dot swells, brightens and glows in turn. */
+/* Typing indicator: each dot swells and brightens in turn. */
 @keyframes typing-glow {
-  0%, 70%, 100% { transform: translateY(0) scale(0.7); opacity: 0.45; box-shadow: 0 0 0 0 transparent; }
-  35%           { transform: translateY(-3px) scale(1); opacity: 1; box-shadow: 0 0 12px 2px color-mix(in oklab, var(--emerald) 70%, transparent); }
+  0%, 70%, 100% { transform: translateY(0) scale(0.7); opacity: 0.45; }
+  35%           { transform: translateY(-3px) scale(1); opacity: 1; }
 }
 
-/* AI bubble rim: the emerald→gold border slowly travels around. */
+/* AI bubble rim: the emerald→gold border slowly breathes. */
 @keyframes rim-travel {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
 }
 
 /* Paywall: slow aurora drift (transform only). */
@@ -108,12 +107,12 @@
 
 /* See .screen[data-leaving] in layout.css. */
 @keyframes screen-leave-failsafe {
-  to { visibility: hidden; opacity: 0; }
+  to { opacity: 0; }
 }
 
-/* Progress-ring draw-in on the profile screen. */
+/* Progress-ring reveal on the profile screen. */
 @keyframes ring-draw {
-  from { stroke-dashoffset: var(--ring-circumference, 300); }
+  from { opacity: 0; transform: scale(0.92); }
 }
 
 /* ── Reduced motion: kill ambient + transitional motion globally.

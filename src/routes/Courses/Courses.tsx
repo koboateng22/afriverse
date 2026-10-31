@@ -67,11 +67,11 @@ export default function Courses() {
             Micro-courses
           </h2>
           <div className="learn__filters" role="radiogroup" aria-label="Filter courses by field">
-            <Chip kind="radio" selected={field === 'All'} onToggle={() => setField('All')} layoutGroup="course-field">
+            <Chip kind="radio" selected={field === 'All'} onToggle={() => setField('All')}>
               All
             </Chip>
             {fieldsWithCourses.map((f) => (
-              <Chip key={f} kind="radio" selected={field === f} onToggle={() => setField(f)} layoutGroup="course-field">
+              <Chip key={f} kind="radio" selected={field === f} onToggle={() => setField(f)}>
                 {f}
               </Chip>
             ))}

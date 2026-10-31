@@ -140,7 +140,7 @@ export default function Onboarding() {
                 {s.key === 'level' && (
                   <div className="onboarding__chips" role="radiogroup" aria-labelledby={`step-${s.key}`}>
                     {EDUCATION_LEVELS.map((l) => (
-                      <Chip key={l} kind="radio" selected={answers.level === l} onToggle={() => setAnswers((a) => ({ ...a, level: l }))} layoutGroup="ob-level">
+                      <Chip key={l} kind="radio" selected={answers.level === l} onToggle={() => setAnswers((a) => ({ ...a, level: l }))}>
                         {l}
                       </Chip>
                     ))}
@@ -149,7 +149,7 @@ export default function Onboarding() {
                 {s.key === 'field' && (
                   <div className="onboarding__chips" role="radiogroup" aria-labelledby={`step-${s.key}`}>
                     {FIELDS.map((f) => (
-                      <Chip key={f} kind="radio" selected={answers.field === f} onToggle={() => setAnswers((a) => ({ ...a, field: f }))} layoutGroup="ob-field">
+                      <Chip key={f} kind="radio" selected={answers.field === f} onToggle={() => setAnswers((a) => ({ ...a, field: f }))}>
                         {f}
                       </Chip>
                     ))}

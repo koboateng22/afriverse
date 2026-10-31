@@ -126,14 +126,14 @@ export default function MentorDetail() {
               </h2>
               <div className="booking__days" role="radiogroup" aria-label="Day">
                 {days.map((d, i) => (
-                  <Chip key={d.toISOString()} kind="radio" selected={day === i} onToggle={() => setDay(i)} layoutGroup="book-day">
+                  <Chip key={d.toISOString()} kind="radio" selected={day === i} onToggle={() => setDay(i)}>
                     {d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
                   </Chip>
                 ))}
               </div>
               <div className="booking__times" role="radiogroup" aria-label="Start time (your local time)">
                 {HOURS.map((h) => (
-                  <Chip key={h} kind="radio" selected={hour === h} onToggle={() => setHour(h)} layoutGroup="book-hour">
+                  <Chip key={h} kind="radio" selected={hour === h} onToggle={() => setHour(h)}>
                     {String(h).padStart(2, '0')}:00
                   </Chip>
                 ))}

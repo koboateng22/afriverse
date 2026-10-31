@@ -1,6 +1,6 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
-import { motion, useIsPresent, useReducedMotion } from 'framer-motion';
-import { pageVariants, pageVariantsReduced } from '../../lib/motion';
+import { motion, useIsPresent } from 'framer-motion';
+import { pageVariants } from '../../lib/motion';
 
 export type PageTransitionProps = {
   children: ReactNode;
@@ -22,7 +22,6 @@ export type PageTransitionProps = {
  */
 export function PageTransition({ children, className, bare, label }: PageTransitionProps) {
   const isPresent = useIsPresent();
-  const reduce = useReducedMotion();
   const lastScroll = useRef(0);
   const pinnedTop = useRef<number | null>(null);
 
@@ -53,7 +52,7 @@ export function PageTransition({ children, className, bare, label }: PageTransit
       // `inert` is a valid HTML attribute; React 18 needs it as an empty string.
       {...(isPresent ? {} : { inert: '' })}
       style={leaving}
-      variants={reduce ? pageVariantsReduced : pageVariants}
+      variants={pageVariants}
       initial="initial"
       animate="enter"
       exit="exit"

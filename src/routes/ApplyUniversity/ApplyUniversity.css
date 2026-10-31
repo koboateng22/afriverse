@@ -1,6 +1,7 @@
 @layer components {
   .apply-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
   .apply-list__grid { display: grid; gap: var(--space-3); }
+  @media (min-width: 768px) { .apply-list__grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); } }
 
   .uni-card {
     display: flex;

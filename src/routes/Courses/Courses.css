@@ -2,6 +2,7 @@
   .learn { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
   .learn__hub { display: grid; gap: var(--space-3); }
   .learn__courses { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  @media (min-width: 768px) { .learn__courses { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); } }
   .learn__h2 { font-size: var(--step-1); }
   .learn__filters {
     display: flex;
@@ -21,8 +22,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     transition: box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
     &:hover { box-shadow: var(--glass-inset), var(--shadow-float-hover); border-color: color-mix(in oklab, var(--emerald) 38%, var(--glass-edge)); }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }

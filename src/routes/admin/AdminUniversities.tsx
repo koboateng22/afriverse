@@ -8,7 +8,7 @@ import { Switch } from '../../components/Switch/Switch';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { Tag } from '../../components/Chip/Chip';
-import { useAdminData } from '../../features/admin/useAdminData';
+import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import { COUNTRIES } from '../../features/universities/countries';
 import { feeOf, requirementsOf, type FormFields, type University } from '../../features/universities/types';
 import { formatMoney, toCents } from '../../lib/money';
@@ -88,6 +88,7 @@ function formFieldsOf(form: Form): FormFields {
 
 export default function AdminUniversities() {
   const { data, error, mutate } = useAdminData<University[]>('universities.list');
+  const rows = asArray(data);
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -173,10 +174,10 @@ export default function AdminUniversities() {
       </div>
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
-      {data && data.length === 0 && <Notice tone="info">No universities yet. Add the first one to open applications.</Notice>}
-      {data && data.length > 0 && (
+      {data && rows.length === 0 && <Notice tone="info">No universities yet. Add the first one to open applications.</Notice>}
+      {rows.length > 0 && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
-          {data.map((u) => {
+          {rows.map((u) => {
             const reqs = requirementsOf(u.form_fields ?? {});
             return (
               <motion.li key={u.id} className="admin-row" variants={riseItem} data-muted={!u.active || undefined}>

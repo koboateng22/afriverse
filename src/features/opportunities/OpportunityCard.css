@@ -30,8 +30,18 @@
 
     /* Glow bloom on save. Two identical keyframes alternate so the
        animation restarts on every save (changing animation-name restarts it). */
-    &[data-glow='1'] { animation: save-glow-a 900ms var(--ease-out); }
-    &[data-glow='0'] { animation: save-glow-b 900ms var(--ease-out); }
+    &[data-glow='1'] .opp-card__glow { animation: save-glow-a 900ms var(--ease-out); }
+    &[data-glow='0'] .opp-card__glow { animation: save-glow-b 900ms var(--ease-out); }
+  }
+
+  .opp-card__glow {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-card-fx);
+    border-radius: inherit;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent);
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* ── Decorative layer (aurora, ripples) — clipped, under all text ─── */

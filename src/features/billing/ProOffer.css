@@ -47,8 +47,6 @@
       var(--glass-sheen),
       color-mix(in oklab, var(--void) 78%, transparent);
     border: 1px solid transparent;
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-gold);
 
     /* Gold rim (mask-drawn 1px ring). */
@@ -130,8 +128,6 @@
     background: var(--glass-fill-strong);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     text-align: start;
     transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
     &:hover { border-color: var(--glass-edge-strong); }

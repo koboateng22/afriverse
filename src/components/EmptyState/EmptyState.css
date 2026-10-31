@@ -8,8 +8,6 @@
     border-radius: var(--radius-md);
     border: 1px dashed var(--glass-edge-strong);
     background: var(--glass-tint);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
   }
   .empty__icon {
     display: grid;

@@ -11,8 +11,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     transition: box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
     &:hover { box-shadow: var(--glass-inset), var(--shadow-float-hover); border-color: color-mix(in oklab, var(--emerald) 38%, var(--glass-edge)); }
     &:hover .list-row__chev { transform: translateX(3px); color: var(--text); }

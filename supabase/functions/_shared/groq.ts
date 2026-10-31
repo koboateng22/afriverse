@@ -24,13 +24,23 @@ type GroqResponse = {
   error?: { message?: string; code?: string };
 };
 
+const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 /**
- * Default model. `llama-3.3-70b-versatile` was retired by Groq on 16 Aug 2026
- * (requests to it now error); Groq names `openai/gpt-oss-120b` as its production
- * replacement. Override without a code change with the GROQ_MODEL secret.
+ * Groq's deprecations page lists DEFAULT_MODEL with a 16 Aug 2026 shutdown and
+ * names this as its replacement. Used only when Groq rejects the chosen model.
  */
+const FALLBACK_MODEL = 'openai/gpt-oss-120b';
+
+/** Override without a code change with the GROQ_MODEL secret. */
 export function aiModel(): string {
-  return optionalEnv('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
+  return optionalEnv('GROQ_MODEL') ?? DEFAULT_MODEL;
+}
+
+/** True when Groq refused the request because the model itself is retired or unknown. */
+function isModelUnavailable(status: number, payload: GroqResponse): boolean {
+  if (status !== 400 && status !== 404) return false;
+  const detail = `${payload.error?.code ?? ''} ${payload.error?.message ?? ''}`;
+  return /model_(decommissioned|not_found)|model\b.*(decommissioned|does not exist|not found)/i.test(detail);
 }
 
 /** gpt-oss models reason before answering; they take reasoning controls the others reject. */
@@ -75,16 +85,16 @@ export async function generate(opts: GenerateOptions): Promise<string> {
     : opts.system;
 
   const answerTokens = opts.maxOutputTokens ?? 800;
-  const reasoning = isReasoningModel(model);
+  const base = (optionalEnv('GROQ_API_BASE') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, '');
 
-  try {
-    const base = (optionalEnv('GROQ_API_BASE') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, '');
+  const request = async (name: string) => {
+    const reasoning = isReasoningModel(name);
     const res = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model,
+        model: name,
         messages: toMessages(system, opts.contents),
         temperature: 0.3,
         max_completion_tokens: reasoning ? answerTokens + REASONING_HEADROOM_TOKENS : answerTokens,
@@ -92,8 +102,15 @@ export async function generate(opts: GenerateOptions): Promise<string> {
         ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
       }),
     });
+    return { res, payload: (await res.json().catch(() => ({}))) as GroqResponse };
+  };
 
-    const payload = (await res.json().catch(() => ({}))) as GroqResponse;
+  try {
+    let { res, payload } = await request(model);
+    if (!res.ok && model !== FALLBACK_MODEL && isModelUnavailable(res.status, payload)) {
+      console.warn(`groq: model ${model} unavailable, using ${FALLBACK_MODEL}: ${payload.error?.message ?? res.statusText}`);
+      ({ res, payload } = await request(FALLBACK_MODEL));
+    }
     if (!res.ok) {
       const detail = payload.error?.message ?? res.statusText;
       if (res.status === 429) throw new HttpError(503, 'ai_busy', 'The AI service is busy right now — please try again in a moment.');

@@ -92,7 +92,7 @@ export default function Scratch() {
           <h2 id="s-chip">Chip + Tag</h2>
           <div className="scratch__row" role="radiogroup" aria-label="Fields">
             {FIELDS.slice(0, 5).map((f) => (
-              <Chip key={f} kind="radio" selected={chip === f} onToggle={() => setChip(f)} layoutGroup="scratch">
+              <Chip key={f} kind="radio" selected={chip === f} onToggle={() => setChip(f)}>
                 {f}
               </Chip>
             ))}

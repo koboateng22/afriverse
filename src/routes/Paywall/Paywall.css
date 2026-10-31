@@ -13,12 +13,15 @@
     border-radius: var(--radius-md);
     background: var(--glass-fill-strong);
     border: 1px solid color-mix(in oklab, var(--gold) 40%, transparent);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-gold);
   }
   .paywall__status-icon { flex: none; inline-size: 28px; block-size: 28px; color: var(--gold); }
   .paywall__status-text { display: grid; gap: var(--space-1); min-inline-size: 0; & p { font-size: var(--step--1); } }
   .paywall__status-title { font-weight: 800; color: var(--text); font-size: var(--step-0) !important; }
   .paywall__manage { display: grid; gap: var(--space-2); }
+
+  /* Laptop and up: one centred column, vertically balanced on the screen. */
+  @media (min-width: 768px) {
+    .paywall { align-content: center; min-block-size: calc(100dvh - var(--space-6) - var(--space-8)); }
+  }
 }

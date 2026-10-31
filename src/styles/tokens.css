@@ -16,6 +16,8 @@
     --muted: #6B7A74;
     /* Near-black for the Pro paywall's "VIP" backdrop (not a brand colour; used nowhere else). */
     --void: #020504;
+    /* Error text and borders; brighter than terracotta so a crash can't be missed. */
+    --error: #FF5A5F;
 
     /* ── Radii (exact) ─────────────────────────────────────────── */
     --radius-sm: 12px;
@@ -93,7 +95,10 @@
 
     /* ── Layout ────────────────────────────────────────────────── */
     --container: 560px;
+    --container-narrow: 640px;
+    --container-reading: 860px;
     --container-wide: 1080px;
+    --sidebar-w: 224px;
     --nav-h: 76px;
     --tap: 44px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -109,6 +114,7 @@
     /* ── Glass (layered glassmorphism) ─────────────────────────────
        Four layers per glass surface, back to front:
          1. backdrop-filter blur + saturate  → frosts whatever is behind
+            (fixed/sticky chrome only: it is too costly on scrolling cards)
          2. --glass-tint (ink)               → guarantees text contrast (WCAG AA)
          3. --glass-sheen (white, diagonal)  → the frosted "milk" of real glass
          4. 1px edge + inner top highlight   → the light catching the rim
@@ -116,12 +122,12 @@
     --glass-blur: 20px;
     --glass-saturate: 1.5;
     --glass-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-    --glass-tint: color-mix(in oklab, var(--ink) 52%, transparent);
+    --glass-tint: color-mix(in oklab, var(--ink) 68%, transparent);
     --glass-tint-strong: color-mix(in oklab, var(--ink) 74%, transparent);
     --glass-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.025) 42%, rgba(255, 255, 255, 0.012) 100%);
     --glass-fill: var(--glass-sheen), var(--glass-tint);
     --glass-fill-strong: var(--glass-sheen), var(--glass-tint-strong);
-    /* Solid stand-in when backdrop-filter is unsupported or transparency is reduced. */
+    /* Solid stand-in when transparency is reduced. */
     --glass-solid: color-mix(in oklab, var(--cream) 6%, var(--ink));
 
     --glass-edge: rgba(255, 255, 255, 0.1);
@@ -170,7 +176,7 @@
     --grain-opacity: 0.03;
 
     /* ── Stacking ──────────────────────────────────────────────── */
-    --z-backdrop: 0;
+    --z-backdrop: -1;
     /* Inside an isolated card: decoration (-1) < text (auto) < controls (1). */
     --z-card-fx: -1;
     --z-card-control: 1;
@@ -179,8 +185,17 @@
     --z-nav: 40;
     --z-sheet: 60;
     --z-toast: 80;
-    --z-grain: 100;
+    --z-grain: -1;
 
     color-scheme: dark;
+  }
+
+  /* Laptop and up: wider pages, and the bottom bar becomes a sidebar. */
+  @media (min-width: 768px) {
+    :root {
+      --container: 1200px;
+      --container-wide: 1200px;
+      --nav-h: 0px;
+    }
   }
 }

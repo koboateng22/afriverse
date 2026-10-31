@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabase } from '../../lib/supabase';
 
 /** Saved opportunities, persisted in public.saved_opportunities (RLS: own rows). */
 export function useSaved(userId: string | undefined) {
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
+  // Read through a ref so `toggle` keeps its identity and memoised cards don't all re-render.
+  const savedRef = useRef(saved);
+  savedRef.current = saved;
 
   useEffect(() => {
     if (!userId) return;
@@ -26,7 +29,7 @@ export function useSaved(userId: string | undefined) {
   const toggle = useCallback(
     async (opportunityId: string) => {
       if (!userId) return;
-      const wasSaved = saved.has(opportunityId);
+      const wasSaved = savedRef.current.has(opportunityId);
       setSaved((prev) => {
         const next = new Set(prev);
         if (wasSaved) next.delete(opportunityId);
@@ -47,7 +50,7 @@ export function useSaved(userId: string | undefined) {
         });
       }
     },
-    [saved, userId],
+    [userId],
   );
 
   return { saved, toggle, error };

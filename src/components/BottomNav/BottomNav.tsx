@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { CalendarDays, Compass, GraduationCap, LayoutDashboard, UserRound, Wallet, type LucideIcon } from 'lucide-react';
-import { spring } from '../../lib/motion';
+import { Logo } from '../Logo/Logo';
 import './BottomNav.css';
 
 type NavItem = {
@@ -47,12 +47,16 @@ export function navMatches(items: NavItem[], pathname: string): boolean {
   return items.some((i) => i.match.some((m) => pathname.startsWith(m)));
 }
 
-export function BottomNav({ items, id }: { items: NavItem[]; id: string }) {
+/** Bottom bar on phones; a left sidebar from 768px (see BottomNav.css). */
+export function BottomNav({ items }: { items: NavItem[] }) {
   const { pathname } = useLocation();
   const activeIndex = items.findIndex((i) => i.match.some((m) => pathname.startsWith(m)));
 
   return (
     <nav className="bottom-nav" aria-label="Primary">
+      <div className="bottom-nav__brand">
+        <Logo to={items[0].to} />
+      </div>
       <ul className="bottom-nav__list" role="list">
         {items.map((item, i) => {
           const Icon = item.icon;
@@ -68,7 +72,7 @@ export function BottomNav({ items, id }: { items: NavItem[]; id: string }) {
                 whileHover="hover"
                 whileTap="tap"
               >
-                {active && <motion.span className="bottom-nav__pill" layoutId={`${id}-nav-pill`} transition={spring} aria-hidden="true" />}
+                {active && <span className="bottom-nav__pill" aria-hidden="true" />}
                 {/* Outer span follows the link's variants (hover / tap / active).
                     Inner span is remounted on activation and runs its own pop-in
                     (squashed → overshoot → settle); transforms of the two compose. */}

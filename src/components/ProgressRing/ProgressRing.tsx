@@ -4,7 +4,7 @@ import './ProgressRing.css';
 
 export type ProgressRingProps = { percent: number; size?: number; label: string };
 
-/** SVG ring that draws in (CSS ring-draw) while the number counts up (Framer). */
+/** SVG ring that fades in (CSS ring-draw) while the number counts up (Framer). */
 export function ProgressRing({ percent, size = 112, label }: ProgressRingProps) {
   const stroke = 8;
   const r = (size - stroke) / 2;
@@ -39,8 +39,6 @@ export function ProgressRing({ percent, size = 112, label }: ProgressRingProps) 
           strokeWidth={stroke}
           strokeDasharray={c}
           strokeDashoffset={c * (1 - percent / 100)}
-          // INLINE: circumference is a one-off dynamic value used by @keyframes ring-draw.
-          style={{ ['--ring-circumference' as string]: c }}
         />
       </svg>
       <span className="ring__number" aria-hidden="true">

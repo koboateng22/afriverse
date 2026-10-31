@@ -6,6 +6,8 @@
     fill: none;
     stroke: url(#ring-grad);
     stroke-linecap: round;
+    transform-box: fill-box;
+    transform-origin: center;
     animation: ring-draw 1.1s var(--ease-out) both;
   }
   .ring__stop-a { stop-color: var(--emerald); }

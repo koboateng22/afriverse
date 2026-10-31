@@ -10,8 +10,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     &[data-status='Offer'] { border-color: color-mix(in oklab, var(--gold) 50%, transparent); }
   }
   .app-card__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: var(--space-3); }

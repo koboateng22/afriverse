@@ -3,6 +3,7 @@
   .mentors__h2 { font-size: var(--step-1); }
   .mentors__upcoming { display: grid; gap: var(--space-2); }
   .mentors__grid { display: grid; gap: var(--space-3); }
+  @media (min-width: 768px) { .mentors__grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); } }
 
   .session-pill {
     display: flex;
@@ -12,8 +13,6 @@
     border-radius: var(--radius-sm);
     background: color-mix(in oklab, var(--deep-green) 45%, transparent);
     border: 1px solid color-mix(in oklab, var(--emerald) 30%, transparent);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     font-size: var(--step--1);
     & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--gold); }
   }
@@ -27,8 +26,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     transition: box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
     &:hover { box-shadow: var(--glass-inset), var(--shadow-float-hover); border-color: color-mix(in oklab, var(--emerald) 38%, var(--glass-edge)); }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }

@@ -157,7 +157,6 @@ export default function Home() {
                 kind="radio"
                 selected={filter === f.id}
                 onToggle={() => choose(f.id)}
-                layoutGroup="home-filter"
                 icon={f.id === 'matched' ? isPro ? <Sparkles aria-hidden="true" /> : <Lock aria-hidden="true" /> : undefined}
               >
                 {f.label}
@@ -203,7 +202,7 @@ export default function Home() {
                     showReasons={filter === 'matched'}
                     spotlight={o.id === spotlightId}
                     saved={saved.has(o.id)}
-                    onToggleSave={() => void toggle(o.id)}
+                    onToggleSave={toggle}
                   />
                 ))}
                 {ordered.length === 0 && (

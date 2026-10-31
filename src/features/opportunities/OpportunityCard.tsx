@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
 import { CalendarClock, Check, Lock, MapPin, Sparkles } from 'lucide-react';
@@ -15,7 +15,7 @@ import './OpportunityCard.css';
 export type OpportunityCardProps = {
   opportunity: Opportunity;
   saved: boolean;
-  onToggleSave: () => void;
+  onToggleSave: (opportunityId: string) => void;
   /** Pro only: score + reasons from scholarship_matches(). */
   match?: Match;
   /** Show the 'why it fits' reasons (Matched tab). Squares never show them. */
@@ -39,7 +39,7 @@ function monogram(provider: string): string {
     .toUpperCase();
 }
 
-export function OpportunityCard({ opportunity: o, saved, onToggleSave, match, showReasons, spotlight, size }: OpportunityCardProps) {
+export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, saved, onToggleSave, match, showReasons, spotlight, size }: OpportunityCardProps) {
   const countdown = countdownFor(o);
   const hero = spotlight || size === 'featured';
   const compact = size === 'square';
@@ -58,7 +58,7 @@ export function OpportunityCard({ opportunity: o, saved, onToggleSave, match, sh
   const handleSave = useCallback(
     (origin?: DOMRect) => {
       const saving = !saved;
-      onToggleSave();
+      onToggleSave(o.id);
 
       const card = cardRef.current;
       if (!card) return;
@@ -79,7 +79,7 @@ export function OpportunityCard({ opportunity: o, saved, onToggleSave, match, sh
       animate(rotateY, [0, nx * amp, -nx * amp * 0.35, 0], opts);
       animate(rotateX, [0, -ny * amp, ny * amp * 0.35, 0], opts);
     },
-    [saved, onToggleSave, reduceMotion, rotateX, rotateY],
+    [saved, onToggleSave, o.id, reduceMotion, rotateX, rotateY],
   );
 
   return (
@@ -94,6 +94,7 @@ export function OpportunityCard({ opportunity: o, saved, onToggleSave, match, sh
       data-glow={glow > 0 ? glow % 2 : undefined}
       style={{ rotateX, rotateY, transformPerspective: 900 }}
     >
+      <span className="opp-card__glow" aria-hidden="true" />
       {/* Decorative layer: clipped to the card, under the text, never hit-testable. */}
       <span className="opp-card__fx" aria-hidden="true">
         {hero && <span className="opp-card__aurora" />}
@@ -173,4 +174,4 @@ export function OpportunityCard({ opportunity: o, saved, onToggleSave, match, sh
       </div>
     </Card>
   );
-}
+});

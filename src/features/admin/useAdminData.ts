@@ -34,6 +34,11 @@ export function useAdminData<T>(action: string, payload: Record<string, unknown>
   return { data, error, reload, mutate };
 }
 
+/** A list from the API, or [] if it is empty or not the shape we expected. */
+export function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 export function slugify(s: string): string {
   return s
     .toLowerCase()

@@ -7,7 +7,7 @@ import { Field, SelectField, TextAreaField } from '../../components/Field/Field'
 import { Chip, Tag } from '../../components/Chip/Chip';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
-import { slugify, useAdminData } from '../../features/admin/useAdminData';
+import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
 import { EDUCATION_LEVELS, FIELDS } from '../../features/onboarding/options';
 import type { Opportunity } from '../../features/opportunities/types';
 import { riseItem, staggerParent } from '../../lib/motion';
@@ -104,7 +104,7 @@ export default function AdminOpportunities() {
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
       {data && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
-          {data.map((o) => (
+          {asArray(data).map((o) => (
             <motion.li key={o.id} className="admin-row" variants={riseItem} data-muted={!o.published || undefined}>
               <div className="admin-row__main">
                 <span className="admin-row__title">{o.title}</span>

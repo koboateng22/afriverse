@@ -114,7 +114,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
                 setError(null);
               }}
             >
-              {method === m && <motion.span className="auth-form__tab-pill" layoutId="auth-method-pill" transition={spring} />}
+              {method === m && <span className="auth-form__tab-pill" />}
               <span className="auth-form__tab-label">{m === 'email' ? 'Email' : 'Phone'}</span>
             </button>
           ))}

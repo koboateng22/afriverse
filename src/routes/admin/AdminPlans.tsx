@@ -5,7 +5,7 @@ import { Field } from '../../components/Field/Field';
 import { Switch } from '../../components/Switch/Switch';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
-import { useAdminData } from '../../features/admin/useAdminData';
+import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import type { PlanRow } from '../../features/billing/types';
 import { formatMoney, toCents } from '../../lib/money';
 import { riseItem, staggerParent } from '../../lib/motion';
@@ -55,7 +55,7 @@ function ProEditor({ plan, onSave }: { plan: Row; onSave: (p: Record<string, unk
 
 export default function AdminPlans() {
   const { data, error, mutate } = useAdminData<Row[]>('plans.list');
-  const pro = data?.find((p) => p.code === 'pro');
+  const pro = asArray(data).find((p) => p.code === 'pro');
   return (
     <section className="admin-section" aria-labelledby="p-h">
       <div className="admin-section__head">

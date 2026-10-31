@@ -8,7 +8,6 @@
 
   .landing__accent {
     background: var(--gradient-brand);
-    background-size: 200% 200%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

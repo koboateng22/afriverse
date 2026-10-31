@@ -1,0 +1,17 @@
+@layer components {
+  .error-boundary {
+    position: relative;
+    z-index: var(--z-content);
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    inline-size: min(100% - 2 * var(--gutter), var(--container-narrow));
+    margin: var(--space-7) auto;
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--error) 14%, var(--ink));
+    border: 1px solid var(--error);
+  }
+  .error-boundary__title { font-size: var(--step-1); color: var(--error); }
+  .error-boundary__message { color: var(--error); overflow-wrap: anywhere; }
+}

@@ -193,28 +193,6 @@ export function ChatSkeleton() {
   );
 }
 
-/** Pro pricing card while the plan loads. */
-export function ProOfferSkeleton() {
-  return (
-    <SkeletonGroup label="Loading Pro" className="skeleton-stack">
-      <SkeletonTile index={0}>
-        <div className="skeleton-tile__row" data-split>
-          <Skeleton shape="pill" width="56px" height="26px" />
-          <Skeleton width="40%" height="34px" />
-        </div>
-        {[92, 80, 86, 70].map((w) => (
-          <Skeleton key={w} width={`${w}%`} height="12px" />
-        ))}
-      </SkeletonTile>
-      <SkeletonTile index={1}>
-        <Skeleton width="50%" height="14px" />
-        <Skeleton width="80%" height="10px" />
-      </SkeletonTile>
-      <Skeleton shape="pill" height="56px" />
-    </SkeletonGroup>
-  );
-}
-
 /** Generic stack of tiles for list screens (Courses, Mentors, Applications). */
 export function ListSkeleton({ label, count = 3, kind, className = 'skeleton-stack' }: { label: string; count?: number; kind: 'card' | 'course' | 'mentor' | 'application'; className?: string }) {
   const Tile = { card: CardSkeleton, course: CourseCardSkeleton, mentor: MentorCardSkeleton, application: ApplicationCardSkeleton }[kind];

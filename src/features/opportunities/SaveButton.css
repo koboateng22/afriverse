@@ -12,8 +12,6 @@
     background: var(--glass-wash);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
     -webkit-tap-highlight-color: transparent;
     transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
       box-shadow var(--dur-mid) var(--ease-out);

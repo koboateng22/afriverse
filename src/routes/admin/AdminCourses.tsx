@@ -7,7 +7,7 @@ import { Field, SelectField, TextAreaField } from '../../components/Field/Field'
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { Tag } from '../../components/Chip/Chip';
-import { slugify, useAdminData } from '../../features/admin/useAdminData';
+import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
 import { FIELDS } from '../../features/onboarding/options';
 import type { Course, CourseLesson } from '../../features/courses/types';
 import { riseItem, staggerParent } from '../../lib/motion';
@@ -78,15 +78,17 @@ export default function AdminCourses() {
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
       {data && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
-          {data.map((c) => (
+          {asArray(data).map((c) => {
+            const lessons = asArray(c.lessons);
+            return (
             <motion.li key={c.id} className="admin-row" variants={riseItem} data-muted={!c.published || undefined}>
               <div className="admin-row__main">
                 <span className="admin-row__title">{c.title}</span>
                 <span className="admin-row__meta">
-                  {c.field} · {c.level} · {c.lessons.length} lessons
+                  {c.field} · {c.level} · {lessons.length} lessons
                 </span>
                 <span className="admin-row__meta">
-                  {[...c.lessons].sort((a, b) => a.position - b.position).map((l) => (
+                  {[...lessons].sort((a, b) => a.position - b.position).map((l) => (
                     <button
                       key={l.id}
                       type="button"
@@ -100,7 +102,7 @@ export default function AdminCourses() {
               </div>
               <div className="admin-row__aside">
                 {!c.published && <Tag>Draft</Tag>}
-                <Button variant="secondary" size="sm" icon={<Plus aria-hidden="true" />} onClick={() => { setFormError(null); setLesson({ course_id: c.id, position: String(c.lessons.length + 1), title: '', youtube_id: '', channel: '', summary: '' }); }}>
+                <Button variant="secondary" size="sm" icon={<Plus aria-hidden="true" />} onClick={() => { setFormError(null); setLesson({ course_id: c.id, position: String(lessons.length + 1), title: '', youtube_id: '', channel: '', summary: '' }); }}>
                   Lesson
                 </Button>
                 <Button variant="secondary" size="sm" icon={<Pencil aria-hidden="true" />} onClick={() => { setFormError(null); setCourse({ id: c.id, title: c.title, slug: c.slug, field: c.field, summary: c.summary, level: c.level, published: c.published }); }}>
@@ -108,7 +110,8 @@ export default function AdminCourses() {
                 </Button>
               </div>
             </motion.li>
-          ))}
+            );
+          })}
         </motion.ul>
       )}
 

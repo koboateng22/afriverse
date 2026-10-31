@@ -78,4 +78,50 @@
   .bottom-nav__icon-wrap, .bottom-nav__icon-pop { display: grid; place-items: center; will-change: transform; }
   .bottom-nav__icon { inline-size: 22px; block-size: 22px; }
   .bottom-nav__link[aria-current='page'] .bottom-nav__icon { filter: drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 45%, transparent)); }
+
+  .bottom-nav__brand { display: none; }
+
+  /* ── Laptop and up: left sidebar ─────────────────────────────────── */
+  @media (min-width: 768px) {
+    .bottom-nav {
+      inset-block: 0;
+      inset-inline-end: auto;
+      inline-size: var(--sidebar-w);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      padding: var(--space-6) var(--space-4);
+      background: var(--glass-fill-strong);
+      border-inline-end: 1px solid var(--glass-edge);
+      -webkit-backdrop-filter: blur(24px) saturate(1.6);
+      backdrop-filter: blur(24px) saturate(1.6);
+      pointer-events: auto;
+    }
+    .bottom-nav__brand { display: block; padding-inline: var(--space-3); }
+
+    .bottom-nav__list {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-1);
+      inline-size: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      box-shadow: none;
+      &::before { display: none; }
+    }
+
+    .bottom-nav__link {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: var(--space-3);
+      min-block-size: 48px;
+      padding-inline: var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--step--1);
+    }
+    .bottom-nav__icon { inline-size: 20px; block-size: 20px; }
+  }
 }

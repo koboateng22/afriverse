@@ -3,7 +3,7 @@ import { CountUp } from '../../components/CountUp/CountUp';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import type { Overview } from '../../features/admin/api';
-import { useAdminData } from '../../features/admin/useAdminData';
+import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import { formatMoney } from '../../lib/money';
 import { riseItem, staggerParent } from '../../lib/motion';
 
@@ -18,6 +18,8 @@ const COUNT_LABELS: Record<string, string> = {
 
 export default function AdminOverview() {
   const { data, error } = useAdminData<Overview>('overview');
+  const warnings = asArray(data?.warnings);
+  const revenue = asArray(data?.revenue);
 
   return (
     <section className="admin-section" aria-labelledby="ov-h">
@@ -35,7 +37,7 @@ export default function AdminOverview() {
               {data.refunds_needed} paid {data.refunds_needed === 1 ? 'booking needs' : 'bookings need'} a refund (slot taken while paying). Refund in the Paystack dashboard; these are excluded from revenue.
             </Notice>
           )}
-          {data.warnings.map((w) => (
+          {warnings.map((w) => (
             <Notice key={w} tone="info">
               {w}
             </Notice>
@@ -43,21 +45,21 @@ export default function AdminOverview() {
           <motion.div className="stat-grid" variants={staggerParent} initial="hidden" animate="show">
             <motion.div className="stat" variants={riseItem}>
               <span className="stat__label">Active Pro students</span>
-              <span className="stat__value"><CountUp value={data.active_pro} /></span>
+              <span className="stat__value"><CountUp value={data.active_pro ?? 0} /></span>
             </motion.div>
             <motion.div className="stat" variants={riseItem} data-alert={data.pending_mentors > 0 || undefined}>
               <span className="stat__label">Mentors awaiting review</span>
-              <span className="stat__value"><CountUp value={data.pending_mentors} /></span>
+              <span className="stat__value"><CountUp value={data.pending_mentors ?? 0} /></span>
             </motion.div>
             <motion.div className="stat" variants={riseItem} data-alert={data.rates_pending > 0 || undefined}>
               <span className="stat__label">Mentor rates to approve</span>
-              <span className="stat__value"><CountUp value={data.rates_pending} /></span>
+              <span className="stat__value"><CountUp value={data.rates_pending ?? 0} /></span>
             </motion.div>
             <motion.div className="stat" variants={riseItem}>
               <span className="stat__label">Applications in progress</span>
-              <span className="stat__value"><CountUp value={data.open_applications} /></span>
+              <span className="stat__value"><CountUp value={data.open_applications ?? 0} /></span>
             </motion.div>
-            {Object.entries(data.counts).map(([k, v]) => (
+            {Object.entries(data.counts || {}).map(([k, v]) => (
               <motion.div key={k} className="stat" variants={riseItem}>
                 <span className="stat__label">{COUNT_LABELS[k] ?? k}</span>
                 <span className="stat__value"><CountUp value={v} /></span>
@@ -70,7 +72,7 @@ export default function AdminOverview() {
               Revenue
             </h2>
             <p className="admin-section__sub">All payments are in GHS. Mentor payouts settle to each mentor's subaccount and are not Afriversity revenue.</p>
-            {data.revenue.length === 0 ? (
+            {revenue.length === 0 ? (
               <Notice tone="info">No successful payments yet.</Notice>
             ) : (
               <div className="table-scroll">
@@ -86,7 +88,7 @@ export default function AdminOverview() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.revenue.map((r) => (
+                    {revenue.map((r) => (
                       <tr key={r.currency}>
                         <th scope="row">{r.currency}</th>
                         <td>{formatMoney(r.subscriptions_revenue, r.currency)}</td>

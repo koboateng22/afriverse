@@ -92,7 +92,7 @@ It sends the 3-day and 1-day reminders, marks lapsed plans `expired` and emails 
 | `YOUTUBE_API_KEY` | function secret | yes | Day-in-the-life video search |
 | `RESEND_API_KEY` | function secret | yes | Renewal / expiry emails |
 | `SITE_URL` | function secret | recommended | Allowed return URL(s) after Paystack checkout |
-| `GROQ_MODEL` | function secret | no | Defaults to `openai/gpt-oss-120b` |
+| `GROQ_MODEL` | function secret | no | Defaults to `llama-3.3-70b-versatile`, falling back to `openai/gpt-oss-120b` if Groq rejects it as retired |
 | `RESEND_FROM` | function secret | no | Verified sender; defaults to Resend's test sender |
 | `GROQ_API_BASE` | function secret | no | Only for pointing tests at a local OpenAI-compatible server |
 | `PAYSTACK_API_BASE` | function secret | no | Only for CI with an `sk_test_` key; **ignored for live keys**, so production always calls `api.paystack.co` |

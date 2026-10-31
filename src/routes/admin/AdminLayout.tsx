@@ -3,11 +3,11 @@ import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion';
 import { LogOut } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
+import { ErrorBoundary } from '../../components/ErrorBoundary/ErrorBoundary';
 import { Logo } from '../../components/Logo/Logo';
 import { Button } from '../../components/Button/Button';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { useAuth } from '../../features/auth/useAuth';
-import { spring } from '../../lib/motion';
 import './AdminConsole.css';
 
 const AdminOverview = lazy(() => import('./AdminOverview'));
@@ -32,8 +32,10 @@ const TABS = [
 
 /** Separate route group. Nothing in the student or mentor apps links here. */
 export default function AdminLayout() {
-  const { session, signOut } = useAuth();
+  const { session, profile, signOut } = useAuth();
   const location = useLocation();
+
+  if (profile?.role !== 'admin') return <Navigate to="/" replace />;
 
   return (
     <PageTransition bare label="Admin console">
@@ -51,7 +53,7 @@ export default function AdminLayout() {
             <NavLink key={t.to} to={t.to} end={t.end} className="admin__tab">
               {({ isActive }) => (
                 <>
-                  {isActive && <motion.span className="admin__tab-pill" layoutId="admin-tab" transition={spring} />}
+                  {isActive && <span className="admin__tab-pill" />}
                   <span className="admin__tab-label">{t.label}</span>
                 </>
               )}
@@ -59,23 +61,26 @@ export default function AdminLayout() {
           ))}
         </nav>
 
-        <Suspense fallback={<Skeleton shape="block" height="240px" label="Loading section" />}>
-          <AnimatePresence mode="wait">
-            <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <Routes location={location}>
-                <Route index element={<AdminOverview />} />
-                <Route path="universities" element={<AdminUniversities />} />
-                <Route path="opportunities" element={<AdminOpportunities />} />
-                <Route path="courses" element={<AdminCourses />} />
-                <Route path="mentors" element={<AdminMentors />} />
-                <Route path="applications" element={<AdminApplications />} />
-                <Route path="plans" element={<AdminPlans />} />
-                <Route path="settings" element={<AdminSettings />} />
-                <Route path="*" element={<Navigate to="/admin" replace />} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-        </Suspense>
+        {/* A crash in one section keeps the bar and tabs usable; changing tab clears it. */}
+        <ErrorBoundary label="This admin section" resetKey={location.pathname}>
+          <Suspense fallback={<Skeleton shape="block" height="240px" label="Loading section" />}>
+            <AnimatePresence mode="wait">
+              <motion.div key={location.pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Routes location={location}>
+                  <Route index element={<AdminOverview />} />
+                  <Route path="universities" element={<AdminUniversities />} />
+                  <Route path="opportunities" element={<AdminOpportunities />} />
+                  <Route path="courses" element={<AdminCourses />} />
+                  <Route path="mentors" element={<AdminMentors />} />
+                  <Route path="applications" element={<AdminApplications />} />
+                  <Route path="plans" element={<AdminPlans />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="*" element={<Navigate to="/admin" replace />} />
+                </Routes>
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </PageTransition>
   );

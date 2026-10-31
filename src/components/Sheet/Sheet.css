@@ -31,7 +31,7 @@
   .sheet {
     position: relative;
     isolation: isolate;
-    inline-size: min(100%, var(--container));
+    inline-size: min(100%, var(--container-narrow));
     max-block-size: min(88dvh, 760px);
     display: flex;
     flex-direction: column;

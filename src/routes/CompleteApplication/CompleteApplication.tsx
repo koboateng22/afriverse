@@ -165,7 +165,7 @@ export default function CompleteApplication() {
                 <span className="field__label">Intake</span>
                 <div className="complete__chips">
                   {intakes().map((i) => (
-                    <Chip key={i} kind="radio" selected={intake === i} onToggle={() => setIntake(i)} layoutGroup="intake">
+                    <Chip key={i} kind="radio" selected={intake === i} onToggle={() => setIntake(i)}>
                       {i}
                     </Chip>
                   ))}

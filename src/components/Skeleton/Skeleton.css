@@ -40,8 +40,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
   }
 
   /* ── Tile ──────────────────────────────────────────────────────── */
@@ -58,8 +56,6 @@
     background: var(--glass-fill);
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset), var(--shadow-float);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
 
     /* Bones inside a tile don't sweep individually. */
     & .skeleton::after { display: none; }
@@ -142,8 +138,6 @@
     border-radius: var(--radius-pill);
     background: var(--glass-fill-strong);
     border: 1px solid var(--glass-edge);
-    -webkit-backdrop-filter: var(--glass-filter);
-    backdrop-filter: var(--glass-filter);
     color: var(--text);
     font-size: var(--step--1);
     font-weight: 700;
@@ -157,6 +151,6 @@
   }
 
   @media (prefers-reduced-transparency: reduce) {
-    .skeleton-tile, .skeleton[data-shape='block']:not(.skeleton-tile .skeleton) { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .skeleton-tile, .skeleton[data-shape='block']:not(.skeleton-tile .skeleton) { background: var(--glass-solid); }
   }
 }

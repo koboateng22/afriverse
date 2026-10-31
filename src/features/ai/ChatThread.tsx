@@ -166,7 +166,7 @@ export function ChatThread({ messages, loading, sending, error, limit, usage, on
           id="chat-input"
           className="chat__input"
           rows={1}
-          maxLength={2000}
+          maxLength={6000}
           placeholder={placeholder}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

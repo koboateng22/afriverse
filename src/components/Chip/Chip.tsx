@@ -8,14 +8,12 @@ export type ChipProps = {
   onToggle?: () => void;
   children: ReactNode;
   icon?: ReactNode;
-  /** When set, the selected highlight slides between chips sharing this id. */
-  layoutGroup?: string;
   /** 'toggle' = multi-select (aria-pressed); 'radio' = single choice in a radiogroup. */
   kind?: 'toggle' | 'radio';
 };
 
 /** Selectable pill. Static (non-interactive) tags use <Tag> instead. */
-export function Chip({ selected = false, onToggle, children, icon, layoutGroup, kind = 'toggle' }: ChipProps) {
+export function Chip({ selected = false, onToggle, children, icon, kind = 'toggle' }: ChipProps) {
   const a11y = kind === 'radio' ? { role: 'radio', 'aria-checked': selected } : { 'aria-pressed': selected };
   return (
     <motion.button
@@ -27,9 +25,7 @@ export function Chip({ selected = false, onToggle, children, icon, layoutGroup, 
       transition={spring}
       {...a11y}
     >
-      {selected && layoutGroup && (
-        <motion.span className="chip__highlight" layoutId={`chip-${layoutGroup}`} transition={spring} aria-hidden="true" />
-      )}
+      {selected && <span className="chip__highlight" aria-hidden="true" />}
       {icon}
       <span className="chip__label">{children}</span>
     </motion.button>

@@ -47,8 +47,9 @@ export default function CareerCompass() {
 
   const suggestions = [
     field ? `Which scholarships fit ${field}?` : 'Which scholarships are open now?',
-    'What does KNUST need for an application?',
     'Which careers fit my field?',
+    'Help me build my CV',
+    'Practise an interview with me',
   ];
 
   return (
@@ -58,7 +59,7 @@ export default function CareerCompass() {
           back={{ to: '/courses', label: 'Learn' }}
           eyebrow="Career Compass"
           title="Ask your counsellor"
-          lede="Short, straight answers from Afriversity’s own scholarships, universities, careers and courses."
+          lede="Career advice, essay feedback, CV building and interview practice, backed by Afriversity’s scholarships, universities and courses."
           aside={
             chat.messages.length > 0 ? (
               <Button variant="quiet" size="sm" icon={<RotateCcw aria-hidden="true" />} onClick={chat.reset}>
@@ -75,7 +76,7 @@ export default function CareerCompass() {
           limit={chat.limit}
           usage={chat.usage}
           onSend={chat.send}
-          placeholder="Ask about scholarships, universities or careers…"
+          placeholder="Ask about careers or scholarships, or paste your essay or CV…"
           suggestions={suggestions}
           emptyTitle="Where would you like to start?"
           renderExtra={(m) => (m.careers && m.careers.length > 0 ? <CareerCards careers={m.careers} onWatch={setWatching} /> : null)}

@@ -7,7 +7,7 @@ import { Field } from '../../components/Field/Field';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { Tag } from '../../components/Chip/Chip';
-import { useAdminData } from '../../features/admin/useAdminData';
+import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import type { Mentor } from '../../features/mentors/types';
 import { formatMoney } from '../../lib/money';
 import { riseItem, staggerParent } from '../../lib/motion';
@@ -25,7 +25,8 @@ export default function AdminMentors() {
   const [busy, setBusy] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const current = data?.find((m) => m.id === openId) ?? null;
+  const rows = [...asArray(data)].sort((a, b) => rank(a) - rank(b));
+  const current = rows.find((m) => m.id === openId) ?? null;
 
   const open = (m: Row) => {
     setFormError(null);
@@ -47,8 +48,6 @@ export default function AdminMentors() {
     void run('approve', 'mentors.review', { id: current.id, decision: 'approved', subaccount_code: subaccount.trim() });
   };
 
-  const rows = [...(data ?? [])].sort((a, b) => rank(a) - rank(b));
-
   return (
     <section className="admin-section" aria-labelledby="m-h">
       <div className="admin-section__head">
@@ -61,8 +60,8 @@ export default function AdminMentors() {
       </div>
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
-      {data && data.length === 0 && <Notice tone="info">No mentor applications yet. Mentors apply from the quiet link on the student sign-in page.</Notice>}
-      {data && data.length > 0 && (
+      {data && rows.length === 0 && <Notice tone="info">No mentor applications yet. Mentors apply from the quiet link on the student sign-in page.</Notice>}
+      {rows.length > 0 && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
           {rows.map((m) => (
             <motion.li key={m.id} className="admin-row" variants={riseItem}>
