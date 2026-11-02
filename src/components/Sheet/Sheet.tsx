@@ -31,6 +31,11 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  // Callers pass inline functions, so read the latest through a ref. If onClose were an
+  // effect dependency, every re-render (each keystroke in a form) would re-run the effect
+  // and pull focus out of the field being typed in.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +51,7 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !panelRef.current) return;
@@ -70,7 +75,7 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
       document.body.style.overflow = prevOverflow;
       returnFocus.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > 120 || info.velocity.y > 600) onClose();

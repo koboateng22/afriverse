@@ -39,7 +39,7 @@ export function RenewalBanner() {
     text = `Pro ends ${formatDay(current.expires_at.slice(0, 10))}. Add another month to keep it.`;
   } else if (!isPro && !dismissed) {
     tone = 'nudge';
-    text = 'Pro: unlimited AI, scholarship matcher and essay reviews — GHS 60 a month.';
+    text = 'Pro: unlimited AI, scholarship matcher and essay reviews — GH₵ 10 a month.';
   }
 
   return (

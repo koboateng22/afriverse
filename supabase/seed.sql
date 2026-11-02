@@ -306,7 +306,7 @@ join public.courses c on c.slug = l.course_slug;
 
 -- ── Plan (single Pro tier; paystack-init reads the price from here) ──────
 insert into public.plans (code, name, tagline, amount_cents, currency, period_days, ai_daily_limit, features) values
-  ('pro', 'Pro', 'Everything you need to win a place', 6000, 'GHS', 30, null,
+  ('pro', 'Pro', 'Everything you need to win a place', 1000, 'GHS', 30, null,
    array['Unlimited AI counsellor messages', 'Scholarship Matcher — ranked by how well you fit', 'AI Essay Reviewer',
          'Application Tracker with full timeline', 'Human counsellor on WhatsApp']);
 

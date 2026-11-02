@@ -12,7 +12,7 @@ Three surfaces:
 
 Revenue, all in **Ghana cedis (GHS)**:
 
-- **Pro — GHS 60/month**, the only paid tier: unlimited AI messages, Scholarship Matcher, AI Essay Reviewer, full Application Tracker and a human counsellor on WhatsApp. Free students get 3 AI messages a day; the 4th opens the Pro paywall.
+- **Pro — GHS 10/month**, the only paid tier: unlimited AI messages, Scholarship Matcher, AI Essay Reviewer, full Application Tracker and a human counsellor on WhatsApp. Free students get 3 AI messages a day; the 4th opens the Pro paywall.
 - **University application fees** — set per university by the admin; after paying, the student fills in a form built from that university's admin-chosen fields and uploads documents.
 - **Mentor sessions** — mentors propose an hourly rate, an admin approves it, students pay it; 75% to the mentor, 25% to Afriversity.
 
@@ -107,8 +107,8 @@ No server secret is ever read by the Vite build — only `VITE_` variables reach
 
 1. `src/features/billing/paystack.ts` — the browser says *what* is being bought, then `redirectToCheckout()` does a full-page redirect (MoMo approval prompts fail inside iframes/popups).
 2. `paystack-init` — verifies the Supabase JWT, prices the purchase **from the database** (Pro plan, the university's fee, the mentor's *approved* rate), creates pending rows, calls `/transaction/initialize` in `GHS`. Any amount the browser sends is ignored.
-   - **Pro by card** → a Paystack **plan** (`interval: monthly`, GHS 60, created automatically on first use) so the card is charged every month. Paystack subscriptions only support cards, so:
-   - **Pro by Mobile Money** → a one-off GHS 60 charge that gives one month (stacks on any remaining time). The paywall offers both as one choice.
+   - **Pro by card** → a Paystack **plan** (`interval: monthly`, GHS 10, created automatically on first use) so the card is charged every month. Paystack subscriptions only support cards, so:
+   - **Pro by Mobile Money** → a one-off GHS 10 charge that gives one month (stacks on any remaining time). The paywall offers both as one choice.
    - **Mentor booking** → `subaccount` = the mentor's `ACCT_…`, `transaction_charge` = 25% (flat, in pesewas) so the split is exact on every booking whatever the subaccount's own setting, and `bearer: account` so the mentor receives a clean 75%.
 5. `paystack-subscription` — cancel auto-renew (`/subscription/disable`) or get Paystack's "update card" link.
 3. `paystack-webhook` — verifies `x-paystack-signature` (HMAC-SHA512, constant-time compare; wrong → 401), checks the charged amount, currency (GHS) and metadata against the pending payment, then activates Pro / marks the application **Paid** (unlocking its form) / confirms the mentor session. It also handles monthly card renewals (`charge.success` on the plan), `subscription.create`, `subscription.not_renew`, `subscription.disable` and `invoice.payment_failed`. Nothing unlocks until this (or `paystack-verify`) has confirmed the charge with Paystack.
@@ -130,7 +130,7 @@ No server secret is ever read by the Vite build — only `VITE_` variables reach
 | Card | `4084 0840 8408 4081`, CVV `408`, any future expiry, PIN `0000`, OTP `123456` |
 | MoMo (Ghana) | MTN `0551234987` · Telecel `0501234987` · AirtelTigo `0271234987`, OTP `123456` |
 
-Amounts are always in pesewas: GH₵60 = `6000`, GH₵250 = `25000`.
+Amounts are always in pesewas: GH₵10 = `1000`, GH₵250 = `25000`.
 
 **Going live (test → live keys):**
 

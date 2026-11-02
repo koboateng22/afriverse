@@ -10,7 +10,9 @@ export function formatMoney(cents: number, currency: string): string {
       currencyDisplay: 'narrowSymbol',
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
-    }).format(cents / 100);
+    })
+      .format(cents / 100)
+      .replace(/^GH₵\s*/, 'GH₵ ');
   } catch {
     return `${currency} ${(cents / 100).toFixed(2)}`;
   }
