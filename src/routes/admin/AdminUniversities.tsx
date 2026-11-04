@@ -35,6 +35,7 @@ type Form = {
   country: string;
   city: string;
   website: string;
+  cutoffLink: string;
   description: string;
   active: boolean;
   fee: string;
@@ -52,6 +53,7 @@ const blank = (): Form => ({
   country: 'Ghana',
   city: '',
   website: '',
+  cutoffLink: '',
   description: '',
   active: true,
   fee: '',
@@ -72,6 +74,7 @@ const toForm = (u: University): Form => {
     country: u.country,
     city: u.city,
     website: u.website ?? '',
+    cutoffLink: u.cutoff_link ?? '',
     description: u.description ?? '',
     active: u.active,
     fee: String(feeOf(u) / 100),
@@ -129,6 +132,10 @@ export default function AdminUniversities() {
       setFormError('Website must start with https://');
       return;
     }
+    if (form.cutoffLink.trim() && !/^https:\/\/\S+$/i.test(form.cutoffLink.trim())) {
+      setFormError('Cut-Off Points Link must be a full link starting with https://');
+      return;
+    }
     setSaving(true);
     setFormError(null);
     const err = await mutate(form.id ? 'universities.update' : 'universities.create', {
@@ -139,6 +146,7 @@ export default function AdminUniversities() {
       country: form.country,
       city: form.city.trim(),
       website: form.website.trim(),
+      cutoff_link: form.cutoffLink.trim(),
       description: form.description.trim(),
       active: form.active,
       app_fee_cents: feeCents,
@@ -235,6 +243,16 @@ export default function AdminUniversities() {
                 <Field label="City" value={form.city} onChange={(e) => set('city', e.target.value)} required minLength={2} maxLength={80} />
               </div>
               <Field label="Website URL" type="url" inputMode="url" placeholder="https://www.example.edu" value={form.website} onChange={(e) => set('website', e.target.value)} />
+              <Field
+                label="Cut-Off Points Link"
+                type="url"
+                inputMode="url"
+                placeholder="https://www.example.edu/admissions/cut-off-points"
+                hint="Students see a “View Cut-Off Points” button next to their aggregate. Leave empty to hide it."
+                value={form.cutoffLink}
+                onChange={(e) => set('cutoffLink', e.target.value)}
+                maxLength={500}
+              />
               <TextAreaField label="Description" hint="Shown on the university page. Two or three sentences work best." value={form.description} onChange={(e) => set('description', e.target.value)} maxLength={2000} rows={4} />
               <Field label="Short name (optional)" placeholder="e.g. KNUST" value={form.short_name} onChange={(e) => set('short_name', e.target.value)} maxLength={40} />
             </fieldset>

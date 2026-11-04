@@ -23,6 +23,8 @@ export type University = {
   service_fee_cents: number;
   fee_notes: string | null;
   website: string | null;
+  /** Link to the university's published cut-off points (https). */
+  cutoff_link: string | null;
   description: string | null;
   form_fields: FormFields;
   active: boolean;

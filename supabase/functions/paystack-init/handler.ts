@@ -56,16 +56,51 @@ async function ensurePaystackPlan(svc: SupabaseClient, plan: { amount_cents: num
   return (data?.paystack_plan_code as string) ?? created.plan_code;
 }
 
+/**
+ * The Pro row as seed.sql and migration 0013 create it: GH₵ 10 (1000 pesewas) a month.
+ * Used only when the row is missing (e.g. a database built without seed.sql).
+ */
+const DEFAULT_PRO = {
+  code: 'pro',
+  name: 'Pro',
+  tagline: 'Everything you need to win a place',
+  amount_cents: 1000,
+  currency: 'GHS',
+  period_days: 30,
+  ai_daily_limit: null,
+  features: [
+    'Unlimited AI counsellor messages',
+    'Scholarship Matcher — ranked by how well you fit',
+    'AI Essay Reviewer',
+    'Application Tracker with full timeline',
+    'Human counsellor on WhatsApp',
+  ],
+  active: true,
+};
+
+type ProPlan = { code: string; amount_cents: number; currency: string; active: boolean; paystack_plan_code: string | null };
+
+/** The Pro plan row, created at the default price if it doesn't exist yet. */
+async function proPlan(svc: SupabaseClient): Promise<ProPlan> {
+  const read = () => svc.from('plans').select('code, amount_cents, currency, active, paystack_plan_code').eq('code', 'pro').maybeSingle();
+  const { data, error } = await read();
+  if (error) throw error;
+  if (data) return data as ProPlan;
+  console.warn('paystack-init: no pro plan row, creating it at the default GHS 10 price');
+  // ignoreDuplicates: a concurrent checkout may have created it first; never overwrite an admin's price.
+  await must(svc.from('plans').upsert(DEFAULT_PRO, { onConflict: 'code', ignoreDuplicates: true }));
+  const again = await read();
+  if (again.error) throw again.error;
+  if (!again.data) throw new HttpError(500, 'plan_missing', 'The Pro plan could not be created. Run migration 0013.');
+  return again.data as ProPlan;
+}
+
 async function priceSubscription(svc: SupabaseClient, userId: string, body: Record<string, unknown>): Promise<Priced> {
   // Card = Paystack plan, renews monthly. MoMo = one month (Paystack can't auto-charge MoMo).
   const method = oneOf(body.method, 'method', ['card', 'momo'] as const);
-  const { data: plan, error } = await svc
-    .from('plans')
-    .select('code, amount_cents, currency, active, paystack_plan_code')
-    .eq('code', 'pro')
-    .maybeSingle();
-  if (error) throw error;
-  if (!plan || !plan.active) throw new HttpError(404, 'plan_unavailable', 'Pro is not on sale right now');
+  const plan = await proPlan(svc);
+  // An existing row that an admin switched off (Admin → Plans) is respected.
+  if (!plan.active) throw new HttpError(404, 'plan_unavailable', 'Pro is not on sale right now');
   assertGhs(plan.currency);
 
   const { data: recurring } = await svc.from('billing_customers').select('status').eq('user_id', userId).maybeSingle();

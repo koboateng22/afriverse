@@ -36,6 +36,7 @@ const UniversityDetail = lazy(() => import('./routes/UniversityDetail/University
 const CompleteApplication = lazy(() => import('./routes/CompleteApplication/CompleteApplication'));
 const EssayReview = lazy(() => import('./routes/EssayReview/EssayReview'));
 const Applications = lazy(() => import('./routes/Applications/Applications'));
+const Results = lazy(() => import('./routes/Results/Results'));
 const Profile = lazy(loadProfile);
 const Paywall = lazy(loadPaywall);
 const Checkout = lazy(() => import('./routes/Checkout/Checkout'));
@@ -127,6 +128,7 @@ function AnimatedRoutes() {
             <Route path="/applications" element={student(<Applications />)} />
             <Route path="/applications/:id/complete" element={student(<CompleteApplication />)} />
             <Route path="/essay-review" element={student(<EssayReview />)} />
+            <Route path="/results" element={student(<Results />)} />
             <Route path="/profile" element={student(<Profile />)} />
             <Route path="/paywall" element={student(<Paywall />)} />
             <Route path="/checkout" element={student(<Checkout />)} />

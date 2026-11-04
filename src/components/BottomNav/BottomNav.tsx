@@ -16,7 +16,7 @@ type NavItem = {
 export const STUDENT_NAV: NavItem[] = [
   { to: '/home', label: 'Discover', icon: Compass, match: ['/home', '/opportunity'] },
   { to: '/courses', label: 'Learn', icon: GraduationCap, match: ['/courses', '/career-compass', '/mentors', '/essay-review'] },
-  { to: '/profile', label: 'You', icon: UserRound, match: ['/profile', '/applications', '/apply-university', '/paywall'] },
+  { to: '/profile', label: 'You', icon: UserRound, match: ['/profile', '/applications', '/apply-university', '/paywall', '/results'] },
 ];
 
 export const MENTOR_NAV: NavItem[] = [

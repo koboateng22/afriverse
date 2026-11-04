@@ -34,7 +34,7 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0010
+npx supabase db push      # applies supabase/migrations/0001 … 0013
 ```
 
 Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 60) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
@@ -69,6 +69,7 @@ npx supabase functions deploy admin-api
 npx supabase functions deploy subscription-cron
 npx supabase functions deploy paystack-subscription
 npx supabase functions deploy application-submit
+npx supabase functions deploy scan-results
 ```
 
 **After deploying, open Admin → Settings** and set the support WhatsApp number (powers "Need help? Send your documents via WhatsApp." on the application form) and the counsellor WhatsApp number Pro students are given. The admin overview warns until both are set.
@@ -93,6 +94,7 @@ It sends the 3-day and 1-day reminders, marks lapsed plans `expired` and emails 
 | `RESEND_API_KEY` | function secret | yes | Renewal / expiry emails |
 | `SITE_URL` | function secret | recommended | Allowed return URL(s) after Paystack checkout |
 | `GROQ_MODEL` | function secret | no | Defaults to `llama-3.3-70b-versatile`, falling back to `openai/gpt-oss-120b` if Groq rejects it as retired |
+| `GROQ_VISION_MODEL` | function secret | no | Result-slip scanner (`scan-results`). Defaults to `qwen/qwen3.8-27b`; Groq retired `llama-3.2-11b-vision-preview` in April 2025 |
 | `RESEND_FROM` | function secret | no | Verified sender; defaults to Resend's test sender |
 | `GROQ_API_BASE` | function secret | no | Only for pointing tests at a local OpenAI-compatible server |
 | `PAYSTACK_API_BASE` | function secret | no | Only for CI with an `sk_test_` key; **ignored for live keys**, so production always calls `api.paystack.co` |

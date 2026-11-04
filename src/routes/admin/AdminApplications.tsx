@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, Download, FileText } from 'lucide-react';
+import { ArrowRightLeft, Download, FileText, ImageIcon } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Sheet/Sheet';
 import { Chip, Tag } from '../../components/Chip/Chip';
@@ -10,14 +10,21 @@ import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { adminCall } from '../../features/admin/api';
 import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import type { Application, ApplicationDocument, ApplicationStatus } from '../../features/applications/types';
+import { CURRICULA, type WassceResults } from '../../features/results/types';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem, staggerParent } from '../../lib/motion';
 
 type Row = Application & {
   university: { name: string; short_name: string | null } | null;
-  student: { full_name: string | null; phone: string | null; country: string | null } | null;
+  student: { full_name: string | null; phone: string | null; country: string | null; results?: WassceResults | null } | null;
 };
+
+/** "Aggregate 12 · Old curriculum", or null when the student hasn't saved results. */
+function resultsLine(r: WassceResults | null | undefined): string | null {
+  if (!r || typeof r.aggregate !== 'number') return null;
+  return `Aggregate ${r.aggregate} · ${CURRICULA[r.curriculum]?.label ?? r.curriculum}`;
+}
 type SignedDoc = ApplicationDocument & { url: string | null };
 
 const FILTERS: Array<ApplicationStatus | 'All'> = ['All', 'Submitted', 'In Review', 'Paid', 'Offer', 'Rejected', 'Pending Payment', 'Failed'];
@@ -44,6 +51,26 @@ export default function AdminApplications() {
   const [docsError, setDocsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [slipBusy, setSlipBusy] = useState(false);
+  const [slipError, setSlipError] = useState<string | null>(null);
+
+  // Opened in a new tab; the signed link is requested on click so it never expires on screen.
+  const openSlip = async (userId: string) => {
+    setSlipBusy(true);
+    setSlipError(null);
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
+    try {
+      const { url } = await adminCall<{ url: string }>('students.result_slip', { user_id: userId });
+      if (tab) tab.location.href = url;
+      else window.location.href = url;
+    } catch (e) {
+      tab?.close();
+      setSlipError(errorMessage(e));
+    } finally {
+      setSlipBusy(false);
+    }
+  };
 
   // Signed links expire after 10 minutes, so fetch them each time the panel opens.
   const openId = editing?.row.id;
@@ -101,6 +128,7 @@ export default function AdminApplications() {
                   {a.program ?? 'Programme not chosen yet'}
                   {a.intake ? ` · ${a.intake}` : ''} · {new Date(a.created_at).toLocaleDateString()}
                 </span>
+                <span className="admin-row__meta">{resultsLine(a.student?.results) ?? 'No WASSCE results saved'}</span>
                 <span className="admin-row__meta">
                   {formatMoney(a.total_cents, a.currency)} · {a.documents?.length ?? 0} file{(a.documents?.length ?? 0) === 1 ? '' : 's'} · ref {a.payment_ref ?? '—'}
                 </span>
@@ -114,6 +142,7 @@ export default function AdminApplications() {
                     icon={<ArrowRightLeft aria-hidden="true" />}
                     onClick={() => {
                       setFormError(null);
+                      setSlipError(null);
                       setEditing({ row: a, status: a.status === 'Paid' ? 'Submitted' : a.status, note: a.status_note ?? '' });
                     }}
                   >
@@ -156,6 +185,37 @@ export default function AdminApplications() {
                 </dl>
               </section>
             )}
+
+            <section aria-labelledby="res-h" className="uni-form__group">
+              <h3 id="res-h" className="uni-form__legend">WASSCE results</h3>
+              {row.student?.results ? (
+                <>
+                  <dl className="admin-details">
+                    <div>
+                      <dt>Aggregate</dt>
+                      <dd>
+                        <strong>{row.student.results.aggregate}</strong> · {CURRICULA[row.student.results.curriculum]?.label ?? row.student.results.curriculum}
+                        {row.student.results.source === 'scan' ? ' · scanned from slip' : ' · entered by hand'}
+                      </dd>
+                    </div>
+                    {[...asArray(row.student.results.core_subjects), ...asArray(row.student.results.elective_subjects)].map((s, i) => (
+                      <div key={`${s.subject}-${i}`}>
+                        <dt>{s.subject}</dt>
+                        <dd>{s.grade}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {row.student.results.slip_path && (
+                    <Button variant="secondary" size="sm" icon={<ImageIcon aria-hidden="true" />} loading={slipBusy} onClick={() => void openSlip(row.user_id)}>
+                      View result slip
+                    </Button>
+                  )}
+                  {slipError && <Notice tone="error">{slipError}</Notice>}
+                </>
+              ) : (
+                <p className="admin-section__sub">The student hasn’t saved their WASSCE results yet.</p>
+              )}
+            </section>
 
             {hasDocs && (
               <section aria-labelledby="docs-h" className="uni-form__group">

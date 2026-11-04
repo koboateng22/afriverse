@@ -1,0 +1,138 @@
+/* ──────────────────────────────────────────────────────────────
+   Result Calculator — glass cards (Card), one grade row per subject.
+   Rows: subject | grade | counted tick | remove. On phones the
+   subject takes the remaining width; the grade select stays compact.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .calc { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+
+  .calc__summary { display: grid; gap: var(--space-2); }
+  .calc__agg { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); }
+  .calc__agg-label { font-size: var(--step--1); font-weight: 700; color: var(--text-3); }
+  .calc__agg-value {
+    font-family: var(--font-display);
+    font-size: var(--step-4);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    &[data-empty] { color: var(--text-3); }
+  }
+  .calc__agg-note { font-size: var(--step--1); color: var(--text-2); }
+  .calc__saved {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--emerald);
+    & svg { inline-size: 16px; block-size: 16px; }
+  }
+
+  .calc__modes, .calc__curricula { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+  .calc__h2 { font-size: var(--step-1); font-weight: 800; color: var(--text); margin-block-end: var(--space-2); }
+  .calc__hint { font-size: var(--step--1); color: var(--text-2); }
+  .calc__fine { text-align: center; font-size: var(--step--2); color: var(--text-3); }
+  .calc__status { min-block-size: 1lh; font-size: var(--step--1); font-weight: 600; color: var(--text-2); }
+  .calc__status:empty { display: none; }
+
+  .calc__group fieldset { display: grid; gap: var(--space-3); min-inline-size: 0; }
+  .calc__form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+
+  /* ── Scan ──────────────────────────────────────────────────── */
+  .calc__scan { display: grid; gap: var(--space-4); }
+  .calc__pick { display: grid; gap: var(--space-3); }
+  @media (min-width: 560px) { .calc__pick { grid-template-columns: 1fr 1fr; } }
+
+  .calc__preview {
+    --sweep-distance: 220px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    justify-self: center;
+    inline-size: min(100%, 360px);
+    block-size: 220px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-edge);
+    background: var(--surface-1);
+    & img { inline-size: 100%; block-size: 100%; object-fit: contain; }
+    &[data-scanning] img { opacity: 0.7; }
+  }
+  /* A bright line moving down the slip while the AI reads it. */
+  .calc__sweep {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: -40px;
+    block-size: 40px;
+    background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--emerald) 55%, transparent) 85%, var(--gold));
+    will-change: transform;
+    animation: scan-sweep 1.6s var(--ease-out) infinite alternate;
+    pointer-events: none;
+  }
+
+  /* ── Grade rows ────────────────────────────────────────────── */
+  .calc__rows { display: grid; gap: var(--space-2); }
+  .calc__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 6.5rem 24px 36px;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: background-color var(--dur-fast) var(--ease-out);
+    &[data-counted] { background: var(--accent-soft); }
+    &[data-missing] .calc__grade { border-color: var(--gold); }
+  }
+  /* Cores: no tick/remove columns. */
+  .calc__row:has(.calc__subject--fixed) { grid-template-columns: minmax(0, 1fr) 6.5rem; }
+
+  .calc__subject { min-inline-size: 0; }
+  .calc__subject--fixed { padding-inline: var(--space-3); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+  input.calc__subject { min-block-size: 48px; }
+  .calc__grade { min-block-size: 48px; padding-inline-end: var(--space-7); font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  .calc__mark { display: grid; place-items: center; color: var(--emerald); & svg { inline-size: 18px; block-size: 18px; } }
+  .calc__remove {
+    display: grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    border-radius: var(--radius-pill);
+    color: var(--text-3);
+    &:is(button):hover { color: var(--error); background: var(--glass-wash-hover); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    & svg { inline-size: 16px; block-size: 16px; }
+  }
+
+  @media (max-width: 380px) {
+    .calc__row { grid-template-columns: minmax(0, 1fr) 5.75rem 20px 32px; gap: var(--space-1); }
+    .calc__row:has(.calc__subject--fixed) { grid-template-columns: minmax(0, 1fr) 5.75rem; }
+    .calc__remove { inline-size: 32px; block-size: 32px; }
+  }
+
+  /* ── Aggregate strip used on /apply-university and university pages ── */
+  .results-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+  }
+  .results-strip__value {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .results-strip__text { flex: 1 1 12rem; display: grid; gap: 2px; min-inline-size: 0; }
+  .results-strip__label { font-weight: 800; color: var(--text); }
+  .results-strip__detail { font-size: var(--step--1); color: var(--text-3); }
+  .results-strip__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+}

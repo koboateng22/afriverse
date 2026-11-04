@@ -25,6 +25,7 @@ const FIELDS = ['Software Engineering', 'Data & AI', 'Medicine & Health', 'Busin
 const LEVELS = ['High school', 'Undergraduate', "Master's", 'PhD', 'Working professional'] as const;
 const APP_STATUSES = ['Pending Payment', 'Paid', 'Submitted', 'In Review', 'Offer', 'Rejected', 'Withdrawn', 'Failed'] as const;
 const BUCKET = 'application-documents';
+const RESULTS_BUCKET = 'results_slips';
 
 // ── Universities ─────────────────────────────────────────────────────────
 const slugify = (t: string) =>
@@ -68,6 +69,7 @@ function universityInput(p: Payload) {
     service_fee_cents: 0,
     fee_notes: optStr(p.fee_notes, 'fee_notes', 400),
     website: httpsUrl(p.website, 'website', true),
+    cutoff_link: httpsUrl(p.cutoff_link, 'cutoff_link', true),
     description: optStr(p.description, 'description', 2000),
     form_fields: formFieldsInput(p.form_fields),
     active: p.active === undefined ? true : bool(p.active, 'active'),
@@ -251,7 +253,7 @@ const ACTIONS: Record<string, Action> = {
   'applications.list': async (svc, p) => {
     let q = svc
       .from('applications')
-      .select('*, university:universities(name, short_name), student:profiles(full_name, phone, country)')
+      .select('*, university:universities(name, short_name), student:profiles(full_name, phone, country, results)')
       .order('created_at', { ascending: false })
       .limit(500);
     if (typeof p.status === 'string' && p.status) q = q.eq('status', oneOf(p.status, 'status', APP_STATUSES));
@@ -278,6 +280,18 @@ const ACTIONS: Record<string, Action> = {
       out.push({ ...d, url: error ? null : data?.signedUrl ?? null });
     }
     return out;
+  },
+
+  // Short-lived link to the result slip a student uploaded with their WASSCE grades.
+  // The path is read from their profile, never taken from the request.
+  'students.result_slip': async (svc, p) => {
+    const id = uuid(p.user_id, 'user_id');
+    const prof = (await must(svc.from('profiles').select('results').eq('id', id).single())) as { results: { slip_path?: string } | null };
+    const path = prof.results?.slip_path;
+    if (!path) throw new HttpError(404, 'no_slip', 'This student has not uploaded a result slip');
+    const { data, error } = await svc.storage.from(RESULTS_BUCKET).createSignedUrl(path, 600);
+    if (error || !data?.signedUrl) throw new HttpError(404, 'no_slip', 'The result slip file is missing');
+    return { url: data.signedUrl };
   },
 
   // ── Settings (WhatsApp numbers, free AI limit) ────────────────────────

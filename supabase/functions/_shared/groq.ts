@@ -127,3 +127,76 @@ export async function generate(opts: GenerateOptions): Promise<string> {
     clearTimeout(timer);
   }
 }
+
+// ── Vision ───────────────────────────────────────────────────────────────
+/**
+ * Groq retired llama-3.2-11b-vision-preview (and the 90b) on 14 Apr 2025, and the
+ * Llama 4 vision models since. qwen/qwen3.8-27b is the vision model Groq's docs
+ * list today. Override without a code change with the GROQ_VISION_MODEL secret.
+ */
+const DEFAULT_VISION_MODEL = 'qwen/qwen3.8-27b';
+
+export function visionModel(): string {
+  return optionalEnv('GROQ_VISION_MODEL') ?? DEFAULT_VISION_MODEL;
+}
+
+type VisionOptions = {
+  prompt: string;
+  /** data:image/...;base64,... */
+  imageDataUrl: string;
+  timeoutMs?: number;
+  maxOutputTokens?: number;
+};
+
+/** One image + one instruction → a JSON object's text (JSON mode). */
+export async function readImageJson(opts: VisionOptions): Promise<string> {
+  const key = requireEnv('GROQ_API_KEY');
+  const model = visionModel();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(MIN_TIMEOUT_MS, opts.timeoutMs ?? 45_000));
+  const base = (optionalEnv('GROQ_API_BASE') ?? 'https://api.groq.com/openai/v1').replace(/\/$/, '');
+
+  try {
+    const res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model,
+        // Text and image in one user turn: the most widely supported vision request shape.
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: opts.prompt },
+              { type: 'image_url', image_url: { url: opts.imageDataUrl } },
+            ],
+          },
+        ],
+        temperature: 0,
+        max_completion_tokens: opts.maxOutputTokens ?? 1_000,
+        response_format: { type: 'json_object' },
+        // Qwen 3.x: 'none' = instruct mode. Reading a slip needs no reasoning, and it's faster.
+        ...(model.startsWith('qwen/') ? { reasoning_effort: 'none' } : {}),
+      }),
+    });
+    const payload = (await res.json().catch(() => ({}))) as GroqResponse;
+    if (!res.ok) {
+      const detail = payload.error?.message ?? res.statusText;
+      if (res.status === 429) throw new HttpError(503, 'ai_busy', 'The scanner is busy right now — please try again in a moment.');
+      if (isModelUnavailable(res.status, payload)) {
+        console.error(`groq vision: model ${model} unavailable: ${detail}`);
+        throw new HttpError(502, 'ai_model_unavailable', 'The scanner is being updated. Enter your grades by hand for now.');
+      }
+      throw new HttpError(502, 'ai_error', `AI error: ${detail}`);
+    }
+    const text = payload.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new HttpError(502, 'ai_empty', 'The scanner returned nothing. Try a clearer photo.');
+    return extractJson(text);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') throw new HttpError(504, 'ai_timeout', 'The scan took too long. Try again, or enter your grades by hand.');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}

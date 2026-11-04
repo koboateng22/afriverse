@@ -1,7 +1,9 @@
 import { getSupabase } from '../../lib/supabase';
 import type { University } from './types';
 
-const COLS = 'id, slug, name, short_name, country, city, currency, app_fee_cents, service_fee_cents, fee_notes, website, description, form_fields, active';
+// '*' rather than a column list: students can read every column (RLS limits rows), and
+// a column added by a newer migration (e.g. cutoff_link, 0013) never breaks this page.
+const COLS = '*';
 
 /** Fees always come from the DB (admin-editable) — never hard-coded in the app. */
 export async function fetchUniversities(): Promise<University[]> {

@@ -11,6 +11,9 @@ import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { fetchUniversity } from '../../features/universities/api';
 import { feeOf, requirementsOf, type University } from '../../features/universities/types';
 import { fetchOpenApplication } from '../../features/applications/api';
+import { useAuth } from '../../features/auth/useAuth';
+import { ResultsStrip } from '../../features/results/ResultsStrip';
+import { useMyResults } from '../../features/results/useMyResults';
 import { startCheckout } from '../../features/billing/paystack';
 import { FunctionError } from '../../lib/functions';
 import { formatMoney } from '../../lib/money';
@@ -25,6 +28,8 @@ export default function UniversityDetail() {
   const [openAppId, setOpenAppId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const { results } = useMyResults(profile?.id);
 
   useEffect(() => {
     fetchUniversity(id)
@@ -76,6 +81,7 @@ export default function UniversityDetail() {
           <Skeleton shape="block" height="220px" label="Loading university" />
         ) : (
           <motion.div className="uni__body" variants={staggerParent} initial="hidden" animate="show">
+            <ResultsStrip results={results} cutoffLink={uni.cutoff_link} />
             <motion.p className="uni__where" variants={riseItem}>
               <MapPin aria-hidden="true" /> {uni.city}, {uni.country}
             </motion.p>

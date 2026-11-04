@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Award, Building2, Check, Compass, FileText, Flag, Headset, LogOut, Sparkles, Target, type LucideIcon } from 'lucide-react';
+import { Award, Building2, Calculator, Check, Compass, FileText, Flag, Headset, LogOut, Sparkles, Target, type LucideIcon } from 'lucide-react';
 import { usePaywall } from '../../features/billing/PaywallModal';
 import { fetchCounselorContact, whatsappLink } from '../../features/billing/api';
 import { Notice } from '../../components/Notice/Notice';
@@ -14,6 +14,8 @@ import { Button } from '../../components/Button/Button';
 import { Chip } from '../../components/Chip/Chip';
 import { useAuth } from '../../features/auth/useAuth';
 import { profileCompletion, updateProfile } from '../../features/profiles/api';
+import { useMyResults } from '../../features/results/useMyResults';
+import { CURRICULA } from '../../features/results/types';
 import type { Profile as ProfileRow } from '../../features/profiles/types';
 import { AFRICAN_COUNTRIES, EDUCATION_LEVELS, FIELDS, GOALS } from '../../features/onboarding/options';
 import { errorMessage } from '../../lib/supabase';
@@ -66,6 +68,7 @@ export default function Profile() {
   };
   // ProtectedRoute guarantees a profile here.
   const p = profile as ProfileRow;
+  const { results } = useMyResults(p.id);
   const [draft, setDraft] = useState<Draft>(() => toDraft(p));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +129,12 @@ export default function Profile() {
               detail={plan && current?.expires_at ? `Active until ${formatDay(current.expires_at.slice(0, 10))}` : 'GH₵ 10 a month — see what’s included'}
             />
             <ListRow onClick={() => void talkToCounselor()} icon={Headset} label="Talk to a counsellor" detail={isPro ? 'Chat with a real person on WhatsApp' : 'Human counsellor access with Pro'} badge={isPro ? undefined : 'Pro'} />
+            <ListRow
+              to="/results"
+              icon={Calculator}
+              label="WASSCE results"
+              detail={results ? `Aggregate ${results.aggregate} · ${CURRICULA[results.curriculum]?.label ?? ''}` : 'Work out your aggregate — type or scan your slip'}
+            />
             <ListRow to="/applications" icon={FileText} label="My applications" detail="Track university applications" />
             <ListRow to="/apply-university" icon={Building2} label="Apply to a university" detail="Let our concierge apply for you" />
           </div>

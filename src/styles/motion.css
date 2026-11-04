@@ -115,6 +115,12 @@
   from { opacity: 0; transform: scale(0.92); }
 }
 
+/* Result-slip scan line (ResultCalculator). Transform only. */
+@keyframes scan-sweep {
+  from { transform: translateY(0); }
+  to   { transform: translateY(var(--sweep-distance, 220px)); }
+}
+
 /* ── Reduced motion: kill ambient + transitional motion globally.
       Framer Motion is separately wrapped in <MotionConfig reducedMotion="user">. */
 @media (prefers-reduced-motion: reduce) {

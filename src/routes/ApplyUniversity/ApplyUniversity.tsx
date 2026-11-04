@@ -8,6 +8,9 @@ import { ListSkeleton } from '../../components/Skeleton/Skeleton';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Notice } from '../../components/Notice/Notice';
 import { fetchUniversities } from '../../features/universities/api';
+import { useAuth } from '../../features/auth/useAuth';
+import { ResultsStrip } from '../../features/results/ResultsStrip';
+import { useMyResults } from '../../features/results/useMyResults';
 import { feeOf, type University } from '../../features/universities/types';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
@@ -19,6 +22,8 @@ const MotionLink = motion.create(Link);
 export default function ApplyUniversity() {
   const [unis, setUnis] = useState<University[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const { results } = useMyResults(profile?.id);
 
   useEffect(() => {
     fetchUniversities()
@@ -35,6 +40,7 @@ export default function ApplyUniversity() {
           title="We'll handle your application"
           lede="Pick a university and pay its application fee. Then complete one short form and our team submits your application for you."
         />
+        <ResultsStrip results={results} />
         {error && <Notice tone="error">{error}</Notice>}
         {!unis && !error && (
           <ListSkeleton kind="card" count={3} label="Loading universities" className="apply-list__grid" />
