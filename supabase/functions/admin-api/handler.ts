@@ -70,6 +70,9 @@ function universityInput(p: Payload) {
     fee_notes: optStr(p.fee_notes, 'fee_notes', 400),
     website: httpsUrl(p.website, 'website', true),
     cutoff_link: httpsUrl(p.cutoff_link, 'cutoff_link', true),
+    // Usually our own university_assets copies, filled in by scrape-university.
+    logo_url: httpsUrl(p.logo_url, 'logo_url', true),
+    cover_image_url: httpsUrl(p.cover_image_url, 'cover_image_url', true),
     description: optStr(p.description, 'description', 2000),
     form_fields: formFieldsInput(p.form_fields),
     active: p.active === undefined ? true : bool(p.active, 'active'),

@@ -1,6 +1,6 @@
-import { useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ExternalLink, FileText, FileUp, Mail, Pencil, Plus, Trash2, Type, UserRound } from 'lucide-react';
+import { ExternalLink, FileText, FileUp, Mail, Pencil, Plus, Sparkles, Trash2, Type, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Sheet/Sheet';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
@@ -8,10 +8,12 @@ import { Switch } from '../../components/Switch/Switch';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { Tag } from '../../components/Chip/Chip';
+import { scrapeUniversity } from '../../features/admin/api';
 import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import { COUNTRIES } from '../../features/universities/countries';
 import { feeOf, requirementsOf, type FormFields, type University } from '../../features/universities/types';
 import { formatMoney, toCents } from '../../lib/money';
+import { errorMessage } from '../../lib/supabase';
 import { riseItem, staggerParent } from '../../lib/motion';
 
 type FlagKey = 'high_school' | 'waec_results' | 'guardian_name' | 'guardian_email' | 'guardian_occupation';
@@ -36,6 +38,8 @@ type Form = {
   city: string;
   website: string;
   cutoffLink: string;
+  logoUrl: string;
+  coverUrl: string;
   description: string;
   active: boolean;
   fee: string;
@@ -54,6 +58,8 @@ const blank = (): Form => ({
   city: '',
   website: '',
   cutoffLink: '',
+  logoUrl: '',
+  coverUrl: '',
   description: '',
   active: true,
   fee: '',
@@ -75,6 +81,8 @@ const toForm = (u: University): Form => {
     city: u.city,
     website: u.website ?? '',
     cutoffLink: u.cutoff_link ?? '',
+    logoUrl: u.logo_url ?? '',
+    coverUrl: u.cover_image_url ?? '',
     description: u.description ?? '',
     active: u.active,
     fee: String(feeOf(u) / 100),
@@ -84,6 +92,14 @@ const toForm = (u: University): Form => {
     docDraft: '',
   };
 };
+
+/** "ug.edu.gh" → "https://ug.edu.gh". Empty when nothing was typed. */
+const siteOf = (v: string) => {
+  const t = v.trim();
+  return !t || /^https?:\/\//i.test(t) ? t : `https://${t}`;
+};
+
+type Fill = { status: 'idle' | 'loading' | 'done' | 'error'; message?: string };
 
 function formFieldsOf(form: Form): FormFields {
   return { ...form.flags, custom_documents: form.customOn ? form.docs.map((label) => ({ key: '', label })) : [] };
@@ -95,12 +111,37 @@ export default function AdminUniversities() {
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fill, setFill] = useState<Fill>({ status: 'idle' });
+  // Bumped whenever another form opens, so a slow auto-fill never lands in the wrong university.
+  const fillRun = useRef(0);
 
   const feeCents = form ? toCents(form.fee) : null;
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
   const open = (f: Form) => {
+    fillRun.current++;
+    setFill({ status: 'idle' });
     setFormError(null);
     setForm(f);
+  };
+
+  // INTEGRATION: scrape-university — copies the site's logo + og:image into university_assets.
+  const autoFill = async () => {
+    if (!form) return;
+    const site = siteOf(form.website);
+    if (!site) return setFill({ status: 'error', message: 'Type the university’s website first, e.g. https://www.ug.edu.gh' });
+    const run = ++fillRun.current;
+    set('website', site);
+    setFill({ status: 'loading' });
+    try {
+      const found = await scrapeUniversity(site);
+      if (run !== fillRun.current) return;
+      setForm((f) => (f ? { ...f, logoUrl: found.logo_url ?? f.logoUrl, coverUrl: found.cover_image_url ?? f.coverUrl } : f));
+      const got = [found.logo_url && 'logo', found.cover_image_url && 'cover image'].filter(Boolean).join(' and ');
+      const missing = !found.logo_url ? ' No logo found.' : !found.cover_image_url ? ' No cover image found.' : '';
+      setFill({ status: 'done', message: `Found the ${got}. Check them below, then save.${missing}` });
+    } catch (err) {
+      if (run === fillRun.current) setFill({ status: 'error', message: errorMessage(err) });
+    }
   };
 
   const addDoc = (label: string) => {
@@ -147,6 +188,8 @@ export default function AdminUniversities() {
       city: form.city.trim(),
       website: form.website.trim(),
       cutoff_link: form.cutoffLink.trim(),
+      logo_url: form.logoUrl,
+      cover_image_url: form.coverUrl,
       description: form.description.trim(),
       active: form.active,
       app_fee_cents: feeCents,
@@ -242,7 +285,50 @@ export default function AdminUniversities() {
                 <SelectField label="Country" options={COUNTRIES.includes(form.country) ? COUNTRIES : [form.country, ...COUNTRIES]} value={form.country} onChange={(e) => set('country', e.target.value)} required />
                 <Field label="City" value={form.city} onChange={(e) => set('city', e.target.value)} required minLength={2} maxLength={80} />
               </div>
-              <Field label="Website URL" type="url" inputMode="url" placeholder="https://www.example.edu" value={form.website} onChange={(e) => set('website', e.target.value)} />
+              <div className="autofill">
+                <Field label="University Website URL" type="url" inputMode="url" placeholder="https://www.example.edu" value={form.website} onChange={(e) => set('website', e.target.value)} />
+                <Button variant="secondary" icon={<Sparkles aria-hidden="true" />} loading={fill.status === 'loading'} disabled={!form.website.trim()} onClick={autoFill}>
+                  {fill.status === 'loading' ? 'Reading website…' : 'Auto-Fill from Website'}
+                </Button>
+              </div>
+              <div aria-live="polite">
+                {fill.status === 'error' && <Notice tone="error">{fill.message}</Notice>}
+                {fill.status === 'done' && <Notice tone="success">{fill.message}</Notice>}
+              </div>
+              {(form.logoUrl || form.coverUrl || fill.status === 'loading') && (
+                <div className="uni-images" aria-busy={fill.status === 'loading' || undefined}>
+                  <figure className="uni-images__item">
+                    <figcaption>Logo</figcaption>
+                    {form.logoUrl ? (
+                      <img className="uni-images__logo" src={form.logoUrl} alt="University logo" />
+                    ) : fill.status === 'loading' ? (
+                      <Skeleton shape="block" height="72px" label="Finding logo" />
+                    ) : (
+                      <p className="uni-images__empty">No logo</p>
+                    )}
+                    {form.logoUrl && (
+                      <button type="button" className="uni-images__remove" onClick={() => set('logoUrl', '')}>
+                        <Trash2 aria-hidden="true" /> Remove logo
+                      </button>
+                    )}
+                  </figure>
+                  <figure className="uni-images__item uni-images__item--cover">
+                    <figcaption>Cover image</figcaption>
+                    {form.coverUrl ? (
+                      <img className="uni-images__cover" src={form.coverUrl} alt="University cover" />
+                    ) : fill.status === 'loading' ? (
+                      <Skeleton shape="block" height="120px" label="Finding cover image" />
+                    ) : (
+                      <p className="uni-images__empty">No cover image</p>
+                    )}
+                    {form.coverUrl && (
+                      <button type="button" className="uni-images__remove" onClick={() => set('coverUrl', '')}>
+                        <Trash2 aria-hidden="true" /> Remove cover
+                      </button>
+                    )}
+                  </figure>
+                </div>
+              )}
               <Field
                 label="Cut-Off Points Link"
                 type="url"

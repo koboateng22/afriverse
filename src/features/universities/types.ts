@@ -25,6 +25,9 @@ export type University = {
   website: string | null;
   /** Link to the university's published cut-off points (https). */
   cutoff_link: string | null;
+  /** Public URLs in the university_assets bucket (migration 0015); null until set. */
+  logo_url?: string | null;
+  cover_image_url?: string | null;
   description: string | null;
   form_fields: FormFields;
   active: boolean;

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
+import { AnimatePresence, motion, useIsPresent, type PanInfo } from 'framer-motion';
 import { X } from 'lucide-react';
 import './Sheet.css';
 
@@ -18,6 +18,9 @@ export type SheetProps = {
   description?: string;
 };
 
+// Closing is a plain, fast fade: opacity only, so it stays on the compositor.
+const EXIT_S = 0.15;
+
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
@@ -25,6 +28,9 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * slide-over panel with variant="side".
  * Enters with a spring from scale .94 → 1, drag-down to dismiss,
  * Escape closes, focus is trapped and restored.
+ * Leaves with a 0.15s fade. While it fades, the layer is marked data-leaving
+ * (see Sheet.css): blur and decorative animations stop and taps reach the
+ * page underneath, so closing never makes the page wait.
  */
 export function Sheet({ open, onClose, title, hideTitle, children, footer, variant = 'bottom', description }: SheetProps) {
   const side = variant === 'side';
@@ -73,7 +79,7 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
       window.clearTimeout(focusFirst);
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
-      returnFocus.current?.focus?.();
+      returnFocus.current?.focus?.({ preventScroll: true });
     };
   }, [open]);
 
@@ -84,12 +90,12 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="sheet-root" data-variant={variant}>
+        <SheetLayer key="sheet" variant={variant}>
           <motion.div
             className="sheet-scrim"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: EXIT_S } }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
             aria-hidden="true"
@@ -106,13 +112,13 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
               ? {
                   initial: { x: '100%' },
                   animate: { x: 0 },
-                  exit: { x: '100%', transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } },
+                  exit: { x: '100%', transition: { duration: EXIT_S, ease: [0.4, 0, 1, 1] } },
                   transition: { type: 'spring', stiffness: 320, damping: 34 },
                 }
               : {
                   initial: { opacity: 0, scale: 0.94, y: 40 },
                   animate: { opacity: 1, scale: 1, y: 0 },
-                  exit: { opacity: 0, scale: 0.96, y: 40, transition: { duration: 0.18 } },
+                  exit: { opacity: 0, transition: { duration: EXIT_S, ease: 'linear' } },
                   transition: { type: 'spring', stiffness: 380, damping: 30 },
                   drag: 'y' as const,
                   dragConstraints: { top: 0, bottom: 0 },
@@ -135,9 +141,19 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
             <div className="sheet__body">{children}</div>
             {footer && <footer className="sheet__footer">{footer}</footer>}
           </motion.div>
-        </div>
+        </SheetLayer>
       )}
     </AnimatePresence>,
     document.body,
+  );
+}
+
+/** The fixed layer. Marks itself data-leaving while AnimatePresence plays the exit. */
+function SheetLayer({ variant, children }: { variant: 'bottom' | 'side'; children: ReactNode }) {
+  const present = useIsPresent();
+  return (
+    <div className="sheet-root" data-variant={variant} data-leaving={present ? undefined : ''}>
+      {children}
+    </div>
   );
 }

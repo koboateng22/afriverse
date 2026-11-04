@@ -156,6 +156,15 @@
     }
   }
 
+  /* Closing (Sheet.tsx marks the layer while the 0.15s fade plays): the page
+     underneath takes taps straight away, and the blur layers and decorative
+     loops (e.g. the Pro halo) stop, so the fade is a cheap opacity change. */
+  .sheet-root[data-leaving] {
+    pointer-events: none;
+    & :is(.sheet, .sheet-scrim) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+    & * { animation-play-state: paused; }
+  }
+
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .sheet { background: var(--glass-solid); }
   }

@@ -19,11 +19,28 @@ export type ResultsInput = {
   slip_path?: string;
 };
 
-/** Saves and returns what the database stored (it recomputes the aggregate). */
-export async function saveMyResults(userId: string, input: ResultsInput): Promise<WassceResults> {
-  const { data, error } = await getSupabase().from('profiles').update({ results: input }).eq('id', userId).select('results').single();
-  if (error) throw error;
-  return (data as { results: WassceResults }).results;
+/**
+ * Saves the signed-in student's results and returns what the database stored
+ * (it recomputes the aggregate). Upserts on id; needs migration 0014's grants.
+ */
+export async function saveMyResults(resultData: ResultsInput): Promise<WassceResults> {
+  const supabase = getSupabase();
+  const { data: auth, error: authError } = await supabase.auth.getSession();
+  const user = auth.session?.user;
+  if (authError || !user) {
+    console.error('[results] save failed: no signed-in user', authError);
+    throw authError ?? new Error('Sign in again to save your results.');
+  }
+
+  const { data, error } = await supabase.from('profiles').upsert({ id: user.id, results: resultData }, { onConflict: 'id' });
+  if (error) {
+    console.error('[results] save failed', { code: error.code, message: error.message, details: error.details, hint: error.hint }, data);
+    throw error;
+  }
+
+  const saved = await fetchMyResults(user.id);
+  if (!saved) throw new Error('Your results did not save. Please try again.');
+  return saved;
 }
 
 /** Keeps one slip per student (replaced on each scan), at <user>/result-slip.jpg. */

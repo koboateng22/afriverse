@@ -34,7 +34,7 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0013
+npx supabase db push      # applies supabase/migrations/0001 … 0015
 ```
 
 Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 60) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
@@ -70,6 +70,7 @@ npx supabase functions deploy subscription-cron
 npx supabase functions deploy paystack-subscription
 npx supabase functions deploy application-submit
 npx supabase functions deploy scan-results
+npx supabase functions deploy scrape-university
 ```
 
 **After deploying, open Admin → Settings** and set the support WhatsApp number (powers "Need help? Send your documents via WhatsApp." on the application form) and the counsellor WhatsApp number Pro students are given. The admin overview warns until both are set.

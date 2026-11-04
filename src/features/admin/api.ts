@@ -9,6 +9,13 @@ export async function adminCall<T>(action: string, payload: Record<string, unkno
   return data;
 }
 
+export type ScrapedImages = { logo_url: string | null; cover_image_url: string | null };
+
+/** Reads a university website's logo + cover image and copies them into our storage. */
+export function scrapeUniversity(url: string): Promise<ScrapedImages> {
+  return invokeFunction<ScrapedImages>('scrape-university', { url });
+}
+
 export type RevenueRow = {
   currency: string;
   subscriptions_revenue: number;

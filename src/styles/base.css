@@ -4,6 +4,9 @@
     color: var(--text);
     font-family: var(--font-body);
     font-size: 100%;
+    /* Keep the scrollbar's space when a sheet locks scrolling, so opening and
+       closing one doesn't change the page width and re-lay out the feed. */
+    scrollbar-gutter: stable;
   }
 
   body {

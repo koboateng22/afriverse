@@ -170,7 +170,7 @@ export function ResultCalculator({ userId, initial, onSaved }: ResultCalculatorP
 
     setSaving(true);
     try {
-      const result = await saveMyResults(userId, {
+      const result = await saveMyResults({
         curriculum,
         core_subjects: spec.cores.map((subject, i) => ({ subject, grade: cores[i] as Grade })),
         elective_subjects: filled.map((r) => ({ subject: r.subject.trim(), grade: r.grade as Grade })),
