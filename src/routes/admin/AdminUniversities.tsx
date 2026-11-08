@@ -43,6 +43,7 @@ type Form = {
   description: string;
   active: boolean;
   fee: string;
+  serviceFee: string;
   flags: Record<FlagKey, boolean>;
   customOn: boolean;
   docs: string[];
@@ -63,6 +64,7 @@ const blank = (): Form => ({
   description: '',
   active: true,
   fee: '',
+  serviceFee: '50',
   flags: { ...noFlags },
   customOn: false,
   docs: [],
@@ -85,7 +87,8 @@ const toForm = (u: University): Form => {
     coverUrl: u.cover_image_url ?? '',
     description: u.description ?? '',
     active: u.active,
-    fee: String(feeOf(u) / 100),
+    fee: String(u.app_fee_cents / 100),
+    serviceFee: String(u.service_fee_cents / 100),
     flags: { high_school: !!f.high_school, waec_results: !!f.waec_results, guardian_name: !!f.guardian_name, guardian_email: !!f.guardian_email, guardian_occupation: !!f.guardian_occupation },
     customOn: docs.length > 0,
     docs,
@@ -116,6 +119,7 @@ export default function AdminUniversities() {
   const fillRun = useRef(0);
 
   const feeCents = form ? toCents(form.fee) : null;
+  const serviceCents = form ? (form.serviceFee.trim() === '' ? 0 : toCents(form.serviceFee)) : null;
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
   const open = (f: Form) => {
     fillRun.current++;
@@ -162,7 +166,11 @@ export default function AdminUniversities() {
     e.preventDefault();
     if (!form) return;
     if (feeCents === null || feeCents < 100) {
-      setFormError('Enter the application fee in GHS, e.g. 250 or 250.50 (minimum GHS 1).');
+      setFormError('Enter the university’s application fee in GHS, e.g. 250 or 250.50 (minimum GHS 1).');
+      return;
+    }
+    if (serviceCents === null) {
+      setFormError('Enter the service fee in GHS, e.g. 50, or 0 for none.');
       return;
     }
     if (form.customOn && form.docs.length === 0) {
@@ -193,6 +201,7 @@ export default function AdminUniversities() {
       description: form.description.trim(),
       active: form.active,
       app_fee_cents: feeCents,
+      service_fee_cents: serviceCents,
       form_fields: formFieldsOf(form),
     });
     setSaving(false);
@@ -217,7 +226,7 @@ export default function AdminUniversities() {
       <div className="admin-section__head">
         <div>
           <h1 id="uni-h" className="admin-section__title">Universities</h1>
-          <p className="admin-section__sub">The fee here is exactly what students pay, in GHS. Changes only affect applications paid afterwards.</p>
+          <p className="admin-section__sub">Students pay the university fee plus your concierge service fee, in GHS. Changes only affect applications paid afterwards.</p>
         </div>
         <Button icon={<Plus aria-hidden="true" />} onClick={() => open(blank())}>
           Add university
@@ -344,20 +353,38 @@ export default function AdminUniversities() {
             </fieldset>
 
             <fieldset className="uni-form__group">
-              <legend className="uni-form__legend">Status &amp; fee</legend>
+              <legend className="uni-form__legend">Status &amp; fees</legend>
               <Switch label="Status" hint={form.active ? 'Visible to students and accepting payments' : 'Hidden from students'} onText="Active" offText="Inactive" checked={form.active} onChange={(v) => set('active', v)} />
-              <Field
-                label="Application fee (GHS)"
-                type="number"
-                inputMode="decimal"
-                min={1}
-                step="0.01"
-                placeholder="e.g. 250"
-                value={form.fee}
-                onChange={(e) => set('fee', e.target.value)}
-                required
-                hint={feeCents !== null && feeCents >= 100 ? `Students pay ${formatMoney(feeCents, 'GHS')} through Paystack.` : 'Charged in Ghana cedis through Paystack.'}
-              />
+              <div className="admin-form__row">
+                <Field
+                  label="University fee (GHS)"
+                  type="number"
+                  inputMode="decimal"
+                  min={1}
+                  step="0.01"
+                  placeholder="e.g. 250"
+                  value={form.fee}
+                  onChange={(e) => set('fee', e.target.value)}
+                  required
+                  hint="What the university charges (the voucher / form fee)."
+                />
+                <Field
+                  label="Service fee (GHS)"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  placeholder="50"
+                  value={form.serviceFee}
+                  onChange={(e) => set('serviceFee', e.target.value)}
+                  hint="Our concierge fee: we buy the voucher and submit the forms."
+                />
+              </div>
+              <p className="uni-form__note" aria-live="polite">
+                {feeCents !== null && feeCents >= 100 && serviceCents !== null
+                  ? `Students pay ${formatMoney(feeCents + serviceCents, 'GHS')} through Paystack (${formatMoney(feeCents, 'GHS')} + ${formatMoney(serviceCents, 'GHS')} service fee).`
+                  : 'Charged in Ghana cedis through Paystack.'}
+              </p>
             </fieldset>
 
             <fieldset className="uni-form__group">

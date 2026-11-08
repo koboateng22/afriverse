@@ -57,23 +57,24 @@ async function ensurePaystackPlan(svc: SupabaseClient, plan: { amount_cents: num
 }
 
 /**
- * The Pro row as seed.sql and migration 0013 create it: GH₵ 10 (1000 pesewas) a month.
+ * The Pro row as migration 0016 sets it: GH₵ 40 (4000 pesewas) a month, human support.
  * Used only when the row is missing (e.g. a database built without seed.sql).
  */
 const DEFAULT_PRO = {
   code: 'pro',
   name: 'Pro',
-  tagline: 'Everything you need to win a place',
-  amount_cents: 1000,
+  tagline: 'A real counsellor in your corner',
+  amount_cents: 4000,
   currency: 'GHS',
   period_days: 30,
   ai_daily_limit: null,
   features: [
-    'Unlimited AI counsellor messages',
+    'Direct WhatsApp access to a Human Counselor',
+    'CV & Essay Strategy Sessions',
+    'Priority Support',
     'Scholarship Matcher — ranked by how well you fit',
-    'AI Essay Reviewer',
     'Application Tracker with full timeline',
-    'Human counsellor on WhatsApp',
+    'Insider application guides',
   ],
   active: true,
 };
@@ -86,12 +87,12 @@ async function proPlan(svc: SupabaseClient): Promise<ProPlan> {
   const { data, error } = await read();
   if (error) throw error;
   if (data) return data as ProPlan;
-  console.warn('paystack-init: no pro plan row, creating it at the default GHS 10 price');
+  console.warn('paystack-init: no pro plan row, creating it at the default GHS 40 price');
   // ignoreDuplicates: a concurrent checkout may have created it first; never overwrite an admin's price.
   await must(svc.from('plans').upsert(DEFAULT_PRO, { onConflict: 'code', ignoreDuplicates: true }));
   const again = await read();
   if (again.error) throw again.error;
-  if (!again.data) throw new HttpError(500, 'plan_missing', 'The Pro plan could not be created. Run migration 0013.');
+  if (!again.data) throw new HttpError(500, 'plan_missing', 'The Pro plan could not be created. Run migration 0016.');
   return again.data as ProPlan;
 }
 

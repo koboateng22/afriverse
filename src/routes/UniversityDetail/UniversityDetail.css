@@ -22,6 +22,17 @@
   .uni__fee-label { font-family: var(--font-body); font-size: var(--step--1); font-weight: 700; color: var(--text-3); letter-spacing: 0; }
   .uni__fee-amount { font-family: var(--font-display); font-size: var(--step-3); font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
   .uni__fee-note { font-size: var(--step--1); }
+  .uni__fee-parts {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 0;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--line);
+    & div { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--step--1); }
+    & dt { color: var(--text-3); }
+    & dd { margin: 0; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  }
+  .uni__pitch { margin-block-start: var(--space-2); font-weight: 700; color: var(--text); }
 
   .uni__section { display: grid; gap: var(--space-3); & h2 { font-size: var(--step-1); } }
   .uni__list {

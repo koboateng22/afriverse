@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, CreditCard, Smartphone } from 'lucide-react';
+import { Check, CreditCard, FileText, Headset, MessageCircle, Smartphone } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Magnetic } from '../../components/Magnetic/Magnetic';
 import { Notice } from '../../components/Notice/Notice';
@@ -19,22 +19,27 @@ const METHODS: Array<{ id: Method; title: string; detail: string; icon: typeof C
   { id: 'momo', title: 'Mobile Money', detail: 'MTN, Telecel, AirtelTigo. One month, renew when you like.', icon: Smartphone },
 ];
 
-// Shown until the plan row arrives, or if it can't be read. Mirrors migration 0013
+// Shown until the plan row arrives, or if it can't be read. Mirrors migration 0016
 // and paystack-init's DEFAULT_PRO, which charges this price when the row is missing.
-const FALLBACK_PRICE = { amount_cents: 1000, currency: 'GHS' };
+const FALLBACK_PRICE = { amount_cents: 4000, currency: 'GHS' };
 const DEFAULT_FEATURES = [
-  'Unlimited AI counsellor messages',
+  'Direct WhatsApp access to a Human Counselor',
+  'CV & Essay Strategy Sessions',
+  'Priority Support',
   'Scholarship Matcher — ranked by how well you fit',
-  'AI Essay Reviewer',
   'Application Tracker with full timeline',
-  'Human counsellor on WhatsApp',
+  'Insider application guides',
 ];
+// Pro is human support: the first three features lead, larger and with their own icon.
+const HIGHLIGHTED = 3;
+const iconFor = (feature: string) =>
+  /whatsapp|counsel/i.test(feature) ? MessageCircle : /\bcv\b|essay/i.test(feature) ? FileText : /support/i.test(feature) ? Headset : Check;
 
 /**
- * Pro plan + payment method + one gold CTA. Used by /paywall and the paywall modal.
- * Never waits on the plan fetch: the button is always live, and until (or unless)
- * the plan row is read the screen shows the GH₵ 10 fallback. paystack-init still
- * prices the charge from the database.
+ * Pro plan (human support) + payment method + one gold CTA. Used by /paywall and
+ * the paywall modal. Never waits on the plan fetch: the button is always live, and
+ * until (or unless) the plan row is read the screen shows the GH₵ 40 fallback.
+ * paystack-init still prices the charge from the database.
  */
 export function ProOffer({ compact }: { compact?: boolean }) {
   const [plan, setPlan] = useState<PlanRow | null>(null);
@@ -82,14 +87,28 @@ export function ProOffer({ compact }: { compact?: boolean }) {
               <small> / month</small>
             </p>
           </div>
-          <ul className="pro-offer__features" role="list">
-            {features.map((f) => (
-              <li key={f}>
-                <Check aria-hidden="true" />
-                {f}
-              </li>
-            ))}
+          <ul className="pro-offer__highlights" role="list" aria-label="Human support">
+            {features.slice(0, HIGHLIGHTED).map((f) => {
+              const Icon = iconFor(f);
+              return (
+                <li key={f}>
+                  <Icon aria-hidden="true" />
+                  {f}
+                </li>
+              );
+            })}
           </ul>
+          {features.length > HIGHLIGHTED && (
+            <ul className="pro-offer__features" role="list" aria-label="Also included">
+              {features.slice(HIGHLIGHTED).map((f) => (
+                <li key={f}>
+                  <Check aria-hidden="true" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="pro-offer__free-ai">Career Compass and the AI Essay Reviewer stay free for everyone.</p>
         </div>
       </motion.section>
 

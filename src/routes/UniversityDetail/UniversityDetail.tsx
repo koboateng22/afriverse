@@ -93,9 +93,20 @@ export default function UniversityDetail() {
 
             <motion.section className="uni__fee" variants={riseItem} aria-labelledby="fee-h">
               <h2 id="fee-h" className="uni__fee-label">
-                Application fee
+                What you pay
               </h2>
               <p className="uni__fee-amount">{formatMoney(feeOf(uni), 'GHS')}</p>
+              <dl className="uni__fee-parts">
+                <div>
+                  <dt>University fee</dt>
+                  <dd>{formatMoney(uni.app_fee_cents, 'GHS')}</dd>
+                </div>
+                <div>
+                  <dt>Service fee</dt>
+                  <dd>{uni.service_fee_cents > 0 ? formatMoney(uni.service_fee_cents, 'GHS') : 'None'}</dd>
+                </div>
+              </dl>
+              <p className="uni__pitch">Skip the bank queues. We buy the voucher and submit the forms for you.</p>
               {uni.fee_notes && <p className="uni__fee-note">{uni.fee_notes}</p>}
             </motion.section>
 
@@ -125,7 +136,7 @@ export default function UniversityDetail() {
               </Button>
             ) : (
               <Button variant="gold" size="lg" block loading={busy} onClick={pay}>
-                Pay Application Fee · {formatMoney(feeOf(uni), 'GHS')}
+                Pay {formatMoney(feeOf(uni), 'GHS')} · we handle the rest
               </Button>
             )}
             <p className="uni__fine">Mobile Money or card, secured by Paystack. Your fee is locked once you pay.</p>

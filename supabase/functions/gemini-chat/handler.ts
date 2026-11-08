@@ -4,9 +4,10 @@
 //             between career advice, essay review, CV building and interview prep;
 //             facts about what Afriversity offers come ONLY from its Supabase data.
 //   lesson  → tutor scoped to one course lesson (the lesson record; Groq can't watch the video).
-//   essay   → AI Essay Reviewer (Pro only).
-// Free students get 3 AI messages a day (app_settings.free_ai_daily_limit);
-// Pro is unlimited, with a short burst limit to stop abuse.
+//   essay   → AI Essay Reviewer.
+// The AI is free for every signed-in student, Free or Pro (Pro is human support).
+// One daily allowance for everyone (app_settings.free_ai_daily_limit, set high
+// enough that it only stops spam) plus a short burst limit.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handle, HttpError, json, readJson } from '../_shared/http.ts';
 import { requireUser, serviceClient, userClient } from '../_shared/supabase.ts';
@@ -35,6 +36,8 @@ type ChatMessage = {
 
 const HISTORY_TURNS = 10;
 const BURST_PER_MINUTE = 12;
+// Used only if app_settings has no free_ai_daily_limit row (migration 0016 sets 50).
+const DEFAULT_DAILY_LIMIT = 50;
 // Long enough to paste a CV or an essay draft into the chat (matches the composer).
 const MAX_MESSAGE_CHARS = 6000;
 export const NOT_IN_DATA = "I don't have that in Afriversity's data yet.";
@@ -66,28 +69,24 @@ const ESSAY_SCHEMA = {
   required: ['score', 'summary', 'strengths', 'improvements', 'edits', 'fit'],
 };
 
-type Allowance = { plan: string | null; limit: number | null; used: number };
+type Allowance = { plan: string | null; limit: number; used: number };
 
-/** Daily allowance from active_plan(): Pro = plans.ai_daily_limit (null = unlimited). */
+/** Today's allowance: the same for every plan (anti-spam, not a paywall). */
 async function allowance(svc: SupabaseClient, userId: string): Promise<Allowance> {
-  const { data: plan, error } = await svc.rpc('active_plan', { p_user: userId });
+  const [{ data: plan, error }, { data: setting }] = await Promise.all([
+    svc.rpc('active_plan', { p_user: userId }),
+    svc.from('app_settings').select('value').eq('key', 'free_ai_daily_limit').maybeSingle(),
+  ]);
   if (error) throw error;
-  let limit: number | null;
-  if (plan) {
-    const { data: row } = await svc.from('plans').select('ai_daily_limit').eq('code', plan).single();
-    limit = (row?.ai_daily_limit as number | null) ?? null;
-  } else {
-    const { data: setting } = await svc.from('app_settings').select('value').eq('key', 'free_ai_daily_limit').maybeSingle();
-    limit = Number(setting?.value ?? 3);
-  }
+  const limit = Number(setting?.value ?? DEFAULT_DAILY_LIMIT);
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const { count } = await svc.from('ai_usage').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', since);
   return { plan: (plan as string | null) ?? null, limit, used: count ?? 0 };
 }
 
 async function enforceLimits(svc: SupabaseClient, userId: string, a: Allowance) {
-  if (a.limit !== null && a.used >= a.limit) {
-    throw new HttpError(429, 'daily_limit', `You've used today's ${a.limit} free AI messages. Upgrade to Pro for unlimited messages.`, { ...a, upgrade: true });
+  if (a.used >= a.limit) {
+    throw new HttpError(429, 'daily_limit', `You've reached today's limit of ${a.limit} AI messages. It resets over the next 24 hours.`, { ...a });
   }
   const { count } = await svc
     .from('ai_usage')
@@ -152,9 +151,6 @@ export const handler = handle(async (req) => {
   const db = userClient(caller.jwt); // RLS-scoped reads/writes of the conversation
 
   const a = await allowance(svc, caller.user.id);
-  if (mode === 'essay' && a.plan !== 'pro') {
-    throw new HttpError(403, 'pro_required', 'The AI Essay Reviewer is part of Pro.', { upgrade: true });
-  }
   await enforceLimits(svc, caller.user.id, a);
 
   const { data: profile } = await svc
@@ -256,7 +252,7 @@ export const handler = handle(async (req) => {
     const answer = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], maxOutputTokens: 500 });
     reply = { role: 'assistant', content: answer.slice(0, 1500), at: new Date().toISOString(), source: 'ai' };
   } else {
-    // ── Essay Reviewer (Pro) ──
+    // ── Essay Reviewer ──
     const essay = str(body.essay, 'essay', { min: 300, max: 12_000 });
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim().slice(0, 500) : '';
     let target = '';

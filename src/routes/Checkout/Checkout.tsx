@@ -16,7 +16,7 @@ const POLL_MS = 3000;
 const MAX_POLLS = 40; // ~2 minutes — MoMo approvals can take a while
 
 const NEXT: Record<VerifyResponse['kind'], { to: string; label: string; title: string; body: string }> = {
-  subscription: { to: '/home', label: 'Back to your feed', title: 'Welcome to Pro', body: 'Unlimited AI, the Scholarship Matcher, essay reviews, the full tracker and a human counsellor are unlocked.' },
+  subscription: { to: '/home', label: 'Back to your feed', title: 'Welcome to Pro', body: 'Your human counsellor on WhatsApp, CV and essay strategy sessions and priority support are unlocked, along with the Scholarship Matcher and full tracker.' },
   application: { to: '/applications', label: 'Complete your application', title: 'Payment received', body: 'Next, fill in the details the university needs.' },
   mentor: { to: '/mentors', label: 'Back to mentors', title: 'Session booked', body: 'Your session is confirmed. You will find it at the top of the Mentors page.' },
 };

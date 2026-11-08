@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FunctionError } from '../../lib/functions';
 import { errorMessage, getSupabase } from '../../lib/supabase';
-import { usePaywall } from '../billing/PaywallModal';
-import { usePlan } from '../billing/PlanProvider';
 import { fetchFreeAiLimit } from '../billing/api';
 import { latestConversation, sendChat } from './api';
 import type { ChatMessage, ChatUsage } from './types';
@@ -11,12 +9,10 @@ export type ChatLimit = { limit: number; plan: string | null };
 
 /**
  * Loads the latest saved conversation, sends messages, tracks usage.
- * When the free daily allowance (3) runs out, the server answers 429
- * daily_limit and we open the Pro paywall modal.
+ * The AI is free for everyone; the server's daily allowance (anti-spam, same
+ * for every plan) answers 429 daily_limit when it runs out.
  */
 export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
-  const { openPaywall } = usePaywall();
-  const { isPro, loading: planLoading } = usePlan();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,12 +39,8 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
     };
   }, [mode, lessonId]);
 
-  // Free plan: show how many of today's messages are left before the first send.
+  // Today's allowance, before the first send (the counter only shows near the limit).
   useEffect(() => {
-    if (planLoading || isPro) {
-      if (isPro) setUsage(null);
-      return;
-    }
     let active = true;
     const since = new Date(Date.now() - 86_400_000).toISOString();
     Promise.all([fetchFreeAiLimit(), getSupabase().from('ai_usage').select('id', { count: 'exact', head: true }).gte('created_at', since)])
@@ -59,7 +51,7 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
     return () => {
       active = false;
     };
-  }, [isPro, planLoading]);
+  }, []);
 
   const send = useCallback(
     async (text: string) => {
@@ -78,10 +70,9 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
       } catch (e) {
         setMessages((m) => m.filter((x) => x !== optimistic));
         if (e instanceof FunctionError && e.code === 'daily_limit') {
-          const l = Number(e.body.limit ?? 3);
+          const l = Number(e.body.limit ?? 50);
           setLimit({ limit: l, plan: (e.body.plan as string | null) ?? null });
           setUsage({ used: Number(e.body.used ?? l), limit: l, plan: null });
-          openPaywall(`You've used your ${l} free AI messages for today. Pro gives you unlimited messages.`);
         } else {
           setError(errorMessage(e));
         }
@@ -90,7 +81,7 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
         setSending(false);
       }
     },
-    [mode, lessonId, conversationId, sending, openPaywall],
+    [mode, lessonId, conversationId, sending],
   );
 
   const reset = useCallback(() => {

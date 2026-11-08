@@ -220,14 +220,4 @@
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   }
   .chat__usage { text-align: center; font-size: var(--step--2); color: var(--text-3); }
-  .chat__upgrade {
-    min-block-size: 36px;
-    padding-inline: var(--space-3);
-    border-radius: var(--radius-pill);
-    background: var(--gold);
-    color: var(--ink);
-    font-weight: 800;
-    font-size: var(--step--1);
-    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-  }
 }

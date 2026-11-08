@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lock, PenLine, Sparkles } from 'lucide-react';
+import { PenLine, Sparkles } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Button } from '../../components/Button/Button';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
 import { Notice } from '../../components/Notice/Notice';
-import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { essayHistory, reviewEssay, type EssayTarget } from '../../features/ai/api';
 import type { AiConversation, EssayReview as Review } from '../../features/ai/types';
 import { fetchOpportunities } from '../../features/opportunities/api';
 import { fetchUniversities } from '../../features/universities/api';
-import { usePlan } from '../../features/billing/PlanProvider';
-import { usePaywall } from '../../features/billing/PaywallModal';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem, spring, staggerParent } from '../../lib/motion';
 import './EssayReview.css';
@@ -62,10 +59,8 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-/** Pro: AI Essay Reviewer. */
+/** AI Essay Reviewer — free for every signed-in student. */
 export default function EssayReview() {
-  const { isPro, loading } = usePlan();
-  const { openPaywall } = usePaywall();
   const [targets, setTargets] = useState<Array<{ value: string; label: string }>>([]);
   const [target, setTarget] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -76,7 +71,6 @@ export default function EssayReview() {
   const [history, setHistory] = useState<AiConversation[]>([]);
 
   useEffect(() => {
-    if (!isPro) return;
     Promise.all([fetchOpportunities(), fetchUniversities(), essayHistory()])
       .then(([o, u, h]) => {
         setTargets([
@@ -86,7 +80,7 @@ export default function EssayReview() {
         setHistory(h);
       })
       .catch((e) => setError(errorMessage(e)));
-  }, [isPro]);
+  }, []);
 
   const words = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
   const labels = targets.map((t) => t.label);
@@ -109,31 +103,10 @@ export default function EssayReview() {
     }
   };
 
-  if (!loading && !isPro) {
-    return (
-      <PageTransition label="AI Essay Reviewer">
-        <div className="container essay">
-          <PageHeader back={{ to: '/courses', label: 'Learn' }} eyebrow="Pro" title="AI Essay Reviewer" />
-          <EmptyState
-            icon={Lock}
-            title="Get your essay reviewed in seconds"
-            action={
-              <Button variant="gold" onClick={() => openPaywall('The AI Essay Reviewer scores your essay, shows what to fix, and suggests rewrites — part of Pro.')}>
-                Unlock with Pro
-              </Button>
-            }
-          >
-            <p>Paste a personal statement or scholarship essay and get a score, clear fixes and sentence rewrites, checked against what the programme asks for.</p>
-          </EmptyState>
-        </div>
-      </PageTransition>
-    );
-  }
-
   return (
     <PageTransition label="AI Essay Reviewer">
       <div className="container essay">
-        <PageHeader back={{ to: '/courses', label: 'Learn' }} eyebrow="Pro" title="AI Essay Reviewer" />
+        <PageHeader back={{ to: '/courses', label: 'Learn' }} eyebrow="Free" title="AI Essay Reviewer" />
 
         <AnimatePresence>{review && <ReviewCard key={review.summary} review={review} />}</AnimatePresence>
 

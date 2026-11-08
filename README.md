@@ -12,8 +12,9 @@ Three surfaces:
 
 Revenue, all in **Ghana cedis (GHS)**:
 
-- **Pro — GHS 10/month**, the only paid tier: unlimited AI messages, Scholarship Matcher, AI Essay Reviewer, full Application Tracker and a human counsellor on WhatsApp. Free students get 3 AI messages a day; the 4th opens the Pro paywall.
-- **University application fees** — set per university by the admin; after paying, the student fills in a form built from that university's admin-chosen fields and uploads documents.
+- **Freemium AI** — Career Compass and the AI Essay Reviewer are free for every signed-in student. One daily allowance for everyone (Admin → Settings, default 50) only stops spam.
+- **Pro — GHS 40/month**, the only paid tier: human support (direct WhatsApp access to a counsellor, CV & essay strategy sessions, priority support), plus the Scholarship Matcher, full Application Tracker and insider guides.
+- **University Concierge** — students pay the university's fee + our service fee (set per university, default GHS 50). We buy the voucher and submit the forms; the student fills in one form built from that university's admin-chosen fields and uploads documents.
 - **Mentor sessions** — mentors propose an hourly rate, an admin approves it, students pay it; 75% to the mentor, 25% to Afriversity.
 
 **Stack:** Vite + React 18 + TypeScript · hand-written CSS (no frameworks) · Framer Motion · Supabase (Postgres, Auth, RLS, Edge Functions) · Paystack · Groq (OpenAI-compatible chat API) · YouTube Data API v3 · Resend.
@@ -34,10 +35,10 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0015
+npx supabase db push      # applies supabase/migrations/0001 … 0017
 ```
 
-Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 60) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
+Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 40) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
 
 ### Admin account
 
@@ -71,6 +72,7 @@ npx supabase functions deploy paystack-subscription
 npx supabase functions deploy application-submit
 npx supabase functions deploy scan-results
 npx supabase functions deploy scrape-university
+npx supabase functions deploy fetch-scholarships
 ```
 
 **After deploying, open Admin → Settings** and set the support WhatsApp number (powers "Need help? Send your documents via WhatsApp." on the application form) and the counsellor WhatsApp number Pro students are given. The admin overview warns until both are set.
@@ -78,6 +80,14 @@ npx supabase functions deploy scrape-university
 **Schedule the renewal job** — Dashboard → Integrations → Cron → new job, every hour, HTTP POST to
 `https://<ref>.supabase.co/functions/v1/subscription-cron` with header `Authorization: Bearer <service-role key>`.
 It sends the 3-day and 1-day reminders, marks lapsed plans `expired` and emails the student. Access ends at `expires_at` even if the job never runs — `active_plan()` compares against `now()`.
+
+**Schedule the scholarship feed check** — same place, a second job, once a day (e.g. `0 6 * * *`), HTTP POST to
+`https://<ref>.supabase.co/functions/v1/fetch-scholarships` with the same header. It reads Opportunity Desk and
+Opportunities for Africans and puts new items in Admin → Opportunities → **Pending Review**; nothing reaches students until
+an admin approves it. Admins can also press **Check feeds now**.
+
+Expired opportunities hide themselves: migration `0017` schedules a pg_cron job (`expire-opportunities`, midnight UTC)
+that unpublishes and closes everything whose deadline has passed.
 
 ---
 

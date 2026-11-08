@@ -53,8 +53,8 @@ export default function Paywall() {
           back={{ to: '/profile', label: 'You' }}
           artTone="gold"
           eyebrow="Afriversity Pro"
-          title={isPro ? 'You’re on Pro' : 'Everything you need to win a place'}
-          lede={isPro ? undefined : 'Unlimited AI help, a scholarship matcher, essay reviews, a full application tracker and a real counsellor on WhatsApp.'}
+          title={isPro ? 'You’re on Pro' : 'A real counsellor in your corner'}
+          lede={isPro ? undefined : 'The AI tools are free for everyone. Pro adds people: a counsellor on WhatsApp, CV and essay strategy sessions, and priority support.'}
         />
 
         {isPro && (

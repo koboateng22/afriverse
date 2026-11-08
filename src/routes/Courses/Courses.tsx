@@ -59,7 +59,7 @@ export default function Courses() {
         <motion.div className="learn__hub" variants={staggerParent} initial="hidden" animate="show">
           <ListRow to="/career-compass" icon={Compass} label="Career Compass" detail="Quick answers about scholarships and universities" />
           <ListRow to="/mentors" icon={Users} label="Mentors" detail="Book a 1:1 with someone who has done it" />
-          <ListRow to="/essay-review" icon={PenLine} label="AI Essay Reviewer" detail="Score and fix your personal statement" badge="Pro" />
+          <ListRow to="/essay-review" icon={PenLine} label="AI Essay Reviewer" detail="Score and fix your personal statement" badge="Free" />
         </motion.div>
 
         <section className="learn__courses" aria-labelledby="courses-h">

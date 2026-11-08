@@ -5,7 +5,6 @@ import { ArrowUp, BookOpen, Building2, GraduationCap, Sparkles } from 'lucide-re
 import { Notice } from '../../components/Notice/Notice';
 import { ChatSkeleton } from '../../components/Skeleton/Skeleton';
 import { press, spring } from '../../lib/motion';
-import { usePaywall } from '../billing/PaywallModal';
 import type { ChatMessage, ChatUsage, RelatedItem } from './types';
 import type { ChatLimit } from './useChat';
 import './ChatThread.css';
@@ -25,6 +24,9 @@ export type ChatThreadProps = {
   emptyTitle: string;
 };
 
+// The counter shows once this many messages or fewer are left today.
+const LOW_ALLOWANCE = 10;
+
 /** Chat bubbles that slide in, a typing indicator, and a pinned composer. */
 const RELATED_ICON = { opportunity: GraduationCap, university: Building2, course: BookOpen } as const;
 const relatedHref = (r: RelatedItem) => (r.type === 'opportunity' ? `/opportunity/${r.slug}` : r.type === 'university' ? `/apply-university/${r.slug}` : `/courses/${r.slug}`);
@@ -39,7 +41,6 @@ function AiAvatar() {
 }
 
 export function ChatThread({ messages, loading, sending, error, limit, usage, onSend, placeholder, suggestions = [], renderExtra, emptyTitle }: ChatThreadProps) {
-  const { openPaywall } = usePaywall();
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
   const lastAssistant = messages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1);
@@ -140,21 +141,15 @@ export function ChatThread({ messages, loading, sending, error, limit, usage, on
 
       {error && <Notice tone="error">{error}</Notice>}
       {limit && (
-        <Notice
-          tone="info"
-          action={
-            <button type="button" className="chat__upgrade" onClick={() => openPaywall(`You've used your ${limit.limit} free AI messages for today.`)}>
-              Upgrade to Pro
-            </button>
-          }
-        >
-          You've used today's {limit.limit} free AI messages. Each one frees up 24 hours after you sent it.
+        <Notice tone="info">
+          You've reached today's limit of {limit.limit} AI messages. Each one frees up 24 hours after you sent it.
         </Notice>
       )}
 
-      {usage && usage.limit !== null && !limit && (
+      {/* The AI is free; the allowance only stops spam, so the counter appears near the end of it. */}
+      {usage && usage.limit !== null && !limit && usage.limit - usage.used <= LOW_ALLOWANCE && (
         <p className="chat__usage" aria-live="polite">
-          {Math.max(0, usage.limit - usage.used)} of {usage.limit} free AI messages left today
+          {Math.max(0, usage.limit - usage.used)} of {usage.limit} AI messages left today
         </p>
       )}
 

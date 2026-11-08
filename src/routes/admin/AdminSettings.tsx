@@ -23,7 +23,7 @@ export default function AdminSettings() {
       support_whatsapp: data.support_whatsapp ?? '',
       counselor_whatsapp: data.counselor_whatsapp ?? '',
       counselor_hours: data.counselor_hours ?? '',
-      free_ai_daily_limit: String(data.free_ai_daily_limit ?? 3),
+      free_ai_daily_limit: String(data.free_ai_daily_limit ?? 50),
     });
   }, [data]);
 
@@ -65,11 +65,11 @@ export default function AdminSettings() {
             <Field label="Counsellor hours" placeholder="Mon–Fri, 9am–5pm GMT" value={draft.counselor_hours} onChange={(e) => set('counselor_hours', e.target.value)} maxLength={80} />
           </div>
           <Field
-            label="Free AI messages per day"
+            label="AI messages per student per day"
             inputMode="numeric"
             value={draft.free_ai_daily_limit}
             onChange={(e) => set('free_ai_daily_limit', e.target.value.replace(/\D/g, '').slice(0, 3))}
-            hint="After this many messages, free students see the Pro paywall. Default 3."
+            hint="The AI is free for every student, Free or Pro. This only stops spam: past this many messages in 24 hours, the AI pauses for that student. Default 50."
           />
           {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
           <Button type="submit" loading={busy}>

@@ -1,13 +1,18 @@
 import { getSupabase } from '../../lib/supabase';
-import { OPPORTUNITY_COLUMNS, type Opportunity, type OpportunityStatus } from './types';
+import { OPPORTUNITY_COLUMNS, OPPORTUNITY_COLUMNS_BEFORE_0017, type Opportunity, type OpportunityStatus } from './types';
 
 const STATUS_ORDER: Record<OpportunityStatus, number> = { open: 0, rolling: 1, upcoming: 2, closed: 3 };
 
+// 42703 = undefined column: the database hasn't run migration 0017 (is_verified) yet.
+const missingColumn = (e: { code?: string } | null) => e?.code === '42703';
+
 /** Published opportunities: open first (soonest deadline), then rolling, upcoming, closed. */
 export async function fetchOpportunities(): Promise<Opportunity[]> {
-  const { data, error } = await getSupabase().from('opportunities').select(OPPORTUNITY_COLUMNS).eq('published', true);
+  const list = (cols: string) => getSupabase().from('opportunities').select(cols).eq('published', true);
+  let { data, error } = await list(OPPORTUNITY_COLUMNS);
+  if (missingColumn(error)) ({ data, error } = await list(OPPORTUNITY_COLUMNS_BEFORE_0017));
   if (error) throw error;
-  const rows = (data ?? []) as Opportunity[];
+  const rows = (data ?? []) as unknown as Opportunity[];
   return rows.sort((a, b) => {
     const s = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
     if (s !== 0) return s;
@@ -20,14 +25,17 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
 
 export async function fetchOpportunity(id: string): Promise<Opportunity | null> {
   const isUuid = /^[0-9a-f-]{36}$/i.test(id);
-  const { data, error } = await getSupabase()
-    .from('opportunities')
-    .select(OPPORTUNITY_COLUMNS)
-    .eq(isUuid ? 'id' : 'slug', id)
-    .eq('published', true)
-    .maybeSingle();
+  const one = (cols: string) =>
+    getSupabase()
+      .from('opportunities')
+      .select(cols)
+      .eq(isUuid ? 'id' : 'slug', id)
+      .eq('published', true)
+      .maybeSingle();
+  let { data, error } = await one(OPPORTUNITY_COLUMNS);
+  if (missingColumn(error)) ({ data, error } = await one(OPPORTUNITY_COLUMNS_BEFORE_0017));
   if (error) throw error;
-  return data as Opportunity | null;
+  return data as unknown as Opportunity | null;
 }
 
 /** Pro-only insider guide. The RPC refuses unless active_plan() = 'pro'. */

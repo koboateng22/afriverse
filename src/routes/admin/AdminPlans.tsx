@@ -14,7 +14,6 @@ type Row = PlanRow & { active: boolean; paystack_plan_code: string | null };
 
 function ProEditor({ plan, onSave }: { plan: Row; onSave: (p: Record<string, unknown>) => Promise<string | null> }) {
   const [price, setPrice] = useState(String(plan.amount_cents / 100));
-  const [limit, setLimit] = useState(plan.ai_daily_limit === null ? '' : String(plan.ai_daily_limit));
   const [active, setActive] = useState(plan.active);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
@@ -24,7 +23,8 @@ function ProEditor({ plan, onSave }: { plan: Row; onSave: (p: Record<string, unk
     e.preventDefault();
     if (!cents || cents < 100) return setMsg({ tone: 'error', text: 'Enter a monthly price of at least GHS 1.' });
     setBusy(true);
-    const err = await onSave({ amount_cents: cents, ai_daily_limit: limit === '' ? null : Number(limit), active });
+    // The AI allowance is the same for every plan (Settings), so Pro has no limit of its own.
+    const err = await onSave({ amount_cents: cents, ai_daily_limit: null, active });
     setBusy(false);
     setMsg(
       err
@@ -37,12 +37,9 @@ function ProEditor({ plan, onSave }: { plan: Row; onSave: (p: Record<string, unk
     <motion.form className="admin-row admin-form" variants={riseItem} onSubmit={submit}>
       <h2 className="admin-row__title">Afriversity Pro</h2>
       <p className="admin-section__sub">
-        Unlocks unlimited AI messages, the Scholarship Matcher, AI Essay Reviewer, Application Tracker and human counsellor access. Cards renew automatically each month; Mobile Money buys one month at a time.
+        Human support: a counsellor on WhatsApp, CV &amp; essay strategy sessions and priority support, plus the Scholarship Matcher, full Application Tracker and insider guides. The AI is free for everyone (daily limit in Settings). Cards renew automatically each month; Mobile Money buys one month at a time.
       </p>
-      <div className="admin-form__row">
-        <Field label="Price per month (GHS)" type="number" inputMode="decimal" min={1} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} hint={cents ? formatMoney(cents, 'GHS') : undefined} />
-        <Field label="Pro AI messages per day" inputMode="numeric" placeholder="Unlimited" value={limit} onChange={(e) => setLimit(e.target.value.replace(/\D/g, ''))} hint="Leave blank for unlimited." />
-      </div>
+      <Field label="Price per month (GHS)" type="number" inputMode="decimal" min={1} step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} hint={cents ? formatMoney(cents, 'GHS') : undefined} />
       <Switch label="On sale" hint={active ? 'Students can subscribe' : 'Checkout is closed'} onText="Yes" offText="No" checked={active} onChange={setActive} />
       <p className="admin-row__meta">Paystack plan: {plan.paystack_plan_code ?? 'created automatically at the first card checkout'}</p>
       {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
@@ -66,7 +63,7 @@ export default function AdminPlans() {
       </div>
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
-      {data && !pro && <Notice tone="error">The Pro plan row is missing. Re-run the seed or migration 0010.</Notice>}
+      {data && !pro && <Notice tone="error">The Pro plan row is missing. Run migration 0016 in the SQL Editor.</Notice>}
       {pro && (
         <motion.div className="admin-list" variants={staggerParent} initial="hidden" animate="show">
           <ProEditor plan={pro} onSave={(payload) => mutate('plans.update', payload)} />

@@ -98,6 +98,34 @@
     }
   }
 
+  /* The three human-support features: what Pro is for. */
+  .pro-offer__highlights {
+    display: grid;
+    gap: var(--space-3);
+    & li {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border-radius: var(--radius-sm);
+      background: color-mix(in oklab, var(--gold) 9%, transparent);
+      border: 1px solid color-mix(in oklab, var(--gold) 28%, transparent);
+      color: var(--text);
+      font-weight: 700;
+    }
+    & svg {
+      flex: none;
+      inline-size: 32px;
+      block-size: 32px;
+      padding: 7px;
+      border-radius: 50%;
+      color: var(--ink);
+      background: var(--gold);
+      box-shadow: 0 0 14px -4px color-mix(in oklab, var(--gold) 80%, transparent);
+    }
+  }
+  .pro-offer__free-ai { font-size: var(--step--2); color: var(--text-3); }
+
   .pro-offer__features {
     display: grid;
     gap: var(--space-3);

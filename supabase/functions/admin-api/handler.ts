@@ -64,9 +64,10 @@ function universityInput(p: Payload) {
     country: str(p.country, 'country', { min: 2, max: 80 }),
     city: str(p.city, 'city', { min: 2, max: 80 }),
     currency: 'GHS',
-    // One application fee, entered in GHS, stored in pesewas.
+    // The university's own fee + our concierge service fee, both GHS in pesewas.
+    // Students pay the sum (paystack-init); the page shows both parts.
     app_fee_cents: int(p.app_fee_cents, 'app_fee_cents', { min: 100, max: 100_000_000 }),
-    service_fee_cents: 0,
+    service_fee_cents: p.service_fee_cents === undefined ? 5000 : int(p.service_fee_cents, 'service_fee_cents', { min: 0, max: 100_000_000 }),
     fee_notes: optStr(p.fee_notes, 'fee_notes', 400),
     website: httpsUrl(p.website, 'website', true),
     cutoff_link: httpsUrl(p.cutoff_link, 'cutoff_link', true),
@@ -111,6 +112,8 @@ function opportunityInput(p: Payload) {
     is_pro: bool(p.is_pro ?? false, 'is_pro'),
     featured: bool(p.featured ?? false, 'featured'),
     published: bool(p.published ?? true, 'published'),
+    // Green "Verified" badge: the url is the provider's own official page.
+    is_verified: bool(p.is_verified ?? false, 'is_verified'),
     verified_on: new Date().toISOString().slice(0, 10),
   };
 }
@@ -199,8 +202,21 @@ const ACTIONS: Record<string, Action> = {
   // ── Opportunities ─────────────────────────────────────────────────────
   'opportunities.list': async (svc) => must(svc.from('opportunities').select('*').order('created_at', { ascending: false })),
   'opportunities.create': async (svc, p) => must(svc.from('opportunities').insert(opportunityInput(p)).select('*').single()),
-  'opportunities.update': async (svc, p) =>
-    must(svc.from('opportunities').update(opportunityInput(p)).eq('id', uuid(p.id, 'id')).select('*').single()),
+  'opportunities.update': async (svc, p) => {
+    const input = opportunityInput(p);
+    // Publishing a scraped item from the edit form approves it.
+    const patch = input.published ? { ...input, review_status: 'approved' } : input;
+    return must(svc.from('opportunities').update(patch).eq('id', uuid(p.id, 'id')).select('*').single());
+  },
+  // Pending Review (fetch-scholarships): approve publishes it; reject hides it and
+  // keeps the row so the scraper never imports that article again.
+  'opportunities.review': async (svc, p) => {
+    const decision = oneOf(p.decision, 'decision', ['approve', 'reject'] as const);
+    const patch = decision === 'approve' ? { review_status: 'approved', published: true } : { review_status: 'rejected', published: false };
+    const row = await must(svc.from('opportunities').update(patch).eq('id', uuid(p.id, 'id')).eq('review_status', 'pending').select('*').maybeSingle());
+    if (!row) throw new HttpError(409, 'not_pending', 'That opportunity has already been reviewed');
+    return row;
+  },
   'opportunities.delete': async (svc, p) => {
     await must(svc.from('opportunities').delete().eq('id', uuid(p.id, 'id')));
     return { deleted: p.id };
@@ -297,7 +313,7 @@ const ACTIONS: Record<string, Action> = {
     return { url: data.signedUrl };
   },
 
-  // ── Settings (WhatsApp numbers, free AI limit) ────────────────────────
+  // ── Settings (WhatsApp numbers, AI daily limit) ────────────────────────
   'settings.get': async (svc) => {
     const rows = (await must(svc.from('app_settings').select('key, value'))) as Array<{ key: string; value: unknown }>;
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));
@@ -312,7 +328,7 @@ const ACTIONS: Record<string, Action> = {
       { key: 'support_whatsapp', value: phone(p.support_whatsapp, 'support_whatsapp') },
       { key: 'counselor_whatsapp', value: phone(p.counselor_whatsapp, 'counselor_whatsapp') },
       { key: 'counselor_hours', value: str(p.counselor_hours ?? '', 'counselor_hours', { max: 80, optional: true }) },
-      { key: 'free_ai_daily_limit', value: int(p.free_ai_daily_limit, 'free_ai_daily_limit', { min: 0, max: 100 }) },
+      { key: 'free_ai_daily_limit', value: int(p.free_ai_daily_limit, 'free_ai_daily_limit', { min: 0, max: 500 }) },
     ];
     await must(svc.from('app_settings').upsert(rows, { onConflict: 'key' }));
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));

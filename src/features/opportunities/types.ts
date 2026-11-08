@@ -25,10 +25,14 @@ export type Opportunity = {
   url: string;
   is_pro: boolean;
   featured: boolean;
+  /** The link is the provider's own official page (migration 0017): green "Verified" badge. */
+  is_verified?: boolean;
 };
 
 export const OPPORTUNITY_COLUMNS =
-  'id, slug, title, provider, kind, summary, description, eligibility, benefits, fields, levels, host_country, open_to, funding, status, deadline, opens_on, cycle_note, url, is_pro, featured';
+  'id, slug, title, provider, kind, summary, description, eligibility, benefits, fields, levels, host_country, open_to, funding, status, deadline, opens_on, cycle_note, url, is_pro, featured, is_verified';
+/** The same without is_verified, for a database that hasn't run migration 0017 yet. */
+export const OPPORTUNITY_COLUMNS_BEFORE_0017 = OPPORTUNITY_COLUMNS.replace(', is_verified', '');
 
 export const FUNDING_LABEL: Record<Funding, string> = {
   full: 'Fully funded',

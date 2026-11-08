@@ -133,6 +133,34 @@
     & dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
   }
   form.admin-row { align-items: stretch; flex-direction: column; }
+
+  .admin-section__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+  /* Opportunities → Pending Review (scraped by fetch-scholarships). */
+  .admin-review {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--highlight-soft);
+    border: 1px solid color-mix(in oklab, var(--gold) 25%, transparent);
+  }
+  .admin-review__title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--step-1); }
+  .admin-review__count {
+    display: grid;
+    place-items: center;
+    min-inline-size: 26px;
+    block-size: 26px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--gold);
+    color: var(--ink);
+    font-size: var(--step--2);
+    font-weight: 800;
+  }
+  .admin-review__empty { font-size: var(--step--1); color: var(--text-3); }
+  .admin-row--review .admin-row__main { flex: 1 1 18rem; }
+  .admin-row__link { font-size: var(--step--2); color: var(--text-3); overflow-wrap: anywhere; }
 }
 
 /* ── University slide-over + form builder ─────────────────────────── */

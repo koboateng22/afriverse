@@ -1,7 +1,7 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
-import { CalendarClock, Check, Lock, MapPin, Sparkles } from 'lucide-react';
+import { BadgeCheck, CalendarClock, Check, Lock, MapPin, Sparkles } from 'lucide-react';
 import { Card } from '../../components/Card/Card';
 import { Tag } from '../../components/Chip/Chip';
 import { countdownFor } from '../../lib/dates';
@@ -153,6 +153,13 @@ export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, s
           <span className="opp-card__match" data-strong={match.score >= MATCH_STRONG || undefined} aria-label={`${match.score}% match with your profile`}>
             {match.score}% match
           </span>
+        )}
+        {/* Trust signal: the link goes to the provider's own site (set by an admin or fetch-scholarships). */}
+        {o.is_verified && (
+          <Tag tone="emerald">
+            <BadgeCheck aria-hidden="true" />
+            Verified
+          </Tag>
         )}
         <Tag tone={countdown.tone}>
           <CalendarClock aria-hidden="true" />

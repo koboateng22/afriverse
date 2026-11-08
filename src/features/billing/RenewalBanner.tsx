@@ -33,13 +33,13 @@ export function RenewalBanner() {
   let text = '';
   if (!isPro && lastEnded?.expires_at) {
     tone = 'renew';
-    text = `Your Pro plan ended on ${formatDay(lastEnded.expires_at.slice(0, 10))}. Renew to unlock unlimited AI and the matcher again.`;
+    text = `Your Pro plan ended on ${formatDay(lastEnded.expires_at.slice(0, 10))}. Renew to get your counsellor and priority support back.`;
   } else if (isPro && billing?.status !== 'active' && current?.expires_at && new Date(current.expires_at).getTime() - Date.now() < 3 * DAY) {
     tone = 'soon';
     text = `Pro ends ${formatDay(current.expires_at.slice(0, 10))}. Add another month to keep it.`;
   } else if (!isPro && !dismissed) {
     tone = 'nudge';
-    text = 'Pro: unlimited AI, scholarship matcher and essay reviews — GH₵ 10 a month.';
+    text = 'Pro: a human counsellor on WhatsApp, CV & essay strategy sessions and priority support — GH₵ 40 a month.';
   }
 
   return (

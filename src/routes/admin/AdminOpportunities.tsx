@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Plus, Star } from 'lucide-react';
+import { BadgeCheck, Check, ExternalLink, Pencil, Plus, RefreshCw, Star, X } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Sheet/Sheet';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
@@ -8,11 +8,22 @@ import { Chip, Tag } from '../../components/Chip/Chip';
 import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
+import { invokeFunction } from '../../lib/functions';
+import { errorMessage } from '../../lib/supabase';
 import { EDUCATION_LEVELS, FIELDS } from '../../features/onboarding/options';
 import type { Opportunity } from '../../features/opportunities/types';
 import { riseItem, staggerParent } from '../../lib/motion';
 
-type Row = Opportunity & { published: boolean; pro_insights: string[] };
+type Row = Opportunity & {
+  published: boolean;
+  pro_insights: string[];
+  // Migration 0017. Scraped items (fetch-scholarships) arrive 'pending'.
+  review_status?: 'pending' | 'approved' | 'rejected';
+  source_url?: string | null;
+  source_name?: string | null;
+};
+
+type FetchReport = { added: number; verified: number; feeds: Array<{ feed: string; added: number; error?: string }> };
 
 const KINDS = ['scholarship', 'fellowship', 'program', 'award'] as const;
 const FUNDING = ['full', 'partial', 'stipend', 'free_training', 'prize'] as const;
@@ -33,7 +44,7 @@ const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const blank: Form = {
   slug: '', title: '', provider: '', kind: 'scholarship', summary: '', description: '', eligibility: '', benefits: '', pro_insights: '',
   fields: [], levels: [], host_country: '', open_to: 'All African countries', funding: 'full', status: 'open', deadline: '', opens_on: '',
-  cycle_note: '', url: '', is_pro: false, featured: false, published: true,
+  cycle_note: '', url: '', is_pro: false, featured: false, published: true, is_verified: false,
 };
 
 const toForm = (o: Row): Form => ({
@@ -47,8 +58,16 @@ const toForm = (o: Row): Form => ({
 });
 
 export default function AdminOpportunities() {
-  const { data, error, mutate } = useAdminData<Row[]>('opportunities.list');
+  const { data, error, mutate, reload } = useAdminData<Row[]>('opportunities.list');
+  const rows = asArray(data);
+  const pending = rows.filter((o) => o.review_status === 'pending');
+  const listed = rows.filter((o) => (o.review_status ?? 'approved') === 'approved');
+  const rejected = rows.length - pending.length - listed.length;
   const [form, setForm] = useState<Form | null>(null);
+  const [fetching, setFetching] = useState(false);
+  const [fetchMsg, setFetchMsg] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -78,6 +97,33 @@ export default function AdminOpportunities() {
     else setForm(null);
   };
 
+  // INTEGRATION: fetch-scholarships — the same run the daily cron does.
+  const checkFeeds = async () => {
+    setFetching(true);
+    setFetchMsg(null);
+    try {
+      const r = await invokeFunction<FetchReport>('fetch-scholarships', {});
+      const failed = r.feeds.filter((f) => f.error).map((f) => f.feed);
+      setFetchMsg({
+        tone: failed.length ? 'info' : 'success',
+        text: `${r.added ? `${r.added} new to review (${r.verified} verified).` : 'Nothing new.'}${failed.length ? ` Couldn't read: ${failed.join(', ')}.` : ''}`,
+      });
+      reload();
+    } catch (e) {
+      setFetchMsg({ tone: 'error', text: errorMessage(e) });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const review = async (o: Row, decision: 'approve' | 'reject') => {
+    setReviewing(o.id);
+    setReviewError(null);
+    const err = await mutate('opportunities.review', { id: o.id, decision });
+    setReviewing(null);
+    if (err) setReviewError(err);
+  };
+
   const toggleFeatured = (o: Row) => mutate('opportunities.update', payloadOf({ ...toForm(o), featured: !o.featured }));
 
   const remove = async () => {
@@ -96,15 +142,76 @@ export default function AdminOpportunities() {
           <h1 id="opp-h" className="admin-section__title">Opportunities</h1>
           <p className="admin-section__sub">Featured items are pinned near the top of every student's feed.</p>
         </div>
-        <Button icon={<Plus aria-hidden="true" />} onClick={() => { setFormError(null); setForm({ ...blank }); }}>
-          Add opportunity
-        </Button>
+        <div className="admin-section__actions">
+          <Button variant="secondary" icon={<RefreshCw aria-hidden="true" />} loading={fetching} onClick={() => void checkFeeds()}>
+            Check feeds now
+          </Button>
+          <Button icon={<Plus aria-hidden="true" />} onClick={() => { setFormError(null); setForm({ ...blank }); }}>
+            Add opportunity
+          </Button>
+        </div>
       </div>
+      {fetchMsg && <Notice tone={fetchMsg.tone}>{fetchMsg.text}</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
+
+      {data && (
+        <section className="admin-review" aria-labelledby="review-h">
+          <h2 id="review-h" className="admin-review__title">
+            Pending Review <span className="admin-review__count">{pending.length}</span>
+          </h2>
+          <p className="admin-section__sub">
+            Found by the daily feed check. Open the original link, check it's the provider's real page and still open, then approve. Students never see these until you do.
+            {rejected > 0 ? ` ${rejected} rejected item${rejected === 1 ? '' : 's'} won't be imported again.` : ''}
+          </p>
+          {reviewError && <Notice tone="error">{reviewError}</Notice>}
+          {pending.length === 0 ? (
+            <p className="admin-review__empty">Nothing waiting. New items appear here after the daily feed check.</p>
+          ) : (
+            <ul className="admin-list" role="list">
+              {pending.map((o) => (
+                <li key={o.id} className="admin-row admin-row--review">
+                  <div className="admin-row__main">
+                    <span className="admin-row__title">{o.title}</span>
+                    <span className="admin-row__meta">
+                      {o.provider} · {o.kind}
+                      {o.deadline ? ` · closes ${o.deadline}` : ` · ${o.status}`}
+                      {o.source_name ? ` · from ${o.source_name}` : ''}
+                    </span>
+                    <span className="admin-row__link">{o.url}</span>
+                  </div>
+                  <div className="admin-row__aside">
+                    {o.is_verified ? (
+                      <Tag tone="emerald"><BadgeCheck aria-hidden="true" /> Official domain</Tag>
+                    ) : (
+                      <Tag>Not verified</Tag>
+                    )}
+                    <a className="btn" data-variant="secondary" data-size="sm" href={o.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink aria-hidden="true" /> View Original Link
+                    </a>
+                    {o.source_url && o.source_url !== o.url && (
+                      <a className="admin-lesson-link" href={o.source_url} target="_blank" rel="noopener noreferrer">Listing</a>
+                    )}
+                    <Button variant="quiet" size="sm" icon={<Pencil aria-hidden="true" />} onClick={() => { setFormError(null); setForm(toForm(o)); }}>
+                      Edit
+                    </Button>
+                    <Button variant="quiet" size="sm" icon={<X aria-hidden="true" />} disabled={reviewing === o.id} onClick={() => void review(o, 'reject')}>
+                      Reject
+                    </Button>
+                    <Button size="sm" icon={<Check aria-hidden="true" />} loading={reviewing === o.id} onClick={() => void review(o, 'approve')}>
+                      Approve
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       {data && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
-          {asArray(data).map((o) => (
+          {listed.map((o) => (
             <motion.li key={o.id} className="admin-row" variants={riseItem} data-muted={!o.published || undefined}>
               <div className="admin-row__main">
                 <span className="admin-row__title">{o.title}</span>
@@ -115,6 +222,7 @@ export default function AdminOpportunities() {
                 </span>
               </div>
               <div className="admin-row__aside">
+                {o.is_verified && <Tag tone="emerald"><BadgeCheck aria-hidden="true" /> Verified</Tag>}
                 {o.is_pro && <Tag tone="gold">Pro guide</Tag>}
                 {!o.published && <Tag>Draft</Tag>}
                 <Button variant={o.featured ? 'gold' : 'secondary'} size="sm" icon={<Star aria-hidden="true" />} onClick={() => void toggleFeatured(o)} aria-pressed={o.featured}>
@@ -173,6 +281,10 @@ export default function AdminOpportunities() {
               Has a Pro insider guide
             </label>
             {form.is_pro && <TextAreaField label="Pro insider guide (one tip per line — only Pro members can read this)" value={form.pro_insights} onChange={(e) => set('pro_insights', e.target.value)} />}
+            <label className="admin-form__toggle">
+              <input type="checkbox" checked={Boolean(form.is_verified)} onChange={(e) => set('is_verified', e.target.checked)} />
+              Verified: the Official URL is the provider's own website (students see a green badge)
+            </label>
             <label className="admin-form__toggle">
               <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
               Featured

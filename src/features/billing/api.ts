@@ -16,7 +16,7 @@ export async function fetchProPlan(): Promise<PlanRow | null> {
 
 export async function fetchFreeAiLimit(): Promise<number> {
   const { data } = await getSupabase().from('app_settings').select('value').eq('key', 'free_ai_daily_limit').maybeSingle();
-  return Number(data?.value ?? 3);
+  return Number(data?.value ?? 50);
 }
 
 // INTEGRATION: paystack — stop card auto-renew / get Paystack's card-update page.

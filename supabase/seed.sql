@@ -306,11 +306,11 @@ join public.courses c on c.slug = l.course_slug;
 
 -- ── Plan (single Pro tier; paystack-init reads the price from here) ──────
 insert into public.plans (code, name, tagline, amount_cents, currency, period_days, ai_daily_limit, features) values
-  ('pro', 'Pro', 'Everything you need to win a place', 1000, 'GHS', 30, null,
-   array['Unlimited AI counsellor messages', 'Scholarship Matcher — ranked by how well you fit', 'AI Essay Reviewer',
-         'Application Tracker with full timeline', 'Human counsellor on WhatsApp']);
+  ('pro', 'Pro', 'A real counsellor in your corner', 4000, 'GHS', 30, null,
+   array['Direct WhatsApp access to a Human Counselor', 'CV & Essay Strategy Sessions', 'Priority Support',
+         'Scholarship Matcher — ranked by how well you fit', 'Application Tracker with full timeline', 'Insider application guides']);
 
--- free_ai_daily_limit (3) and the WhatsApp settings are created by migration 0010.
+-- free_ai_daily_limit (50 since 0016; the same for every plan) and the WhatsApp settings come from migrations.
 
 -- ── Pro insider guides (drawn from each programme's published rules) ────
 update public.opportunities set pro_insights = array[

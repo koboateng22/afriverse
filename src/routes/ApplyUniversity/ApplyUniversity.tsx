@@ -38,8 +38,13 @@ export default function ApplyUniversity() {
           back={{ to: '/profile', label: 'You' }}
           eyebrow="University concierge"
           title="We'll handle your application"
-          lede="Pick a university and pay its application fee. Then complete one short form and our team submits your application for you."
+          lede="Skip the bank queues. We buy the voucher and submit the forms for you."
         />
+        <ol className="apply-steps" aria-label="How it works">
+          <li><b>1</b> Pick a university and pay online: its fee + our service fee.</li>
+          <li><b>2</b> Fill in one short form from your phone.</li>
+          <li><b>3</b> We buy the voucher and submit your application.</li>
+        </ol>
         <ResultsStrip results={results} />
         {error && <Notice tone="error">{error}</Notice>}
         {!unis && !error && (
@@ -65,7 +70,9 @@ export default function ApplyUniversity() {
                 </span>
                 <span className="uni-card__price">
                   <span className="uni-card__total">{formatMoney(feeOf(u), 'GHS')}</span>
-                  <span className="uni-card__all-in">application fee</span>
+                  <span className="uni-card__all-in">
+                    {u.service_fee_cents > 0 ? `University fee + ${formatMoney(u.service_fee_cents, 'GHS')} service` : 'University fee, no service fee'}
+                  </span>
                 </span>
                 <ArrowRight className="uni-card__go" aria-hidden="true" />
               </MotionLink>
