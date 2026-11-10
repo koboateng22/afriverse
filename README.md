@@ -12,7 +12,7 @@ Three surfaces:
 
 Revenue, all in **Ghana cedis (GHS)**:
 
-- **Freemium AI** — Career Compass and the AI Essay Reviewer are free for every signed-in student. One daily allowance for everyone (Admin → Settings, default 50) only stops spam.
+- **Freemium AI** — Career Compass and the AI Essay Reviewer are free for every signed-in student. The Essay Reviewer is built for applications to universities abroad (US, UK, Canada, Europe, elsewhere): it judges each essay by its destination's rules and essay type (not Ghanaian/WASSCE conventions), scores ten categories with reasons, checks length in code, and reviews rather than rewrites: corrections and optional suggestions, never invented achievements. One daily allowance for everyone (Admin → Settings, default 50) only stops spam.
 - **Pro — GHS 40/month**, the only paid tier: human support (direct WhatsApp access to a counsellor, CV & essay strategy sessions, priority support), plus the Scholarship Matcher, full Application Tracker and insider guides.
 - **University Concierge** — students pay the university's fee + our service fee (set per university, default GHS 50). We buy the voucher and submit the forms; the student fills in one form built from that university's admin-chosen fields and uploads documents.
 - **Campus Ambassadors** — an admin turns a student into an ambassador with a referral code (Admin → Ambassadors). Students enter the code at signup ("Have a referral code?", or the `?ref=` link the ambassador shares). When a referred student first pays for Pro, GH₵ 5 goes to the ambassador's *pending* earnings (renewals earn nothing). Ambassadors see their numbers in the Ambassador Hub (`/ambassador`) but can't cash out: an admin sends MoMo at month end and presses **Mark as Paid**, which moves that amount to *paid* (migration `0018`).
@@ -36,7 +36,7 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0018
+npx supabase db push      # applies supabase/migrations/0001 … 0019
 ```
 
 Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 40) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)

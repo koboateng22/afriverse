@@ -11,6 +11,7 @@ import { Tag } from '../../components/Chip/Chip';
 import { scrapeUniversity } from '../../features/admin/api';
 import { asArray, useAdminData } from '../../features/admin/useAdminData';
 import { COUNTRIES } from '../../features/universities/countries';
+import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
 import { feeOf, requirementsOf, type FormFields, type University } from '../../features/universities/types';
 import { formatMoney, toCents } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
@@ -27,6 +28,12 @@ const BUILDER: Array<{ key: FlagKey; label: string; kind: 'Text' | 'File upload'
   { key: 'guardian_occupation', label: 'Parent/Guardian Occupation', kind: 'Text', icon: Type },
 ];
 
+const OWNERSHIP_OPTIONS: Array<{ value: Form['ownership']; label: string }> = [
+  { value: '', label: 'Not verified yet (needs review)' },
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+];
+
 const DOC_SUGGESTIONS = ['Passport Photo', 'Transcript', 'Birth Certificate', 'Recommendation Letter', 'Personal Statement'];
 
 type Form = {
@@ -41,6 +48,11 @@ type Form = {
   logoUrl: string;
   coverUrl: string;
   description: string;
+  ownership: '' | 'public' | 'private';
+  ownershipSource: string;
+  programmes: string;
+  admission: string;
+  tuition: string;
   active: boolean;
   fee: string;
   serviceFee: string;
@@ -62,6 +74,11 @@ const blank = (): Form => ({
   logoUrl: '',
   coverUrl: '',
   description: '',
+  ownership: '',
+  ownershipSource: '',
+  programmes: '',
+  admission: '',
+  tuition: '',
   active: true,
   fee: '',
   serviceFee: '50',
@@ -86,6 +103,11 @@ const toForm = (u: University): Form => {
     logoUrl: u.logo_url ?? '',
     coverUrl: u.cover_image_url ?? '',
     description: u.description ?? '',
+    ownership: u.ownership ?? '',
+    ownershipSource: u.ownership_source ?? '',
+    programmes: (u.programmes ?? []).join('\n'),
+    admission: u.admission_requirements ?? '',
+    tuition: u.tuition_info ?? '',
     active: u.active,
     fee: String(u.app_fee_cents / 100),
     serviceFee: String(u.service_fee_cents / 100),
@@ -111,6 +133,7 @@ function formFieldsOf(form: Form): FormFields {
 export default function AdminUniversities() {
   const { data, error, mutate } = useAdminData<University[]>('universities.list');
   const rows = asArray(data);
+  const unverified = rows.filter((u) => !u.ownership).length;
   const [form, setForm] = useState<Form | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -181,6 +204,14 @@ export default function AdminUniversities() {
       setFormError('Website must start with https://');
       return;
     }
+    if (!form.id && !form.ownership) {
+      setFormError('Choose whether the university is public or private, from an official source.');
+      return;
+    }
+    if (form.ownership && form.ownershipSource.trim().length < 3) {
+      setFormError('Say how you verified that it is public or private (e.g. the official website or the regulator’s list), or leave it as not verified.');
+      return;
+    }
     if (form.cutoffLink.trim() && !/^https:\/\/\S+$/i.test(form.cutoffLink.trim())) {
       setFormError('Cut-Off Points Link must be a full link starting with https://');
       return;
@@ -199,6 +230,11 @@ export default function AdminUniversities() {
       logo_url: form.logoUrl,
       cover_image_url: form.coverUrl,
       description: form.description.trim(),
+      ownership: form.ownership || null,
+      ownership_source: form.ownership ? form.ownershipSource.trim() : null,
+      programmes: form.programmes.split('\n').map((x) => x.trim()).filter(Boolean),
+      admission_requirements: form.admission.trim(),
+      tuition_info: form.tuition.trim(),
       active: form.active,
       app_fee_cents: feeCents,
       service_fee_cents: serviceCents,
@@ -235,6 +271,11 @@ export default function AdminUniversities() {
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}
       {data && rows.length === 0 && <Notice tone="info">No universities yet. Add the first one to open applications.</Notice>}
+      {unverified > 0 && (
+        <Notice tone="info">
+          {unverified} {unverified === 1 ? 'university needs' : 'universities need'} a public/private classification. Until then students only find {unverified === 1 ? 'it' : 'them'} under “Still being classified”, not in the Public or Private tab.
+        </Notice>
+      )}
       {rows.length > 0 && (
         <motion.ul className="admin-list" role="list" variants={staggerParent} initial="hidden" animate="show">
           {rows.map((u) => {
@@ -248,6 +289,7 @@ export default function AdminUniversities() {
                   </span>
                 </div>
                 <div className="admin-row__aside">
+                  {u.ownership ? <OwnershipBadge u={u} /> : <Tag tone="urgent">Needs review</Tag>}
                   <Tag>{u.active ? 'Active' : 'Inactive'}</Tag>
                   <span className="admin-row__money">{formatMoney(feeOf(u), 'GHS')}</span>
                   <Button variant="secondary" size="sm" icon={<Pencil aria-hidden="true" />} onClick={() => open(toForm(u))} aria-label={`Edit ${u.name}`}>
@@ -350,6 +392,37 @@ export default function AdminUniversities() {
               />
               <TextAreaField label="Description" hint="Shown on the university page. Two or three sentences work best." value={form.description} onChange={(e) => set('description', e.target.value)} maxLength={2000} rows={4} />
               <Field label="Short name (optional)" placeholder="e.g. KNUST" value={form.short_name} onChange={(e) => set('short_name', e.target.value)} maxLength={40} />
+            </fieldset>
+
+            <fieldset className="uni-form__group">
+              <legend className="uni-form__legend">Public or private</legend>
+              <SelectField
+                label="Ownership"
+                // A new university is classified up front; "not verified" exists only for older rows.
+                options={(form.id ? OWNERSHIP_OPTIONS : OWNERSHIP_OPTIONS.filter((o) => o.value)).map((o) => o.label)}
+                placeholder={form.id ? undefined : 'Choose public or private'}
+                value={form.ownership || form.id ? OWNERSHIP_OPTIONS.find((o) => o.value === form.ownership)!.label : ''}
+                onChange={(e) => set('ownership', OWNERSHIP_OPTIONS.find((o) => o.label === e.target.value)?.value ?? '')}
+                required={!form.id}
+                hint="Use the official classification (the university’s site or the national regulator), never the name."
+              />
+              {form.ownership && (
+                <Field
+                  label="How you verified it"
+                  placeholder="e.g. Listed as a public university on the national regulator’s website"
+                  value={form.ownershipSource}
+                  onChange={(e) => set('ownershipSource', e.target.value)}
+                  maxLength={300}
+                  required
+                />
+              )}
+            </fieldset>
+
+            <fieldset className="uni-form__group">
+              <legend className="uni-form__legend">Details students compare</legend>
+              <TextAreaField label="Programmes (one per line)" hint="Shown on the card and the university page." value={form.programmes} onChange={(e) => set('programmes', e.target.value)} rows={4} />
+              <TextAreaField label="Admission requirements" hint="e.g. minimum aggregate, required subjects. Optional." value={form.admission} onChange={(e) => set('admission', e.target.value)} maxLength={2000} rows={3} />
+              <TextAreaField label="Tuition" hint="e.g. fee range per year and where it’s published. Optional." value={form.tuition} onChange={(e) => set('tuition', e.target.value)} maxLength={800} rows={2} />
             </fieldset>
 
             <fieldset className="uni-form__group">

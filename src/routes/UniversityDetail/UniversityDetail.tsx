@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Building2, Check, FileText, MapPin } from 'lucide-react';
+import { ArrowUpRight, Building2, Check, FileText, GraduationCap, MapPin } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Button } from '../../components/Button/Button';
@@ -10,6 +10,7 @@ import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { fetchUniversity } from '../../features/universities/api';
 import { feeOf, requirementsOf, type University } from '../../features/universities/types';
+import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
 import { fetchOpenApplication } from '../../features/applications/api';
 import { useAuth } from '../../features/auth/useAuth';
 import { ResultsStrip } from '../../features/results/ResultsStrip';
@@ -82,13 +83,44 @@ export default function UniversityDetail() {
         ) : (
           <motion.div className="uni__body" variants={staggerParent} initial="hidden" animate="show">
             <ResultsStrip results={results} cutoffLink={uni.cutoff_link} />
-            <motion.p className="uni__where" variants={riseItem}>
-              <MapPin aria-hidden="true" /> {uni.city}, {uni.country}
-            </motion.p>
+            <motion.div className="uni__meta" variants={riseItem}>
+              <p className="uni__where">
+                <MapPin aria-hidden="true" /> {uni.city}, {uni.country}
+              </p>
+              <OwnershipBadge u={uni} long />
+            </motion.div>
             {uni.description && (
               <motion.p className="uni__desc" variants={riseItem}>
                 {uni.description}
               </motion.p>
+            )}
+
+            {(uni.programmes?.length ?? 0) > 0 && (
+              <motion.section className="uni__section" variants={riseItem} aria-labelledby="prog-h">
+                <h2 id="prog-h">Programmes</h2>
+                <ul role="list" className="uni__progs">
+                  {uni.programmes!.map((p) => (
+                    <li key={p}>
+                      <GraduationCap aria-hidden="true" /> {p}
+                    </li>
+                  ))}
+                </ul>
+              </motion.section>
+            )}
+            {uni.admission_requirements && (
+              <motion.section className="uni__section" variants={riseItem} aria-labelledby="adm-h">
+                <h2 id="adm-h">Admission requirements</h2>
+                <p className="uni__prose">{uni.admission_requirements}</p>
+              </motion.section>
+            )}
+            {uni.tuition_info && (
+              <motion.section className="uni__section" variants={riseItem} aria-labelledby="tui-h">
+                <h2 id="tui-h">Tuition</h2>
+                <p className="uni__prose">{uni.tuition_info}</p>
+              </motion.section>
+            )}
+            {(uni.admission_requirements || uni.tuition_info) && (
+              <motion.p className="uni__fine" variants={riseItem}>Requirements and fees can change each year. Confirm them on the official website before you apply.</motion.p>
             )}
 
             <motion.section className="uni__fee" variants={riseItem} aria-labelledby="fee-h">

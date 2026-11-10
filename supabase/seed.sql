@@ -30,6 +30,18 @@ insert into public.universities (slug, name, short_name, country, city, currency
    'Private liberal-arts university in Berekuso, founded in 2002, offering computer science, engineering, business administration and economics.',
    '{"high_school": true, "waec_results": true, "guardian_name": true, "guardian_email": true, "guardian_occupation": true, "custom_documents": [{"key": "doc_transcript", "label": "High school transcript"}, {"key": "doc_recommendation", "label": "Recommendation letter"}]}');
 
+-- Ownership (0019): documented for these five; anything added later starts unverified.
+update public.universities u
+   set ownership = v.ownership, ownership_source = v.source
+  from (values
+    ('university-of-ghana', 'public', 'Public university founded in 1948 (official site: ug.edu.gh)'),
+    ('knust', 'public', 'Public university founded in 1952 (official site: knust.edu.gh)'),
+    ('university-of-lagos', 'public', 'Federal (public) university founded in 1962 (official site: unilag.edu.ng)'),
+    ('covenant-university', 'private', 'Private university founded in 2002 (official site: covenantuniversity.edu.ng)'),
+    ('ashesi-university', 'private', 'Private university founded in 2002 (official site: ashesi.edu.gh)')
+  ) as v(slug, ownership, source)
+ where u.slug = v.slug;
+
 -- ── Opportunities ────────────────────────────────────────────────────────
 insert into public.opportunities
   (slug, title, provider, kind, summary, description, eligibility, benefits, fields, levels, host_country, open_to, funding, status, deadline, opens_on, cycle_note, url, is_pro, featured)
@@ -308,7 +320,11 @@ join public.courses c on c.slug = l.course_slug;
 insert into public.plans (code, name, tagline, amount_cents, currency, period_days, ai_daily_limit, features) values
   ('pro', 'Pro', 'A real counsellor in your corner', 4000, 'GHS', 30, null,
    array['Direct WhatsApp access to a Human Counselor', 'CV & Essay Strategy Sessions', 'Priority Support',
-         'Scholarship Matcher — ranked by how well you fit', 'Application Tracker with full timeline', 'Insider application guides']);
+         'Scholarship Matcher — ranked by how well you fit', 'Application Tracker with full timeline', 'Insider application guides'])
+-- Migration 0013 already creates the Pro row, so update it rather than failing on the duplicate.
+on conflict (code) do update
+  set name = excluded.name, tagline = excluded.tagline, amount_cents = excluded.amount_cents, currency = excluded.currency,
+      period_days = excluded.period_days, ai_daily_limit = excluded.ai_daily_limit, features = excluded.features;
 
 -- free_ai_daily_limit (50 since 0016; the same for every plan) and the WhatsApp settings come from migrations.
 

@@ -1,4 +1,4 @@
--- Which of supabase/migrations/0001 … 0018 are in this database?
+-- Which of supabase/migrations/0001 … 0019 are in this database?
 -- Checks for something each migration creates, so it works however the
 -- migration was applied (SQL Editor paste or `supabase db push`).
 -- Read-only. Run it with scripts/check-migrations.sh, or paste it into the
@@ -71,6 +71,10 @@ from (values
                                    and to_regclass('public.referral_rewards') is not null
                                    and exists (select 1 from pg_trigger where tgname = 'subscriptions_credit_referral')
                                    and to_regprocedure('public.ambassador_mark_paid(uuid, integer, uuid, text)') is not null,
-                                   'referral columns, rewards ledger, bonus trigger, mark-paid function')
+                                   'referral columns, rewards ledger, bonus trigger, mark-paid function'),
+  ('0019_university_ownership',    exists (select 1 from col where c = 'universities.ownership')
+                                   and exists (select 1 from col where c = 'universities.programmes')
+                                   and exists (select 1 from col where c = 'universities.tuition_info'),
+                                   'universities.ownership (+ source), programmes, admission requirements, tuition')
 ) as m(migration, applied, checks)
 order by migration;

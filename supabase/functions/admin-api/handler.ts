@@ -55,6 +55,20 @@ function formFieldsInput(v: unknown) {
   };
 }
 
+/**
+ * Public / private, or null = not verified (shown as "Needs review"). Never guessed:
+ * setting it requires saying how it was verified (official site, regulator's list…).
+ */
+function ownershipInput(p: Payload): { ownership: 'public' | 'private' | null; ownership_source: string | null } {
+  if (p.ownership === null || p.ownership === undefined || p.ownership === '') return { ownership: null, ownership_source: null };
+  const ownership = oneOf(p.ownership, 'ownership', ['public', 'private'] as const);
+  const source = optStr(p.ownership_source, 'ownership_source', 300);
+  if (!source || source.length < 3) {
+    throw new HttpError(400, 'invalid_input', 'ownership_source: say how you verified it, e.g. the official website or the regulator’s list', { field: 'ownership_source' });
+  }
+  return { ownership, ownership_source: source };
+}
+
 function universityInput(p: Payload) {
   const name = str(p.name, 'name', { min: 2, max: 160 });
   return {
@@ -75,6 +89,11 @@ function universityInput(p: Payload) {
     logo_url: httpsUrl(p.logo_url, 'logo_url', true),
     cover_image_url: httpsUrl(p.cover_image_url, 'cover_image_url', true),
     description: optStr(p.description, 'description', 2000),
+    ...ownershipInput(p),
+    // Blank lines from the textarea are dropped before validating.
+    programmes: strArray(Array.isArray(p.programmes) ? p.programmes.filter((x) => typeof x !== 'string' || x.trim()) : p.programmes ?? [], 'programmes', { maxItems: 60, maxLen: 100 }).map((x) => x.trim()),
+    admission_requirements: optStr(p.admission_requirements, 'admission_requirements', 2000),
+    tuition_info: optStr(p.tuition_info, 'tuition_info', 800),
     form_fields: formFieldsInput(p.form_fields),
     active: p.active === undefined ? true : bool(p.active, 'active'),
   };
@@ -189,7 +208,11 @@ const ACTIONS: Record<string, Action> = {
     const activePro = new Set(proRows.map((r) => r.user_id)).size;
     const settings = (await must(svc.from('app_settings').select('key, value'))) as Array<{ key: string; value: unknown }>;
     const setting = (k: string) => String(settings.find((r) => r.key === k)?.value ?? '');
+    // Universities without a public/private classification (0019). Skipped if that migration hasn't run.
+    const { count: unclassified, error: ownErr } = await svc.from('universities').select('id', { count: 'exact', head: true }).is('ownership', null);
     const warnings = [
+      !ownErr && (unclassified ?? 0) > 0 &&
+        `${unclassified} ${unclassified === 1 ? 'university needs' : 'universities need'} a public/private classification (Universities). Students can't find them in either tab until then.`,
       !setting('support_whatsapp') && 'Set the WhatsApp support number (Settings) so students can send documents.',
       !setting('counselor_whatsapp') && 'Set the counsellor WhatsApp number (Settings) — Pro students are promised human counsellor access.',
     ].filter(Boolean);
@@ -209,7 +232,12 @@ const ACTIONS: Record<string, Action> = {
 
   // ── Universities ──────────────────────────────────────────────────────
   'universities.list': async (svc) => must(svc.from('universities').select('*').order('name')),
-  'universities.create': async (svc, p) => must(svc.from('universities').insert(universityInput(p)).select('*').single()),
+  'universities.create': async (svc, p) => {
+    const input = universityInput(p);
+    // New universities are classified up front; only rows from before 0019 may still be unverified.
+    if (!input.ownership) throw new HttpError(400, 'invalid_input', 'ownership: choose Public or Private and say how you verified it', { field: 'ownership' });
+    return must(svc.from('universities').insert(input).select('*').single());
+  },
   'universities.update': async (svc, p) =>
     must(svc.from('universities').update(universityInput(p)).eq('id', uuid(p.id, 'id')).select('*').single()),
   'universities.delete': async (svc, p) => {

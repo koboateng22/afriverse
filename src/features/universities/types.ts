@@ -31,7 +31,36 @@ export type University = {
   description: string | null;
   form_fields: FormFields;
   active: boolean;
+  /** 0019: 'public' | 'private', or null while not verified. Never inferred from the name. */
+  ownership?: Ownership | null;
+  /** How the classification was verified (official site, regulator's list…). */
+  ownership_source?: string | null;
+  programmes?: string[];
+  admission_requirements?: string | null;
+  tuition_info?: string | null;
 };
+
+export type Ownership = 'public' | 'private';
+/** Listing groups: the two classifications plus the "being verified" bucket. */
+export type OwnershipGroup = Ownership | 'unverified';
+
+export const OWNERSHIP_LABEL: Record<OwnershipGroup, string> = {
+  public: 'Public',
+  private: 'Private',
+  unverified: 'Being verified',
+};
+
+export const groupOf = (u: Pick<University, 'ownership'>): OwnershipGroup =>
+  u.ownership === 'public' || u.ownership === 'private' ? u.ownership : 'unverified';
+
+/** Case- and accent-insensitive search over name, short name, place and programmes. */
+export function matchesSearch(u: University, query: string): boolean {
+  const fold = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const q = fold(query.trim());
+  if (!q) return true;
+  const hay = fold([u.name, u.short_name ?? '', u.city, u.country, ...(u.programmes ?? [])].join(' '));
+  return q.split(/\s+/).every((word) => hay.includes(word));
+}
 
 /** Total the student pays (single application fee; legacy service fee included). */
 export const feeOf = (u: Pick<University, 'app_fee_cents' | 'service_fee_cents'>) => u.app_fee_cents + u.service_fee_cents;

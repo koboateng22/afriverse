@@ -57,3 +57,24 @@
   }
   .uni__fine { text-align: center; font-size: var(--step--2); color: var(--text-3); }
 }
+
+@layer components {
+  .uni__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+  .uni__progs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    & li {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-pill);
+      background: var(--glass-fill);
+      border: 1px solid var(--glass-edge);
+      font-size: var(--step--1);
+    }
+    & svg { inline-size: 14px; block-size: 14px; color: var(--gold); }
+  }
+  .uni__prose { font-size: var(--step--1); color: var(--text-2); white-space: pre-line; }
+}

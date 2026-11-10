@@ -4,7 +4,8 @@
 //             between career advice, essay review, CV building and interview prep;
 //             facts about what Afriversity offers come ONLY from its Supabase data.
 //   lesson  → tutor scoped to one course lesson (the lesson record; Groq can't watch the video).
-//   essay   → AI Essay Reviewer.
+//   essay   → AI Essay Reviewer for INTERNATIONAL university applications (essay.ts):
+//             destination- and essay-type-aware review; it reviews, never rewrites the whole essay.
 // The AI is free for every signed-in student, Free or Pro (Pro is human support).
 // One daily allowance for everyone (app_settings.free_ai_daily_limit, set high
 // enough that it only stops spam) plus a short burst limit.
@@ -13,10 +14,15 @@ import { handle, HttpError, json, readJson } from '../_shared/http.ts';
 import { requireUser, serviceClient, userClient } from '../_shared/supabase.ts';
 import { generate, type AiContent } from '../_shared/groq.ts';
 import { oneOf, str, uuid } from '../_shared/validate.ts';
+import {
+  essayContext, limitCheck, missingInfo, normalizeReview, numberedEssay, paragraphsOf, REVIEW_SCHEMA, reviewSystemPrompt, TYPE_LABEL,
+  type EssayReviewV2, type EssayType,
+} from './essay.ts';
 
 type CareerCard = { title: string; field: string; why: string; first_steps: string[]; day_in_life_query: string };
 type Related = { type: 'opportunity' | 'university' | 'course'; slug: string; title: string };
-type EssayReview = {
+// Reviews saved before the international reviewer (v2) keep this shape.
+type LegacyEssayReview = {
   score: number;
   summary: string;
   strengths: string[];
@@ -30,7 +36,7 @@ type ChatMessage = {
   at: string;
   careers?: CareerCard[];
   related?: Related[];
-  review?: EssayReview;
+  review?: LegacyEssayReview | EssayReviewV2;
   source?: 'ai' | 'library';
 };
 
@@ -53,21 +59,6 @@ const CAREER_SCHEMA = {
   required: ['reply', 'careers', 'related'],
 };
 
-const ESSAY_SCHEMA = {
-  type: 'object',
-  properties: {
-    score: { type: 'integer' },
-    summary: { type: 'string' },
-    strengths: { type: 'array', items: { type: 'string' } },
-    improvements: { type: 'array', items: { type: 'string' } },
-    edits: {
-      type: 'array',
-      items: { type: 'object', properties: { original: { type: 'string' }, suggestion: { type: 'string' } }, required: ['original', 'suggestion'] },
-    },
-    fit: { type: 'array', items: { type: 'string' } },
-  },
-  required: ['score', 'summary', 'strengths', 'improvements', 'edits', 'fit'],
-};
 
 type Allowance = { plan: string | null; limit: number; used: number };
 
@@ -98,6 +89,26 @@ async function enforceLimits(svc: SupabaseClient, userId: string, a: Allowance) 
 
 function history(messages: ChatMessage[]): AiContent[] {
   return messages.slice(-HISTORY_TURNS).map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', parts: [{ text: m.content }] }));
+}
+
+/** The model's JSON, or a clear error instead of a crash when it isn't JSON. */
+function parseJson(raw: string): Record<string, unknown> {
+  try {
+    const v = JSON.parse(raw);
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
+  } catch {
+    /* fall through */
+  }
+  throw new HttpError(502, 'ai_bad_json', 'The AI answer could not be read. Please try again.');
+}
+
+const PLACE: Record<string, string> = { us: 'United States', uk: 'United Kingdom', canada: 'Canada', europe: 'Europe', other: 'International' };
+
+/** "UCAS personal statement · Medicine" — what the Past reviews list shows. */
+function essayTitle(body: Record<string, unknown>, essay: string): string {
+  const type = TYPE_LABEL[body.essay_type as EssayType] ?? 'Essay';
+  const where = [body.university, body.programme].filter((x) => typeof x === 'string' && x.trim()).join(', ') || PLACE[String(body.destination)] || '';
+  return (where ? `${type} · ${where}` : `${type} · ${essay.slice(0, 40)}`).slice(0, 80);
 }
 
 const clip = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -252,42 +263,30 @@ export const handler = handle(async (req) => {
     const answer = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], maxOutputTokens: 500 });
     reply = { role: 'assistant', content: answer.slice(0, 1500), at: new Date().toISOString(), source: 'ai' };
   } else {
-    // ── Essay Reviewer ──
-    const essay = str(body.essay, 'essay', { min: 300, max: 12_000 });
-    const prompt = typeof body.prompt === 'string' ? body.prompt.trim().slice(0, 500) : '';
-    let target = '';
-    if (body.target && typeof body.target === 'object') {
-      const t = body.target as Record<string, unknown>;
-      const slug = str(t.slug, 'target.slug', { max: 120 });
-      if (t.type === 'opportunity') {
-        const { data } = await db.from('opportunities').select('title, provider, eligibility, benefits, description').eq('slug', slug).maybeSingle();
-        if (data) target = `Applying to ${data.title} (${data.provider}). ${data.description} Selection criteria: ${(data.eligibility as string[]).join('; ')}.`;
-      } else if (t.type === 'university') {
-        const { data } = await db.from('universities').select('name, description').eq('slug', slug).maybeSingle();
-        if (data) target = `Applying to ${data.name}. ${data.description ?? ''}`;
-      }
+    // ── Essay Reviewer: international university applications (essay.ts) ──
+    const essay = str(body.essay, 'essay', { min: 150, max: 15_000 });
+    const ctx = essayContext(body);
+    if (typeof body.scholarship_slug === 'string' && body.scholarship_slug) {
+      const { data } = await db.from('opportunities').select('title, provider, eligibility, description').eq('slug', str(body.scholarship_slug, 'scholarship_slug', { max: 120 })).maybeSingle();
+      if (data) ctx.scholarship = `${data.title} (${data.provider}). ${String(data.description).slice(0, 800)} Selection criteria: ${(data.eligibility as string[]).join('; ')}.`;
     }
+    const lc = limitCheck(essay, ctx.essay_type, ctx.limit);
+    const missing = missingInfo(ctx, ctx.essay_type);
+    // Numbered paragraphs, so section-by-section comments point at real paragraphs.
+    const paras = paragraphsOf(essay);
+    const raw = await generate({
+      system: reviewSystemPrompt(ctx, lc, missing, studentLine, paras.length),
+      contents: [{ role: 'user', parts: [{ text: numberedEssay(paras) }] }],
+      json: { schema: REVIEW_SCHEMA },
+      maxOutputTokens: 3000,
+      timeoutMs: 60_000,
+    });
+    const review = normalizeReview(parseJson(raw), essay, ctx, lc, missing);
+    // The limit check follows the detected type when the applicant chose "not sure".
+    if (ctx.essay_type === 'auto') review.limit = limitCheck(essay, review.context.detected_type, ctx.limit);
     conversationId = null; // each review is its own record
     userMsg = { role: 'user', content: essay, at: new Date().toISOString() };
-    const system = [
-      'You review application essays for African students. Be direct and specific; no praise padding.',
-      'Return JSON: score (1-10 overall), summary (max 2 sentences), strengths (max 3), improvements (max 4, each actionable), edits (max 4 {original: exact sentence from the essay, suggestion: improved rewrite}), fit (max 3 notes on how well the essay matches the target criteria; empty if no target).',
-      'Judge only the essay text and the target data given. Do not invent facts about the student.',
-      studentLine,
-      target ? `TARGET (from Afriversity data): ${target}` : 'No target selected.',
-      prompt ? `Essay question: ${prompt}` : '',
-    ].join('\n');
-    const raw = await generate({ system, contents: [{ role: 'user', parts: [{ text: essay }] }], json: { schema: ESSAY_SCHEMA }, maxOutputTokens: 1500, timeoutMs: 40_000 });
-    const p = JSON.parse(raw) as Record<string, unknown>;
-    const review: EssayReview = {
-      score: Math.max(1, Math.min(10, Math.round(Number(p.score) || 1))),
-      summary: clip(p.summary, 400),
-      strengths: strList(p.strengths, 3, 300),
-      improvements: strList(p.improvements, 4, 300),
-      edits: (Array.isArray(p.edits) ? p.edits : []).slice(0, 4).map((e) => ({ original: clip((e as Record<string, unknown>).original, 400), suggestion: clip((e as Record<string, unknown>).suggestion, 400) })).filter((e) => e.original && e.suggestion),
-      fit: strList(p.fit, 3, 300),
-    };
-    reply = { role: 'assistant', content: review.summary, review, at: new Date().toISOString(), source: 'ai' };
+    reply = { role: 'assistant', content: review.overall.summary, review, at: new Date().toISOString(), source: 'ai' };
   }
 
   const nextMessages = [...messages, userMsg, reply];
@@ -295,7 +294,7 @@ export const handler = handle(async (req) => {
     const { error } = await db.from('ai_conversations').update({ messages: nextMessages }).eq('id', conversationId);
     if (error) throw error;
   } else {
-    const title = mode === 'essay' ? (typeof body.prompt === 'string' && body.prompt.trim() ? body.prompt.trim() : userMsg.content).slice(0, 80) : userMsg.content.slice(0, 80);
+    const title = mode === 'essay' ? essayTitle(body, userMsg.content) : userMsg.content.slice(0, 80);
     const { data, error } = await db.from('ai_conversations').insert({ kind: mode, lesson_id: lessonId, title, messages: nextMessages }).select('id').single();
     if (error) throw error;
     conversationId = data.id as string;

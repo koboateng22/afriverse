@@ -61,5 +61,100 @@
   .uni-card__price { display: grid; justify-items: end; flex: none; text-align: end; }
   .uni-card__total { font-weight: 800; color: var(--gold); }
   .uni-card__all-in { font-size: var(--step--2); color: var(--text-3); }
+  .uni-card__mono img { inline-size: 100%; block-size: 100%; object-fit: contain; padding: 6px; border-radius: inherit; background: var(--cream); }
+  .uni-card__tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: var(--space-1); }
+  .uni-card__progs { font-size: var(--step--2); color: var(--text-3); }
+
+  /* ── Filters: segmented tabs + search ─────────────────────────── */
+  .uni-filters { display: grid; gap: var(--space-4); }
+  .uni-filters__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    @media (min-width: 640px) { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: end; }
+  }
+  .uni-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-pill);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    @media (min-width: 640px) { inline-size: min(100%, 24rem); }
+  }
+  .uni-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    color: var(--text-2);
+    font-weight: 700;
+    font-size: var(--step--1);
+    &[aria-selected='true'] { color: var(--ink); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .uni-tab__pill { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: var(--gold); box-shadow: 0 6px 18px -8px color-mix(in oklab, var(--gold) 80%, transparent); }
+  .uni-tab__label, .uni-tab__count { position: relative; z-index: 1; }
+  .uni-tab__count {
+    min-inline-size: 22px;
+    padding-inline: 6px;
+    border-radius: var(--radius-pill);
+    font-size: var(--step--2);
+    font-variant-numeric: tabular-nums;
+    background: color-mix(in oklab, currentColor 14%, transparent);
+  }
+
+  /* ── Groups ───────────────────────────────────────────────────── */
+  .uni-groups { display: grid; gap: var(--space-7); }
+  .uni-groups__empty { padding: var(--space-5); border-radius: var(--radius-md); border: 1px dashed var(--glass-edge-strong); text-align: center; color: var(--text-3); font-size: var(--step--1); }
+  .uni-group { display: grid; gap: var(--space-3); }
+  .uni-group__head { display: flex; align-items: center; gap: var(--space-3); }
+  .uni-group__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    & svg { inline-size: 20px; block-size: 20px; }
+  }
+  .uni-group[data-ownership='public'] .uni-group__icon { color: color-mix(in oklab, var(--emerald) 55%, var(--cream)); border-color: color-mix(in oklab, var(--emerald) 45%, transparent); }
+  .uni-group[data-ownership='private'] .uni-group__icon { color: var(--gold); border-color: color-mix(in oklab, var(--gold) 45%, transparent); }
+  .uni-group__title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--step-1); }
+  .uni-group__count { font-size: var(--step--1); color: var(--text-3); font-weight: 700; }
+  .uni-group__blurb { font-size: var(--step--1); color: var(--text-3); }
+
+  /* Not yet classified: in neither tab, reachable here. */
+  .uni-pending {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--glass-edge-strong);
+    & summary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-block-size: var(--tap);
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text-2);
+      list-style: none;
+      & svg { inline-size: 18px; block-size: 18px; color: var(--text-3); }
+      &::-webkit-details-marker { display: none; }
+      &:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+    }
+    &[open] summary { margin-block-end: var(--space-2); }
+  }
+
   .uni-card__go { flex: none; inline-size: 18px; block-size: 18px; color: var(--text-3); transition: transform var(--dur-fast) var(--ease-out); }
 }

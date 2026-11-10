@@ -1,9 +1,12 @@
+import type { EssayReviewV2 } from './essay';
+
 /** Row shape of public.ai_conversations and the messages it stores. */
 export type CareerCard = { title: string; field: string; why: string; first_steps: string[]; day_in_life_query: string };
 
 export type RelatedItem = { type: 'opportunity' | 'university' | 'course'; slug: string; title: string };
 
-export type EssayReview = {
+/** Reviews saved before the international reviewer. New reviews are EssayReviewV2. */
+export type LegacyEssayReview = {
   score: number;
   summary: string;
   strengths: string[];
@@ -19,7 +22,7 @@ export type ChatMessage = {
   careers?: CareerCard[];
   /** Afriversity records the answer drew on (validated server-side). */
   related?: RelatedItem[];
-  review?: EssayReview;
+  review?: LegacyEssayReview | EssayReviewV2;
   /** 'library' = the AI was unavailable and the answer came from the careers table. */
   source?: 'ai' | 'library';
 };

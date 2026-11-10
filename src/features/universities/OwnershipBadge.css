@@ -1,0 +1,16 @@
+@layer components {
+  /* Ownership pill: public = emerald, private = gold, not yet verified = dashed neutral. */
+  .uni-own {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--2);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text-2);
+    border: 1px dashed var(--glass-edge-strong);
+    &[data-ownership='public'] { color: color-mix(in oklab, var(--emerald) 55%, var(--cream)); border: 1px solid color-mix(in oklab, var(--emerald) 55%, transparent); background: color-mix(in oklab, var(--emerald) 16%, transparent); }
+    &[data-ownership='private'] { color: var(--gold); border: 1px solid color-mix(in oklab, var(--gold) 50%, transparent); background: color-mix(in oklab, var(--gold) 12%, transparent); }
+  }
+}

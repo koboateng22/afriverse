@@ -1,5 +1,6 @@
 // INTEGRATION: groq — all model calls happen in the `gemini-chat` edge function (name kept from the Gemini era).
 import { invokeFunction } from '../../lib/functions';
+import type { Destination, EssayType, LimitUnit } from './essay';
 import { getSupabase } from '../../lib/supabase';
 import type { AiConversation, ChatMessage, ChatUsage } from './types';
 
@@ -31,13 +32,26 @@ export async function deleteConversation(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export type EssayTarget = { type: 'opportunity' | 'university'; slug: string };
+export type EssayRequest = {
+  essay: string;
+  destination: Destination;
+  country?: string;
+  essay_type: EssayType | 'auto';
+  university?: string;
+  programme?: string;
+  prompt?: string;
+  limit?: { value: number; unit: LimitUnit } | null;
+  /** A listed scholarship (opportunity slug), for scholarship essays. */
+  scholarship_slug?: string;
+};
 
-/** Pro: AI Essay Reviewer. Each review is stored as its own conversation. */
-export function reviewEssay(input: { essay: string; prompt?: string; target?: EssayTarget | null }): Promise<ChatReply> {
-  const body: Record<string, unknown> = { mode: 'essay', essay: input.essay };
-  if (input.prompt?.trim()) body.prompt = input.prompt.trim();
-  if (input.target) body.target = input.target;
+/** AI Essay Reviewer (international applications). Each review is stored as its own conversation. */
+export function reviewEssay(input: EssayRequest): Promise<ChatReply> {
+  const body: Record<string, unknown> = { mode: 'essay' };
+  for (const [k, v] of Object.entries(input)) {
+    if (v === undefined || v === null || (typeof v === 'string' && !v.trim())) continue;
+    body[k] = typeof v === 'string' ? v.trim() : v;
+  }
   return invokeFunction<ChatReply>('gemini-chat', body);
 }
 
