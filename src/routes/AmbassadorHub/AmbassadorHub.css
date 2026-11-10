@@ -1,0 +1,174 @@
+/* ──────────────────────────────────────────────────────────────
+   Ambassador Hub — the code card is the hero: strong glass, gold
+   rim, a slow halo behind it. Stat tiles are lighter glass so the
+   code stays the focal point. Text contrast never depends on the
+   halo: the card's tint is strong enough on its own.
+   ────────────────────────────────────────────────────────────── */
+@layer components {
+  .amb { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .amb__loading, .amb__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+
+  /* ── Code card ─────────────────────────────────────────────── */
+  .amb-code { position: relative; isolation: isolate; padding-block: var(--space-2); }
+  .amb-code__halo {
+    position: absolute;
+    inset: 6% 10%;
+    z-index: -1;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 90deg,
+      color-mix(in oklab, var(--gold) 80%, transparent),
+      color-mix(in oklab, var(--emerald) 70%, transparent) 35%,
+      color-mix(in oklab, var(--gold) 35%, transparent) 65%,
+      color-mix(in oklab, var(--gold) 80%, transparent)
+    );
+    filter: blur(40px);
+    opacity: 0.5;
+    will-change: transform, opacity;
+    animation: halo-breathe 18s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .amb-code__card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 60%),
+      var(--glass-sheen),
+      color-mix(in oklab, var(--void) 78%, transparent);
+    border: 1px solid transparent;
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-gold);
+
+    /* Gold rim (mask-drawn 1px ring), as on the Pro card. */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: var(--z-card-fx);
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(150deg, var(--gold), color-mix(in oklab, var(--gold) 20%, transparent) 40%, color-mix(in oklab, var(--emerald) 45%, transparent) 70%, var(--gold));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+  }
+  .amb-code__label {
+    font-family: var(--font-body);
+    font-size: var(--step--2);
+    font-weight: 800;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .amb-code__value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2rem, 9vw, 2.75rem);
+    letter-spacing: 0.08em;
+    line-height: 1.1;
+    color: var(--cream);
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+  .amb-code__link { font-size: var(--step--1); color: var(--text-3); overflow-wrap: anywhere; }
+  .amb-code__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: var(--space-3);
+    inline-size: 100%;
+    max-inline-size: 26rem;
+    margin-block-start: var(--space-3);
+    & .btn { inline-size: 100%; }
+    @media (max-width: 360px) { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ── Stats ─────────────────────────────────────────────────── */
+  .amb-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    list-style: none;
+    padding: 0;
+    @media (min-width: 720px) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  .amb-stat {
+    --accent: var(--text-2);
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    min-inline-size: 0;
+    &[data-tone='gold'] { --accent: var(--gold); border-color: color-mix(in oklab, var(--gold) 35%, transparent); }
+    &[data-tone='emerald'] { --accent: color-mix(in oklab, var(--emerald) 60%, var(--cream)); border-color: color-mix(in oklab, var(--emerald) 40%, transparent); }
+  }
+  .amb-stat__icon {
+    display: grid;
+    place-items: center;
+    inline-size: 34px;
+    block-size: 34px;
+    margin-block-end: var(--space-2);
+    border-radius: 50%;
+    color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+    & svg { inline-size: 18px; block-size: 18px; }
+  }
+  .amb-stat__value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--step-2);
+    color: var(--cream);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .amb-stat[data-tone='gold'] .amb-stat__value { color: var(--gold); }
+  .amb-stat__label { font-size: var(--step--1); font-weight: 700; color: var(--text); }
+  .amb-stat__hint { font-size: var(--step--2); color: var(--text-3); }
+
+  /* ── How you earn ──────────────────────────────────────────── */
+  .amb-how {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+  }
+  .amb-how__title { font-size: var(--step-1); }
+  .amb-how__steps {
+    display: grid;
+    gap: var(--space-3);
+    list-style: none;
+    padding: 0;
+    & li { display: flex; align-items: flex-start; gap: var(--space-3); font-size: var(--step--1); color: var(--text-2); }
+    & b {
+      display: grid;
+      place-items: center;
+      flex: none;
+      inline-size: 26px;
+      block-size: 26px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--ink);
+      font-size: var(--step--2);
+      font-weight: 800;
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .amb-code__card { background: var(--glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+}

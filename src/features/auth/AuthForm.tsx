@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lock, Mail, MailCheck, Phone, UserRound } from 'lucide-react';
+import { Gift, Lock, Mail, MailCheck, Phone, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
 import { errorMessage } from '../../lib/supabase';
 import { spring } from '../../lib/motion';
+import { normalizeCode, referralCodeValid, rememberReferral } from '../ambassador/api';
 import { sendPhoneOtp, signInWithEmail, signInWithGoogle, signUpWithEmail, toE164, verifyPhoneOtp, type SignupAs } from './api';
 import './AuthForm.css';
 
@@ -14,6 +15,10 @@ export type AuthFormProps = {
 };
 
 type Method = 'email' | 'phone';
+type CodeCheck = 'idle' | 'checking' | 'valid' | 'invalid';
+
+/** ?ref=CHRIS10 from an ambassador's shared link. */
+const codeFromUrl = () => normalizeCode(new URLSearchParams(window.location.search).get('ref') ?? '');
 
 function GoogleGlyph() {
   // Brand mark drawn with currentColor to stay inside the token palette.
@@ -38,10 +43,51 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const [busy, setBusy] = useState<'submit' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checkInbox, setCheckInbox] = useState<string | null>(null);
+  const [referral, setReferral] = useState(codeFromUrl);
+  const [codeCheck, setCodeCheck] = useState<CodeCheck>('idle');
 
   const isSignup = mode === 'signup';
   const allowPhone = audience === 'student';
   const allowGoogle = audience === 'student';
+  const askReferral = isSignup && audience === 'student';
+
+  /** The code to send, or '' for none. Throws for a code that doesn't exist, so nobody signs up thinking it counted. */
+  const checkedReferral = async (): Promise<string> => {
+    const code = normalizeCode(referral);
+    if (!askReferral || !code) return '';
+    if (codeCheck === 'valid') return code;
+    setCodeCheck('checking');
+    let ok: boolean;
+    try {
+      ok = await referralCodeValid(code);
+    } catch {
+      setCodeCheck('idle');
+      return code; // couldn't check: send it anyway, the server ignores unknown codes
+    }
+    setCodeCheck(ok ? 'valid' : 'invalid');
+    if (!ok) throw new Error(`We couldn't find the referral code ${code}. Check it with your ambassador, or clear the box to continue.`);
+    return code;
+  };
+
+  const referralField = askReferral && (
+    <Field
+      label="Have a referral code?"
+      icon={<Gift />}
+      placeholder="e.g. CHRIS10"
+      autoCapitalize="characters"
+      autoComplete="off"
+      spellCheck={false}
+      maxLength={16}
+      value={referral}
+      onChange={(e) => {
+        setReferral(normalizeCode(e.target.value));
+        setCodeCheck('idle');
+      }}
+      onBlur={() => void checkedReferral().catch(() => {})}
+      hint={codeCheck === 'valid' ? 'Code applied. Thanks for joining through a Campus Ambassador.' : codeCheck === 'checking' ? 'Checking code…' : 'Optional. From a Campus Ambassador.'}
+      error={codeCheck === 'invalid' ? "That code doesn't exist. Check it, or leave the box empty." : null}
+    />
+  );
 
   const run = async (kind: 'submit' | 'google', fn: () => Promise<void>) => {
     setError(null);
@@ -62,7 +108,8 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
     run('submit', async () => {
       if (isSignup) {
         if (password.length < 8) throw new Error('Use at least 8 characters for your password.');
-        const { needsConfirmation } = await signUpWithEmail({ email: email.trim(), password, fullName: fullName.trim(), as: audience });
+        const referralCode = await checkedReferral();
+        const { needsConfirmation } = await signUpWithEmail({ email: email.trim(), password, fullName: fullName.trim(), as: audience, referralCode });
         if (needsConfirmation) setCheckInbox(email.trim());
       } else {
         await signInWithEmail(email.trim(), password);
@@ -76,7 +123,8 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
       if (!otpSentTo) {
         const e164 = toE164(phone);
         if (!/^\+\d{9,15}$/.test(e164)) throw new Error('Enter a valid phone number, e.g. 055 123 4987 or +233 55 123 4987.');
-        await sendPhoneOtp(e164, isSignup ? fullName.trim() : undefined);
+        const referralCode = isSignup ? await checkedReferral() : '';
+        await sendPhoneOtp(e164, isSignup ? fullName.trim() : undefined, referralCode);
         setOtpSentTo(e164);
       } else {
         if (!/^\d{6}$/.test(otp.trim())) throw new Error('Enter the 6-digit code from the SMS.');
@@ -147,6 +195,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            {referralField}
             {error && <p className="auth-form__error" role="alert">{error}</p>}
             <Button type="submit" size="lg" block loading={busy === 'submit'} disabled={!email || !password || (isSignup && !fullName.trim())}>
               {isSignup ? (audience === 'mentor' ? 'Apply as a mentor' : 'Create account') : 'Sign in'}
@@ -188,6 +237,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
                 autoFocus
               />
             )}
+            {!otpSentTo && referralField}
             {error && <p className="auth-form__error" role="alert">{error}</p>}
             <Button type="submit" size="lg" block loading={busy === 'submit'} disabled={!otpSentTo ? !phone : otp.length !== 6}>
               {otpSentTo ? 'Verify code' : 'Send code'}
@@ -206,7 +256,13 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
           <div className="auth-form__or" aria-hidden="true">
             <span>or</span>
           </div>
-          <Button variant="secondary" size="lg" block icon={<GoogleGlyph />} loading={busy === 'google'} onClick={() => run('google', signInWithGoogle)}>
+          <Button variant="secondary" size="lg" block icon={<GoogleGlyph />} loading={busy === 'google'} onClick={() =>
+              run('google', async () => {
+                // Google leaves the site before the account exists: keep the code to claim on return.
+                if (askReferral) rememberReferral(await checkedReferral());
+                await signInWithGoogle();
+              })
+            }>
             Continue with Google
           </Button>
         </>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import type { Role } from '../profiles/types';
+import { isStudent, type Role } from '../profiles/types';
 import { homeFor, useAuth } from './useAuth';
 import { ConfigErrorScreen } from '../../components/ConfigErrorScreen/ConfigErrorScreen';
 import { FullscreenLoader } from '../../components/FullscreenLoader/FullscreenLoader';
@@ -32,7 +32,7 @@ export function ProtectedRoute({ roles, loginPath = '/login', denyPath, requireO
 
   if (!roles.includes(profile.role)) return <Navigate to={denyPath ?? homeFor(profile)} replace />;
 
-  if (profile.role === 'student' && requireOnboarded && !profile.onboarded_at) {
+  if (isStudent(profile.role) && requireOnboarded && !profile.onboarded_at) {
     return <Navigate to="/onboarding" replace />;
   }
   return <>{children}</>;

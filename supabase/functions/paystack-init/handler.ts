@@ -4,7 +4,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handle, HttpError, json, readJson } from '../_shared/http.ts';
 import { optionalEnv } from '../_shared/env.ts';
-import { requireUser, serviceClient } from '../_shared/supabase.ts';
+import { isStudent, requireUser, serviceClient } from '../_shared/supabase.ts';
 import { paystackRequest, paystackSecret } from '../_shared/paystack.ts';
 import { oneOf, optStr, str, uuid } from '../_shared/validate.ts';
 
@@ -246,7 +246,7 @@ export const handler = handle(async (req) => {
   const svc = serviceClient();
   const caller = await requireUser(req, svc); // 401 on a missing/invalid JWT
   paystackSecret(); // 500 if PAYSTACK_SECRET_KEY is missing — before anything is written
-  if (caller.role !== 'student') throw new HttpError(403, 'students_only', 'Only student accounts can make purchases');
+  if (!isStudent(caller.role)) throw new HttpError(403, 'students_only', 'Only student accounts can make purchases');
 
   const body = await readJson(req);
   const type = oneOf(body.type, 'type', ['subscription', 'application', 'mentor'] as const);

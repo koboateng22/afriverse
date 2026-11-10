@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import { errorMessage, getSupabase } from '../../lib/supabase';
 import { homeFor, useAuth } from './useAuth';
+import { claimPendingReferral } from '../ambassador/api';
+import { isStudent } from '../profiles/types';
 import { FullscreenLoader } from '../../components/FullscreenLoader/FullscreenLoader';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import './AuthLayout.css';
@@ -27,6 +29,7 @@ export default function AuthCallback() {
     return params.get('error_description');
   });
   const gotSession = useRef(false);
+  const leaving = useRef(false);
 
   // 1. Get the session from the Supabase client.
   useEffect(() => {
@@ -69,8 +72,12 @@ export default function AuthCallback() {
   useEffect(() => {
     if (!session) return;
     const caughtUp = auth.session?.user.id === session.user.id && !auth.loading;
-    if (!caughtUp) return;
-    navigate(auth.profile ? homeFor(auth.profile) : '/home', { replace: true });
+    if (!caughtUp || leaving.current) return;
+    leaving.current = true;
+    const go = () => navigate(auth.profile ? homeFor(auth.profile) : '/home', { replace: true });
+    // A Google sign-up started with a referral code: claim it now that the account exists.
+    if (isStudent(auth.profile?.role)) void claimPendingReferral().catch(() => {}).finally(go);
+    else go();
   }, [session, auth.session, auth.loading, auth.profile, navigate]);
 
   if (failure) {

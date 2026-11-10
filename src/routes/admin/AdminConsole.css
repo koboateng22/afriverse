@@ -136,6 +136,18 @@
 
   .admin-section__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+  /* Ambassadors: payout panel + verification lists. */
+  .amb-admin__totals dd { color: var(--gold); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .amb-admin__pay {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--highlight-soft);
+    border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+  }
+  .amb-admin__list { display: grid; gap: var(--space-2); }
+
   /* Opportunities → Pending Review (scraped by fetch-scholarships). */
   .admin-review {
     display: grid;

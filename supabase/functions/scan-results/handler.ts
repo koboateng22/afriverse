@@ -4,7 +4,7 @@
 // Result Calculator and saves them, and the database recomputes the aggregate.
 // Limits: SCANS_PER_DAY per student (result_scans), separate from AI chat.
 import { handle, HttpError, json, readJson } from '../_shared/http.ts';
-import { requireUser, serviceClient } from '../_shared/supabase.ts';
+import { isStudent, requireUser, serviceClient } from '../_shared/supabase.ts';
 import { readImageJson } from '../_shared/groq.ts';
 import { oneOf } from '../_shared/validate.ts';
 
@@ -58,7 +58,7 @@ function imageDataUrl(body: Record<string, unknown>): string {
 export const handler = handle(async (req) => {
   const svc = serviceClient();
   const caller = await requireUser(req, svc);
-  if (caller.role !== 'student') throw new HttpError(403, 'students_only', 'Only student accounts can scan result slips');
+  if (!isStudent(caller.role)) throw new HttpError(403, 'students_only', 'Only student accounts can scan result slips');
 
   const image = imageDataUrl(await readJson(req));
 

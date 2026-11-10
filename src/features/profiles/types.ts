@@ -1,5 +1,9 @@
 /** Row shape of public.profiles. */
-export type Role = 'student' | 'mentor' | 'admin';
+export type Role = 'student' | 'mentor' | 'admin' | 'ambassador';
+
+/** Roles that use the student app. Ambassadors (0018) are students with a referral code and the Ambassador Hub. */
+export const STUDENT_ROLES: Role[] = ['student', 'ambassador'];
+export const isStudent = (role: Role | null | undefined) => role === 'student' || role === 'ambassador';
 
 export type Profile = {
   id: string;

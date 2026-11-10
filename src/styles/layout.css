@@ -50,7 +50,7 @@
     body:has(.bottom-nav) .screen { padding-inline-start: var(--sidebar-w); }
 
     /* Forms, chat and the paywall read best as a centred column… */
-    .container:is(.auth, .auth-callback, .paywall, .checkout, .complete, .compass, .essay, .onboarding, .not-found, .config-error, .feed-loader__inner, .results-page) {
+    .container:is(.auth, .auth-callback, .paywall, .checkout, .complete, .compass, .essay, .onboarding, .not-found, .config-error, .feed-loader__inner, .results-page, .amb) {
       inline-size: min(100% - 2 * var(--gutter), var(--container-narrow));
     }
     /* …and long-form detail pages at a comfortable line length. */

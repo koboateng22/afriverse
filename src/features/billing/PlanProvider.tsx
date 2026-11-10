@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getSupabase } from '../../lib/supabase';
 import { useAuth } from '../auth/useAuth';
+import { isStudent as isStudentRole } from '../profiles/types';
 import type { BillingCustomer, Plan, Subscription } from './types';
 
 export type PlanState = {
@@ -26,7 +27,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [lastEnded, setLastEnded] = useState<Subscription | null>(null);
   const [billing, setBilling] = useState<BillingCustomer | null>(null);
   const [loading, setLoading] = useState(true);
-  const isStudent = profile?.role === 'student';
+  const isStudent = isStudentRole(profile?.role);
 
   const refresh = useCallback(async () => {
     if (!isStudent) {

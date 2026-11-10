@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Award, Building2, Calculator, Check, Compass, FileText, Flag, Headset, LogOut, Sparkles, Target, type LucideIcon } from 'lucide-react';
+import { Award, Building2, Calculator, Check, Compass, FileText, Flag, Gift, Headset, LogOut, Sparkles, Target, type LucideIcon } from 'lucide-react';
 import { usePaywall } from '../../features/billing/PaywallModal';
 import { fetchCounselorContact, whatsappLink } from '../../features/billing/api';
 import { Notice } from '../../components/Notice/Notice';
@@ -122,6 +122,9 @@ export default function Profile() {
         <motion.section className="profile__section" variants={riseItem} aria-labelledby="more-h">
           <h2 id="more-h" className="visually-hidden">Your Afriversity</h2>
           <div className="profile__links">
+            {p.role === 'ambassador' && (
+              <ListRow to="/ambassador" icon={Gift} label="Ambassador Hub" detail="Your referral code, sign-ups and earnings" badge="Ambassador" />
+            )}
             <ListRow
               to="/paywall"
               icon={Sparkles}

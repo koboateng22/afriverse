@@ -15,6 +15,7 @@ export function homeFor(profile: Profile | null): string {
     admin: '/admin',
     mentor: '/mentor/dashboard',
     student: profile.onboarded_at ? '/home' : '/onboarding',
+    ambassador: profile.onboarded_at ? '/home' : '/onboarding',
   };
   return byRole[profile.role];
 }

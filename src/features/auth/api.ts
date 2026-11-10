@@ -4,7 +4,7 @@ const callbackUrl = () => `${window.location.origin}/auth/callback`;
 
 export type SignupAs = 'student' | 'mentor';
 
-export async function signUpWithEmail(input: { email: string; password: string; fullName: string; as: SignupAs }) {
+export async function signUpWithEmail(input: { email: string; password: string; fullName: string; as: SignupAs; referralCode?: string }) {
   const { data, error } = await getSupabase().auth.signUp({
     email: input.email,
     password: input.password,
@@ -12,7 +12,8 @@ export async function signUpWithEmail(input: { email: string; password: string; 
       emailRedirectTo: callbackUrl(),
       // `signup_as` is read by the handle_new_user trigger, which only accepts
       // 'student' or 'mentor' (mentors start as pending). Admin can't be requested.
-      data: { full_name: input.fullName, signup_as: input.as },
+      // referral_code: an ambassador's code; the trigger keeps it only if it's live (0018).
+      data: { full_name: input.fullName, signup_as: input.as, ...(input.referralCode ? { referral_code: input.referralCode } : {}) },
     },
   });
   if (error) throw error;
@@ -32,11 +33,14 @@ export async function signInWithGoogle() {
   if (error) throw error;
 }
 
-/** Sends an SMS code. Creates the account on first use (student role). */
-export async function sendPhoneOtp(phone: string, fullName?: string) {
+/** Sends an SMS code. Creates the account on first use (student role, with the referral code if given). */
+export async function sendPhoneOtp(phone: string, fullName?: string, referralCode?: string) {
   const { error } = await getSupabase().auth.signInWithOtp({
     phone,
-    options: { shouldCreateUser: true, data: fullName ? { full_name: fullName, signup_as: 'student' } : { signup_as: 'student' } },
+    options: {
+      shouldCreateUser: true,
+      data: { signup_as: 'student', ...(fullName ? { full_name: fullName } : {}), ...(referralCode ? { referral_code: referralCode } : {}) },
+    },
   });
   if (error) throw error;
 }

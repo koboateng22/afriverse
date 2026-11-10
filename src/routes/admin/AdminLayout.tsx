@@ -15,6 +15,7 @@ const AdminUniversities = lazy(() => import('./AdminUniversities'));
 const AdminOpportunities = lazy(() => import('./AdminOpportunities'));
 const AdminCourses = lazy(() => import('./AdminCourses'));
 const AdminMentors = lazy(() => import('./AdminMentors'));
+const AdminAmbassadors = lazy(() => import('./AdminAmbassadors'));
 const AdminApplications = lazy(() => import('./AdminApplications'));
 const AdminPlans = lazy(() => import('./AdminPlans'));
 const AdminSettings = lazy(() => import('./AdminSettings'));
@@ -25,6 +26,7 @@ const TABS = [
   { to: '/admin/opportunities', label: 'Opportunities' },
   { to: '/admin/courses', label: 'Courses' },
   { to: '/admin/mentors', label: 'Mentors' },
+  { to: '/admin/ambassadors', label: 'Ambassadors' },
   { to: '/admin/applications', label: 'Applications' },
   { to: '/admin/plans', label: 'Pro plan' },
   { to: '/admin/settings', label: 'Settings' },
@@ -72,6 +74,7 @@ export default function AdminLayout() {
                   <Route path="opportunities" element={<AdminOpportunities />} />
                   <Route path="courses" element={<AdminCourses />} />
                   <Route path="mentors" element={<AdminMentors />} />
+                  <Route path="ambassadors" element={<AdminAmbassadors />} />
                   <Route path="applications" element={<AdminApplications />} />
                   <Route path="plans" element={<AdminPlans />} />
                   <Route path="settings" element={<AdminSettings />} />

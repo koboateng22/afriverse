@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType 
 import { AuthProvider } from './features/auth/AuthProvider';
 import { useAuth } from './features/auth/useAuth';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
+import { isStudent, STUDENT_ROLES } from './features/profiles/types';
 import { PlanProvider } from './features/billing/PlanProvider';
 import { PaywallProvider } from './features/billing/PaywallModal';
 import { Backdrop, GrainOverlay } from './components/Backdrop/Backdrop';
@@ -37,6 +38,7 @@ const CompleteApplication = lazy(() => import('./routes/CompleteApplication/Comp
 const EssayReview = lazy(() => import('./routes/EssayReview/EssayReview'));
 const Applications = lazy(() => import('./routes/Applications/Applications'));
 const Results = lazy(() => import('./routes/Results/Results'));
+const AmbassadorHub = lazy(() => import('./routes/AmbassadorHub/AmbassadorHub'));
 const Profile = lazy(loadProfile);
 const Paywall = lazy(loadPaywall);
 const Checkout = lazy(() => import('./routes/Checkout/Checkout'));
@@ -48,7 +50,7 @@ const MentorSessions = lazy(() => import('./routes/mentor/MentorSessions'));
 const MentorEarnings = lazy(() => import('./routes/mentor/MentorEarnings'));
 const AdminLayout = lazy(() => import('./routes/admin/AdminLayout'));
 
-const student = (el: ReactNode) => <ProtectedRoute roles={['student']}>{el}</ProtectedRoute>;
+const student = (el: ReactNode) => <ProtectedRoute roles={STUDENT_ROLES}>{el}</ProtectedRoute>;
 const mentor = (el: ReactNode) => (
   <ProtectedRoute roles={['mentor']} loginPath="/mentor/login">
     {el}
@@ -75,12 +77,12 @@ function AnimatedRoutes() {
   const navType = useNavigationType();
   const { profile } = useAuth();
   const path = location.pathname;
-  const showStudentNav = profile?.role === 'student' && Boolean(profile.onboarded_at) && navMatches(STUDENT_NAV, path) && !path.startsWith('/checkout');
+  const showStudentNav = isStudent(profile?.role) && Boolean(profile.onboarded_at) && navMatches(STUDENT_NAV, path) && !path.startsWith('/checkout');
   const showMentorNav = profile?.role === 'mentor' && navMatches(MENTOR_NAV, path);
   const heroBackdrop = path === '/' || path === '/signup';
   // The admin console animates its own sub-pages, so the whole group shares one key.
   const routeKey = path.startsWith('/admin') ? '/admin' : path;
-  usePrefetchTabs(profile?.role === 'student');
+  usePrefetchTabs(isStudent(profile?.role));
 
   // New screens start at the top (back/forward keeps the browser's position).
   // Runs before paint; the leaving screen has already pinned its own offset.
@@ -110,7 +112,7 @@ function AnimatedRoutes() {
             <Route
               path="/onboarding"
               element={
-                <ProtectedRoute roles={['student']} requireOnboarded={false}>
+                <ProtectedRoute roles={STUDENT_ROLES} requireOnboarded={false}>
                   <Onboarding />
                 </ProtectedRoute>
               }
@@ -129,6 +131,7 @@ function AnimatedRoutes() {
             <Route path="/applications/:id/complete" element={student(<CompleteApplication />)} />
             <Route path="/essay-review" element={student(<EssayReview />)} />
             <Route path="/results" element={student(<Results />)} />
+            <Route path="/ambassador" element={student(<AmbassadorHub />)} />
             <Route path="/profile" element={student(<Profile />)} />
             <Route path="/paywall" element={student(<Paywall />)} />
             <Route path="/checkout" element={student(<Checkout />)} />

@@ -146,6 +146,30 @@ function lessonInput(p: Payload) {
   };
 }
 
+// ── Ambassadors ──────────────────────────────────────────────────────────
+type AmbassadorRow = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  referral_code: string | null;
+  ambassador_pending_earnings_cents: number;
+  ambassador_total_paid_cents: number;
+  created_at: string;
+};
+const AMBASSADOR_COLS = 'id, full_name, email, phone, referral_code, ambassador_pending_earnings_cents, ambassador_total_paid_cents, created_at';
+
+/**
+ * "Chris Mensah" → "CHRIS" + digits: 2 digits first (CHRIS27), then 3 and 4 once
+ * those keep clashing, so a common first name never runs out. "AMB" when there's no usable name.
+ */
+const codeFrom = (name: string | null, attempt: number) => {
+  const first = (name ?? '').normalize('NFKD').replace(/[^A-Za-z]/g, ' ').trim().split(/\s+/)[0]?.toUpperCase().slice(0, 8) ?? '';
+  const digits = attempt < 3 ? 2 : attempt < 6 ? 3 : 4;
+  const n = Math.floor(10 ** (digits - 1) + Math.random() * 9 * 10 ** (digits - 1));
+  return `${first.length >= 2 ? first : 'AMB'}${n}`;
+};
+
 const ACTIONS: Record<string, Action> = {
   // ── Overview + revenue ────────────────────────────────────────────────
   'overview': async (svc) => {
@@ -311,6 +335,75 @@ const ACTIONS: Record<string, Action> = {
     const { data, error } = await svc.storage.from(RESULTS_BUCKET).createSignedUrl(path, 600);
     if (error || !data?.signedUrl) throw new HttpError(404, 'no_slip', 'The result slip file is missing');
     return { url: data.signedUrl };
+  },
+
+  // ── Ambassadors (referral payouts are manual: MoMo first, then Mark as Paid) ─
+  'ambassadors.list': async (svc) => {
+    const rows = (await must(svc.from('profiles').select(AMBASSADOR_COLS).eq('role', 'ambassador').order('ambassador_pending_earnings_cents', { ascending: false }))) as AmbassadorRow[];
+    const codes = rows.map((r) => r.referral_code).filter((c): c is string => Boolean(c));
+    const [signups, rewards] = await Promise.all([
+      codes.length ? (must(svc.from('profiles').select('referred_by').in('referred_by', codes)) as Promise<Array<{ referred_by: string }>>) : Promise.resolve([]),
+      rows.length ? (must(svc.from('referral_rewards').select('ambassador_id').in('ambassador_id', rows.map((r) => r.id))) as Promise<Array<{ ambassador_id: string }>>) : Promise.resolve([]),
+    ]);
+    return rows.map((r) => ({
+      ...r,
+      signups: signups.filter((x) => x.referred_by === r.referral_code).length,
+      upgrades: rewards.filter((x) => x.ambassador_id === r.id).length,
+    }));
+  },
+  // Turns an existing student account into an ambassador with a unique code.
+  'ambassadors.add': async (svc, p) => {
+    const email = str(p.email, 'email', { min: 5, max: 254 }).toLowerCase();
+    const wanted = p.referral_code ? str(p.referral_code, 'referral_code', { max: 16 }).toUpperCase().replace(/\s+/g, '') : '';
+    if (wanted && !/^[A-Z0-9]{4,16}$/.test(wanted)) throw new HttpError(400, 'invalid_input', 'referral_code: 4–16 letters or numbers, e.g. CHRIS10', { field: 'referral_code' });
+    const { data: found, error } = await svc.from('profiles').select('id, role, full_name, referral_code').ilike('email', email).maybeSingle();
+    if (error) throw error;
+    if (!found) throw new HttpError(404, 'not_found', 'No account uses that email. Ask them to sign up first.');
+    if (found.role === 'ambassador') throw new HttpError(409, 'already_ambassador', 'They are already an ambassador');
+    if (found.role !== 'student') throw new HttpError(409, 'not_student', 'Only student accounts can become ambassadors');
+    for (let attempt = 0; attempt < 9; attempt++) {
+      // Their old code (if they were an ambassador before) comes back first.
+      const code = wanted || (attempt === 0 && found.referral_code) || codeFrom(found.full_name as string | null, attempt);
+      const { data, error: upErr } = await svc.from('profiles').update({ role: 'ambassador', referral_code: code }).eq('id', found.id).select(AMBASSADOR_COLS).single();
+      if (!upErr) return data;
+      if ((upErr as { code?: string }).code !== '23505') throw upErr;
+      if (wanted) throw new HttpError(409, 'code_taken', `${wanted} is already someone's code. Pick another.`);
+    }
+    throw new HttpError(409, 'code_taken', 'Could not find a free code. Enter one yourself.');
+  },
+  'ambassadors.remove': async (svc, p) => {
+    const id = uuid(p.id, 'id');
+    const row = (await must(svc.from('profiles').select('ambassador_pending_earnings_cents').eq('id', id).eq('role', 'ambassador').maybeSingle())) as { ambassador_pending_earnings_cents: number } | null;
+    if (!row) throw new HttpError(404, 'not_found', 'Ambassador not found');
+    if (row.ambassador_pending_earnings_cents > 0) {
+      throw new HttpError(409, 'pending_earnings', `Pay their pending GHS ${(row.ambassador_pending_earnings_cents / 100).toFixed(2)} and mark it paid first.`);
+    }
+    // Back to a plain student. The code stops working for new sign-ups; history is kept.
+    return must(svc.from('profiles').update({ role: 'student' }).eq('id', id).select(AMBASSADOR_COLS).single());
+  },
+  // Verification before paying: who they referred, when each bonus was earned, past payouts.
+  'ambassadors.detail': async (svc, p) => {
+    const id = uuid(p.id, 'id');
+    const [rewards, payouts] = await Promise.all([
+      must(svc.from('referral_rewards').select('id, amount_cents, created_at, code, student:profiles!referral_rewards_referred_user_id_fkey(full_name, email, phone, created_at)').eq('ambassador_id', id).order('created_at', { ascending: false }).limit(200)),
+      must(svc.from('ambassador_payouts').select('id, amount_cents, reference, created_at').eq('ambassador_id', id).order('created_at', { ascending: false }).limit(50)),
+    ]);
+    return { rewards, payouts };
+  },
+  // The admin has sent the MoMo: move exactly that amount from pending to paid.
+  'ambassadors.mark_paid': async (svc, p, adminId) => {
+    const amount = int(p.amount_cents, 'amount_cents', { min: 1, max: 100_000_000 });
+    const { data, error } = await svc.rpc('ambassador_mark_paid', {
+      p_ambassador: uuid(p.id, 'id'),
+      p_amount: amount,
+      p_admin: adminId,
+      p_reference: optStr(p.reference, 'reference', 120),
+    });
+    if (error) {
+      if ((error as { code?: string }).code === '40001') throw new HttpError(409, 'pending_changed', 'Their pending earnings changed. Reload, check the new amount, then mark it paid.');
+      throw error;
+    }
+    return data;
   },
 
   // ── Settings (WhatsApp numbers, AI daily limit) ────────────────────────
