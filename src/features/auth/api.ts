@@ -4,7 +4,24 @@ const callbackUrl = () => `${window.location.origin}/auth/callback`;
 
 export type SignupAs = 'student' | 'mentor';
 
-export async function signUpWithEmail(input: { email: string; password: string; fullName: string; as: SignupAs; referralCode?: string }) {
+/** Thrown when the email already has an account; the form offers a sign-in link instead. */
+export class EmailTakenError extends Error {
+  constructor() {
+    super('This email is already registered. Please sign in instead.');
+    this.name = 'EmailTakenError';
+  }
+}
+
+export type MentorApplication = { expertise: string; rate_cents: number; linkedin_url: string };
+
+export async function signUpWithEmail(input: {
+  email: string;
+  password: string;
+  fullName: string;
+  as: SignupAs;
+  referralCode?: string;
+  mentorApplication?: MentorApplication;
+}) {
   const { data, error } = await getSupabase().auth.signUp({
     email: input.email,
     password: input.password,
@@ -13,11 +30,47 @@ export async function signUpWithEmail(input: { email: string; password: string; 
       // `signup_as` is read by the handle_new_user trigger, which only accepts
       // 'student' or 'mentor' (mentors start as pending). Admin can't be requested.
       // referral_code: an ambassador's code; the trigger keeps it only if it's live (0018).
-      data: { full_name: input.fullName, signup_as: input.as, ...(input.referralCode ? { referral_code: input.referralCode } : {}) },
+      // mentor_application: saved to mentor_applications by the same trigger (0021).
+      data: {
+        full_name: input.fullName,
+        signup_as: input.as,
+        ...(input.referralCode ? { referral_code: input.referralCode } : {}),
+        ...(input.mentorApplication ? { mentor_application: input.mentorApplication } : {}),
+      },
     },
   });
+  // With email confirmation off, Supabase says so directly.
+  if (error && /already (been )?registered|already exists/i.test(error.message)) throw new EmailTakenError();
   if (error) throw error;
+  // With confirmation on, it hides that the email exists: a user with no identities comes back.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new EmailTakenError();
   return { needsConfirmation: !data.session };
+}
+
+/** Sends the reset link. Always "succeeds" to the caller, so nobody can probe which emails have accounts. */
+export async function requestPasswordReset(email: string) {
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/update-password` });
+  if (error && /rate|too many|429/i.test(`${error.message} ${(error as { status?: number }).status ?? ''}`)) {
+    throw new Error('Too many reset requests. Wait a few minutes, then try again.');
+  }
+}
+
+/** Sets a new password for the user signed in through the reset link. */
+export async function updatePassword(password: string) {
+  const { error } = await getSupabase().auth.updateUser({ password });
+  if (error) throw error;
+}
+
+/** Friendlier words for the auth errors students actually hit. */
+export function authErrorMessage(e: unknown): string {
+  const msg = e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : String(e ?? '');
+  const status = (e as { status?: number } | null)?.status;
+  if (status === 429 || /rate limit|too many requests|over_request_rate_limit/i.test(msg)) return 'Too many attempts. Wait a minute, then try again.';
+  if (/invalid login credentials/i.test(msg)) return 'That email and password don’t match. Try again, or reset your password.';
+  if (/email not confirmed/i.test(msg)) return 'Confirm your email first: open the link we sent you.';
+  if (/same.*password|different from the old/i.test(msg)) return 'Choose a password different from your old one.';
+  if (/weak|at least \d+ characters|password should/i.test(msg)) return 'Choose a stronger password: at least 8 characters.';
+  return msg || 'Something went wrong. Please try again.';
 }
 
 export async function signInWithEmail(email: string, password: string) {

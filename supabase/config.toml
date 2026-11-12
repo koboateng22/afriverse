@@ -3,7 +3,16 @@ project_id = "afriversity"
 
 [auth]
 site_url = "http://localhost:5173"
-additional_redirect_urls = ["http://localhost:5173/auth/callback"]
+# /update-password is where password-reset emails land.
+additional_redirect_urls = ["http://localhost:5173/auth/callback", "http://localhost:5173/update-password"]
+# Matches the signup form's rule.
+minimum_password_length = 8
+
+# Per IP. Supabase counts sign-ins and sign-ups per 5-minute window:
+# 25 per 5 minutes ≈ 5 attempts a minute. The hosted project uses the values in
+# Dashboard → Authentication → Rate Limits; set the same there.
+[auth.rate_limit]
+sign_in_sign_ups = 25
 
 [auth.email]
 enable_confirmations = true

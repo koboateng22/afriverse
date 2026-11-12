@@ -61,4 +61,17 @@
     & svg { inline-size: 32px; block-size: 32px; color: var(--gold); }
     & h2 { font-size: var(--step-2); }
   }
+
+  .auth-form__forgot {
+    justify-self: end;
+    margin-block-start: calc(-1 * var(--space-2));
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+  }
+  .auth-form__error a { color: inherit; font-weight: 800; text-decoration: underline; }
+  .auth-form__note { font-size: var(--step--2); color: var(--text-3); text-align: center; }
 }

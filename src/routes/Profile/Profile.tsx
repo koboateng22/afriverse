@@ -125,6 +125,9 @@ export default function Profile() {
             {p.role === 'ambassador' && (
               <ListRow to="/ambassador" icon={Gift} label="Ambassador Hub" detail="Your referral code, sign-ups and earnings" badge="Ambassador" />
             )}
+            {p.role === 'pending_ambassador' && (
+              <ListRow to="/ambassador-apply" icon={Gift} label="Ambassador application" detail="Under review. We’ll contact you on WhatsApp." badge="Pending" />
+            )}
             <ListRow
               to="/paywall"
               icon={Sparkles}
@@ -140,6 +143,9 @@ export default function Profile() {
             />
             <ListRow to="/applications" icon={FileText} label="My applications" detail="Track university applications" />
             <ListRow to="/apply-university" icon={Building2} label="Apply to a university" detail="Let our concierge apply for you" />
+            {p.role === 'student' && (
+              <ListRow to="/ambassador-apply" icon={Gift} label="Become a Campus Ambassador" detail="Earn GH₵ 5 for every friend who goes Pro" />
+            )}
           </div>
           {counselError && <Notice tone="error">{counselError}</Notice>}
         </motion.section>

@@ -6,8 +6,8 @@ Three surfaces:
 
 | Surface | Routes |
 |---|---|
-| **Student** | `/`, `/login`, `/signup`, `/onboarding`, `/home`, `/opportunity/:id`, `/career-compass`, `/courses`, `/courses/:id`, `/essay-review`, `/mentors`, `/mentors/:id`, `/apply-university`, `/apply-university/:id`, `/applications`, `/applications/:id/complete`, `/profile`, `/results`, `/ambassador` (ambassadors), `/paywall`, `/checkout` |
-| **Mentor** | `/mentor/login` (quiet link at the bottom of `/login`), `/mentor/dashboard`, `/mentor/sessions`, `/mentor/earnings` |
+| **Student** | `/`, `/login`, `/signup`, `/reset-password`, `/update-password`, `/ambassador-apply`, `/onboarding`, `/home`, `/opportunity/:id`, `/career-compass`, `/courses`, `/courses/:id`, `/essay-review`, `/mentors`, `/mentors/:id`, `/apply-university`, `/apply-university/:id`, `/applications`, `/applications/:id/complete`, `/profile`, `/results`, `/ambassador` (ambassadors), `/paywall`, `/checkout` |
+| **Mentor** | `/mentor/login` (quiet link at the bottom of `/login`), `/mentor-apply`, `/mentor/dashboard`, `/mentor/sessions`, `/mentor/earnings` |
 | **Admin** | `/admin`, `/admin/universities`, `/admin/opportunities`, `/admin/courses`, `/admin/mentors`, `/admin/ambassadors`, `/admin/applications`, `/admin/plans`, `/admin/settings` — never linked; non-admins are sent to `/` |
 
 Revenue, all in **Ghana cedis (GHS)**:
@@ -36,7 +36,7 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0020
+npx supabase db push      # applies supabase/migrations/0001 … 0021
 ```
 
 Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 40) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
@@ -75,6 +75,11 @@ npx supabase functions deploy scan-results
 npx supabase functions deploy scrape-university
 npx supabase functions deploy fetch-scholarships
 ```
+
+**Auth settings (Supabase Dashboard → Authentication):**
+- *URL Configuration*: add `https://<your-domain>/update-password` (and `/auth/callback`) to the redirect URLs, or password-reset links won't open.
+- *Rate Limits*: sign-ups and sign-ins per 5 minutes per IP → **25** (≈ 5 a minute). `supabase/config.toml` sets the same for local development.
+- *Providers → Email*: minimum password length **8** (the forms ask for 8).
 
 **After deploying, open Admin → Settings** and set the support WhatsApp number (powers "Need help? Send your documents via WhatsApp." on the application form) and the counsellor WhatsApp number Pro students are given. The admin overview warns until both are set.
 

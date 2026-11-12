@@ -12,7 +12,14 @@ import type { Mentor } from '../../features/mentors/types';
 import { formatMoney } from '../../lib/money';
 import { riseItem, staggerParent } from '../../lib/motion';
 
-type Row = Mentor & { email: string | null; subaccount_code: string | null; proposed_rate_cents: number | null; rate_review: 'none' | 'pending' | 'approved' | 'rejected' };
+type Row = Mentor & {
+  email: string | null;
+  subaccount_code: string | null;
+  proposed_rate_cents: number | null;
+  rate_review: 'none' | 'pending' | 'approved' | 'rejected';
+  /** From /mentor-apply (0021); null for mentors who joined before it. */
+  application?: { expertise: string; rate_cents: number | null; linkedin_url: string | null; created_at: string } | null;
+};
 
 const ghs = (c: number | null | undefined) => (c ? `${formatMoney(c, 'GHS')}/hr` : '—');
 // Pending accounts first, then rates waiting for review.
@@ -90,6 +97,25 @@ export default function AdminMentors() {
       <Sheet variant="side" open={Boolean(current)} onClose={() => setOpenId(null)} title={current ? current.display_name : 'Mentor'} description={current?.email ?? undefined}>
         {current && (
           <div className="admin-form">
+            {current.application && (
+              <dl className="admin-details" aria-label="Application">
+                <div><dt>Applied</dt><dd>{current.application.created_at.slice(0, 10)}</dd></div>
+                <div><dt>Expertise</dt><dd>{current.application.expertise || '—'}</dd></div>
+                <div><dt>Asked rate</dt><dd>{current.application.rate_cents ? formatMoney(current.application.rate_cents, 'GHS') + ' per session' : '—'}</dd></div>
+                <div>
+                  <dt>LinkedIn</dt>
+                  <dd>
+                    {current.application.linkedin_url ? (
+                      <a className="admin-lesson-link" href={current.application.linkedin_url} target="_blank" rel="noopener noreferrer">
+                        {current.application.linkedin_url.replace(/^https:\/\/(www\.)?/, '')}
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            )}
             <section className="rate-review" data-state={current.rate_review} aria-labelledby="rr-h">
               <h3 id="rr-h" className="uni-form__legend">Hourly rate</h3>
               <div className="rate-review__nums">

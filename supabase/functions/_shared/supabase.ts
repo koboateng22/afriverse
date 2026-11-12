@@ -17,10 +17,10 @@ export function userClient(jwt: string): SupabaseClient {
   });
 }
 
-export type Caller = { user: User; jwt: string; role: 'student' | 'mentor' | 'admin' | 'ambassador' };
+export type Caller = { user: User; jwt: string; role: 'student' | 'mentor' | 'admin' | 'ambassador' | 'pending_ambassador' };
 
-/** Ambassadors (0018) are students with a referral code: they get everything students get. */
-export const isStudent = (role: Caller['role']) => role === 'student' || role === 'ambassador';
+/** Ambassadors (0018) and applicants (0021) are students too: they get everything students get. */
+export const isStudent = (role: Caller['role']) => role === 'student' || role === 'ambassador' || role === 'pending_ambassador';
 
 /**
  * Verifies the Supabase JWT on the request with the Auth server (not just by

@@ -62,3 +62,11 @@ export const whatsappShareUrl = (code: string) =>
   `https://wa.me/?text=${encodeURIComponent(
     `I use Afriversity to find scholarships and apply to universities, and the AI counsellor is free. Join with my code ${code}: ${referralLink(code)}`,
   )}`;
+
+export type AmbassadorApplication = { fullName: string; university: string; phone: string; why: string };
+
+/** /ambassador-apply: saves the application and marks the student pending_ambassador (RPC, 0021). */
+export async function applyAmbassador(a: AmbassadorApplication): Promise<void> {
+  const { error } = await getSupabase().rpc('apply_ambassador', { p_full_name: a.fullName, p_university: a.university, p_phone: a.phone, p_why: a.why });
+  if (error) throw error;
+}

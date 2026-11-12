@@ -17,6 +17,7 @@
     color: var(--text-3);
   }
 
+  .auth-quiet-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 var(--space-2); }
   .auth-quiet-link {
     display: inline-flex;
     align-items: center;

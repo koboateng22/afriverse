@@ -10,6 +10,7 @@ import { PaywallProvider } from './features/billing/PaywallModal';
 import { Backdrop, GrainOverlay } from './components/Backdrop/Backdrop';
 import { BottomNav, MENTOR_NAV, navMatches, STUDENT_NAV } from './components/BottomNav/BottomNav';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
+import { ToastProvider } from './components/Toast/Toast';
 import { FullscreenLoader } from './components/FullscreenLoader/FullscreenLoader';
 import Landing from './routes/Landing/Landing';
 
@@ -23,6 +24,10 @@ const loadCompass = () => import('./routes/CareerCompass/CareerCompass');
 const loadPaywall = () => import('./routes/Paywall/Paywall');
 const Login = lazy(() => import('./routes/auth/Login'));
 const Signup = lazy(() => import('./routes/auth/Signup'));
+const ResetPassword = lazy(() => import('./routes/auth/ResetPassword'));
+const UpdatePassword = lazy(() => import('./routes/auth/UpdatePassword'));
+const AmbassadorApply = lazy(() => import('./routes/auth/AmbassadorApply'));
+const MentorApply = lazy(() => import('./routes/mentor/MentorApply'));
 const AuthCallback = lazy(() => import('./features/auth/AuthCallback'));
 const Onboarding = lazy(() => import('./routes/Onboarding/Onboarding'));
 const Home = lazy(loadHome);
@@ -79,7 +84,7 @@ function AnimatedRoutes() {
   const path = location.pathname;
   const showStudentNav = isStudent(profile?.role) && Boolean(profile.onboarded_at) && navMatches(STUDENT_NAV, path) && !path.startsWith('/checkout');
   const showMentorNav = profile?.role === 'mentor' && navMatches(MENTOR_NAV, path);
-  const heroBackdrop = path === '/' || path === '/signup';
+  const heroBackdrop = path === '/' || path === '/signup' || path === '/ambassador-apply' || path === '/mentor-apply';
   // The admin console animates its own sub-pages, so the whole group shares one key.
   const routeKey = path.startsWith('/admin') ? '/admin' : path;
   usePrefetchTabs(isStudent(profile?.role));
@@ -105,6 +110,9 @@ function AnimatedRoutes() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/update-password" element={<UpdatePassword />} />
+            <Route path="/ambassador-apply" element={<AmbassadorApply />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/scratch" element={<Scratch />} />
 
@@ -138,6 +146,7 @@ function AnimatedRoutes() {
 
             {/* ── Mentor (entry: quiet link on /login only) ──────── */}
             <Route path="/mentor/login" element={<MentorLogin />} />
+            <Route path="/mentor-apply" element={<MentorApply />} />
             <Route path="/mentor" element={<Navigate to="/mentor/dashboard" replace />} />
             <Route path="/mentor/dashboard" element={mentor(<MentorDashboard />)} />
             <Route path="/mentor/sessions" element={mentor(<MentorSessions />)} />
@@ -173,8 +182,10 @@ export function App() {
         <AuthProvider>
           <PlanProvider>
             <PaywallProvider>
-              <AnimatedRoutes />
-              <GrainOverlay />
+              <ToastProvider>
+                <AnimatedRoutes />
+                <GrainOverlay />
+              </ToastProvider>
             </PaywallProvider>
           </PlanProvider>
         </AuthProvider>

@@ -1,0 +1,50 @@
+@layer components {
+  .toasts {
+    position: fixed;
+    z-index: calc(var(--z-sheet) + 10);
+    inset-inline: var(--space-4);
+    inset-block-start: calc(var(--space-4) + env(safe-area-inset-top, 0px));
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    pointer-events: none;
+    @media (min-width: 720px) {
+      inset-inline: auto var(--space-6);
+      inset-block: auto calc(var(--space-6) + var(--safe-bottom, 0px));
+      justify-items: end;
+    }
+  }
+  .toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    inline-size: min(100%, 26rem);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge-strong);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    color: var(--text);
+    font-size: var(--step--1);
+    & > svg { flex: none; inline-size: 20px; block-size: 20px; margin-block-start: 1px; }
+    & p { flex: 1; min-inline-size: 0; }
+    &[data-tone='success'] > svg { color: color-mix(in oklab, var(--emerald) 55%, var(--cream)); }
+    &[data-tone='error'] { border-color: color-mix(in oklab, var(--terracotta) 55%, transparent); & > svg { color: var(--terracotta); } }
+  }
+  .toast__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 50%;
+    color: var(--text-3);
+    & svg { inline-size: 16px; block-size: 16px; }
+    &:hover { color: var(--text); background: var(--glass-wash); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .toast { background: var(--glass-solid); } }
+}

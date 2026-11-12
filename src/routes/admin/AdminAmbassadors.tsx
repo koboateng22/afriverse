@@ -35,6 +35,88 @@ type Detail = {
 const cedis = (cents: number) => formatMoney(cents, 'GHS');
 const day = (iso: string) => formatDay(iso.slice(0, 10));
 
+type Application = {
+  id: string;
+  user_id: string;
+  full_name: string;
+  university: string;
+  phone: string;
+  why: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  profile: { email: string | null; role: string } | null;
+};
+
+const waLink = (phone: string) => `https://wa.me/${phone.replace(/\D/g, '')}`;
+
+/** Applications from /ambassador-apply (0021). Approve gives them a referral code. */
+function ApplicationsPanel({ onApproved }: { onApproved: () => void }) {
+  const { data, error, mutate } = useAdminData<Application[]>('ambassadors.applications');
+  const pending = asArray(data).filter((a) => a.status === 'pending');
+  const [codes, setCodes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ tone: 'error' | 'success'; text: string } | null>(null);
+
+  const review = async (a: Application, decision: 'approve' | 'reject') => {
+    if (decision === 'reject' && !window.confirm(`Reject ${a.full_name}'s application? They stay a normal student.`)) return;
+    setBusy(a.id + decision);
+    setMsg(null);
+    const err = await mutate('ambassadors.review', { id: a.id, decision, referral_code: codes[a.id] || undefined });
+    setBusy(null);
+    if (err) return setMsg({ tone: 'error', text: err });
+    setMsg({ tone: 'success', text: decision === 'approve' ? `${a.full_name} is now an ambassador.` : `${a.full_name}'s application was rejected.` });
+    if (decision === 'approve') onApproved();
+  };
+
+  if (error) {
+    return /ambassador_applications|does not exist|schema cache/i.test(error) ? <Notice tone="info">Run migration 0021 to receive ambassador applications.</Notice> : <Notice tone="error">{error}</Notice>;
+  }
+  return (
+    <section className="admin-review" aria-labelledby="amb-apps-h">
+      <h2 id="amb-apps-h" className="admin-review__title">
+        Applications <span className="admin-review__count">{pending.length}</span>
+      </h2>
+      <p className="admin-section__sub">From “Apply to be a Campus Ambassador”. Chat to them on WhatsApp, then approve or reject.</p>
+      {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+      {!data && <Skeleton shape="block" height="80px" label="Loading applications" />}
+      {data && pending.length === 0 && <p className="admin-review__empty">No applications waiting.</p>}
+      {pending.length > 0 && (
+        <ul className="admin-list" role="list">
+          {pending.map((a) => (
+            <li key={a.id} className="admin-row admin-row--review">
+              <div className="admin-row__main">
+                <span className="admin-row__title">{a.full_name}</span>
+                <span className="admin-row__meta">
+                  {a.university} · {a.profile?.email ?? 'no email'} · applied {day(a.created_at)}
+                </span>
+                <p className="amb-admin__why">“{a.why}”</p>
+              </div>
+              <div className="admin-row__aside">
+                <a className="btn" data-variant="secondary" data-size="sm" href={waLink(a.phone)} target="_blank" rel="noopener noreferrer">
+                  WhatsApp {a.phone}
+                </a>
+                <Field
+                  label="Code (optional)"
+                  placeholder="Auto"
+                  value={codes[a.id] ?? ''}
+                  maxLength={16}
+                  onChange={(e) => setCodes((c) => ({ ...c, [a.id]: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))}
+                />
+                <Button variant="quiet" size="sm" loading={busy === a.id + 'reject'} disabled={Boolean(busy)} onClick={() => void review(a, 'reject')}>
+                  Reject
+                </Button>
+                <Button size="sm" loading={busy === a.id + 'approve'} disabled={Boolean(busy)} onClick={() => void review(a, 'approve')}>
+                  Approve
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /**
  * Campus Ambassadors. Earnings stay pending until an admin has sent the MoMo,
  * then "Mark as Paid" moves exactly that amount to paid (ambassador_mark_paid, 0018).
@@ -137,6 +219,8 @@ export default function AdminAmbassadors() {
           </Button>
         </form>
       )}
+
+      <ApplicationsPanel onApproved={reload} />
 
       {error && <Notice tone="error">{error}</Notice>}
       {!data && !error && <Skeleton shape="block" height="160px" label="Loading" />}

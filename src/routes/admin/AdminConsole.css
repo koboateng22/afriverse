@@ -147,6 +147,7 @@
     border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
   }
   .amb-admin__list { display: grid; gap: var(--space-2); }
+  .amb-admin__why { font-size: var(--step--1); color: var(--text-2); font-style: italic; overflow-wrap: anywhere; }
 
   /* Opportunities → Pending Review (scraped by fetch-scholarships). */
   .admin-review {

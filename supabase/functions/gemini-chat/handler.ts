@@ -41,7 +41,8 @@ type ChatMessage = {
 };
 
 const HISTORY_TURNS = 10;
-const BURST_PER_MINUTE = 12;
+// Per user, all AI modes together: protects the Groq rate limits from spam.
+const BURST_PER_MINUTE = 5;
 // Used only if app_settings has no free_ai_daily_limit row (migration 0016 sets 50).
 const DEFAULT_DAILY_LIMIT = 50;
 // Long enough to paste a CV or an essay draft into the chat (matches the composer).

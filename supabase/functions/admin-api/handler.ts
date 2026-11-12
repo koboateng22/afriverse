@@ -189,6 +189,33 @@ const codeFrom = (name: string | null, attempt: number) => {
   return `${first.length >= 2 ? first : 'AMB'}${n}`;
 };
 
+type AmbassadorCandidate = { id: string; role: string; full_name: string | null; referral_code: string | null };
+
+const wantedCode = (p: Payload) => {
+  const wanted = p.referral_code ? str(p.referral_code, 'referral_code', { max: 16 }).toUpperCase().replace(/\s+/g, '') : '';
+  if (wanted && !/^[A-Z0-9]{4,16}$/.test(wanted)) throw new HttpError(400, 'invalid_input', 'referral_code: 4–16 letters or numbers, e.g. CHRIS10', { field: 'referral_code' });
+  return wanted;
+};
+
+/** Student (or applicant) → ambassador with a unique referral code. */
+async function makeAmbassador(svc: SupabaseClient, found: AmbassadorCandidate, wanted: string) {
+  if (found.role === 'ambassador') throw new HttpError(409, 'already_ambassador', 'They are already an ambassador');
+  if (found.role !== 'student' && found.role !== 'pending_ambassador') throw new HttpError(409, 'not_student', 'Only student accounts can become ambassadors');
+  for (let attempt = 0; attempt < 9; attempt++) {
+    // Their old code (if they were an ambassador before) comes back first.
+    const code = wanted || (attempt === 0 && found.referral_code) || codeFrom(found.full_name, attempt);
+    const { data, error: upErr } = await svc.from('profiles').update({ role: 'ambassador', referral_code: code }).eq('id', found.id).select(AMBASSADOR_COLS).single();
+    if (!upErr) {
+      // Adding someone by email also settles any application they had open.
+      await svc.from('ambassador_applications').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('user_id', found.id).eq('status', 'pending');
+      return data;
+    }
+    if ((upErr as { code?: string }).code !== '23505') throw upErr;
+    if (wanted) throw new HttpError(409, 'code_taken', `${wanted} is already someone's code. Pick another.`);
+  }
+  throw new HttpError(409, 'code_taken', 'Could not find a free code. Enter one yourself.');
+}
+
 const ACTIONS: Record<string, Action> = {
   // ── Overview + revenue ────────────────────────────────────────────────
   'overview': async (svc) => {
@@ -292,10 +319,12 @@ const ACTIONS: Record<string, Action> = {
   // ── Mentors ───────────────────────────────────────────────────────────
   'mentors.list': async (svc) => {
     const rows = (await must(svc.from('mentors').select('*').order('created_at', { ascending: false }))) as Array<Record<string, unknown>>;
+    // Applications from /mentor-apply (0021): expertise, proposed rate, LinkedIn. Missing table = none yet.
+    const { data: apps } = await svc.from('mentor_applications').select('user_id, expertise, rate_cents, linkedin_url, created_at');
     const withEmail = [];
     for (const m of rows) {
       const { data } = await svc.auth.admin.getUserById(m.id as string);
-      withEmail.push({ ...m, email: data.user?.email ?? null });
+      withEmail.push({ ...m, email: data.user?.email ?? null, application: (apps ?? []).find((a) => a.user_id === m.id) ?? null });
     }
     return withEmail;
   },
@@ -382,22 +411,40 @@ const ACTIONS: Record<string, Action> = {
   // Turns an existing student account into an ambassador with a unique code.
   'ambassadors.add': async (svc, p) => {
     const email = str(p.email, 'email', { min: 5, max: 254 }).toLowerCase();
-    const wanted = p.referral_code ? str(p.referral_code, 'referral_code', { max: 16 }).toUpperCase().replace(/\s+/g, '') : '';
-    if (wanted && !/^[A-Z0-9]{4,16}$/.test(wanted)) throw new HttpError(400, 'invalid_input', 'referral_code: 4–16 letters or numbers, e.g. CHRIS10', { field: 'referral_code' });
     const { data: found, error } = await svc.from('profiles').select('id, role, full_name, referral_code').ilike('email', email).maybeSingle();
     if (error) throw error;
     if (!found) throw new HttpError(404, 'not_found', 'No account uses that email. Ask them to sign up first.');
-    if (found.role === 'ambassador') throw new HttpError(409, 'already_ambassador', 'They are already an ambassador');
-    if (found.role !== 'student') throw new HttpError(409, 'not_student', 'Only student accounts can become ambassadors');
-    for (let attempt = 0; attempt < 9; attempt++) {
-      // Their old code (if they were an ambassador before) comes back first.
-      const code = wanted || (attempt === 0 && found.referral_code) || codeFrom(found.full_name as string | null, attempt);
-      const { data, error: upErr } = await svc.from('profiles').update({ role: 'ambassador', referral_code: code }).eq('id', found.id).select(AMBASSADOR_COLS).single();
-      if (!upErr) return data;
-      if ((upErr as { code?: string }).code !== '23505') throw upErr;
-      if (wanted) throw new HttpError(409, 'code_taken', `${wanted} is already someone's code. Pick another.`);
+    return makeAmbassador(svc, found as AmbassadorCandidate, wantedCode(p));
+  },
+  // Applications from /ambassador-apply (0021): approve makes them an ambassador with a code.
+  'ambassadors.applications': async (svc) =>
+    must(
+      svc
+        .from('ambassador_applications')
+        .select('id, user_id, full_name, university, phone, why, status, created_at, reviewed_at, profile:profiles!ambassador_applications_user_id_fkey(email, role)')
+        .order('created_at', { ascending: false })
+        .limit(100),
+    ),
+  'ambassadors.review': async (svc, p, adminId) => {
+    const id = uuid(p.id, 'id');
+    const decision = oneOf(p.decision, 'decision', ['approve', 'reject'] as const);
+    const app = (await must(svc.from('ambassador_applications').select('id, user_id, status').eq('id', id).maybeSingle())) as { id: string; user_id: string; status: string } | null;
+    if (!app) throw new HttpError(404, 'not_found', 'Application not found');
+    if (app.status !== 'pending') throw new HttpError(409, 'not_pending', 'That application has already been reviewed');
+    const profile = (await must(svc.from('profiles').select('id, role, full_name, referral_code').eq('id', app.user_id).single())) as AmbassadorCandidate;
+    let result: unknown = null;
+    if (decision === 'approve') {
+      result = await makeAmbassador(svc, profile, wantedCode(p));
+    } else if (profile.role === 'pending_ambassador') {
+      await must(svc.from('profiles').update({ role: 'student' }).eq('id', profile.id).eq('role', 'pending_ambassador').select('id'));
     }
-    throw new HttpError(409, 'code_taken', 'Could not find a free code. Enter one yourself.');
+    await must(
+      svc.from('ambassador_applications')
+        .update({ status: decision === 'approve' ? 'approved' : 'rejected', reviewed_by: adminId, reviewed_at: new Date().toISOString() })
+        .eq('id', app.id)
+        .select('id'),
+    );
+    return { decision, ambassador: result };
   },
   'ambassadors.remove': async (svc, p) => {
     const id = uuid(p.id, 'id');

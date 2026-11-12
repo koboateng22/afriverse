@@ -14,10 +14,15 @@ export default function Login() {
             <p>
               New here? <Link to="/signup">Create an account</Link>
             </p>
-            {/* Quiet mentor entry point — never shown in student navigation. */}
-            <Link to="/mentor/login" className="auth-quiet-link">
-              Mentor sign-in
-            </Link>
+            {/* Quiet entry points — never shown in student navigation. */}
+            <span className="auth-quiet-links">
+              <Link to="/mentor/login" className="auth-quiet-link">
+                Mentor sign-in
+              </Link>
+              <Link to="/ambassador-apply" className="auth-quiet-link">
+                Apply to be a Campus Ambassador
+              </Link>
+            </span>
           </>
         }
       >

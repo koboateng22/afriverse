@@ -1,12 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Gift, Lock, Mail, MailCheck, Phone, UserRound } from 'lucide-react';
+import { Gift, KeyRound, Lock, Mail, MailCheck, Phone, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
-import { errorMessage } from '../../lib/supabase';
 import { spring } from '../../lib/motion';
 import { normalizeCode, referralCodeValid, rememberReferral } from '../ambassador/api';
-import { sendPhoneOtp, signInWithEmail, signInWithGoogle, signUpWithEmail, toE164, verifyPhoneOtp, type SignupAs } from './api';
+import { authErrorMessage, EmailTakenError, sendPhoneOtp, signInWithEmail, signInWithGoogle, signUpWithEmail, toE164, verifyPhoneOtp, type SignupAs } from './api';
 import './AuthForm.css';
 
 export type AuthFormProps = {
@@ -16,6 +16,10 @@ export type AuthFormProps = {
 
 type Method = 'email' | 'phone';
 type CodeCheck = 'idle' | 'checking' | 'valid' | 'invalid';
+
+// Client-side brake on repeated failed sign-ins (Supabase's own rate limit is the real guard).
+const MAX_FAILED_SIGNINS = 5;
+const FAILED_WINDOW_MS = 60_000;
 
 /** ?ref=CHRIS10 from an ambassador's shared link. */
 const codeFromUrl = () => normalizeCode(new URLSearchParams(window.location.search).get('ref') ?? '');
@@ -37,6 +41,11 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [emailTaken, setEmailTaken] = useState(false);
+  const failures = useRef<number[]>([]);
+  const [lockedUntil, setLockedUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
@@ -50,6 +59,28 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const allowPhone = audience === 'student';
   const allowGoogle = audience === 'student';
   const askReferral = isSignup && audience === 'student';
+  const signInPath = audience === 'mentor' ? '/mentor/login' : '/login';
+  const mismatch = isSignup && confirm.length > 0 && confirm !== password;
+  const lockLeft = Math.max(0, Math.ceil((lockedUntil - now) / 1000));
+
+  // Count down a sign-in lock, then release it.
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const t = window.setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= lockedUntil) setLockedUntil(0);
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [lockedUntil]);
+
+  const noteFailedSignIn = () => {
+    const t = Date.now();
+    failures.current = [...failures.current.filter((x) => t - x < FAILED_WINDOW_MS), t];
+    if (failures.current.length >= MAX_FAILED_SIGNINS) {
+      setNow(t);
+      setLockedUntil(failures.current[0] + FAILED_WINDOW_MS);
+    }
+  };
 
   /** The code to send, or '' for none. Throws for a code that doesn't exist, so nobody signs up thinking it counted. */
   const checkedReferral = async (): Promise<string> => {
@@ -91,11 +122,13 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
 
   const run = async (kind: 'submit' | 'google', fn: () => Promise<void>) => {
     setError(null);
+    setEmailTaken(false);
     setBusy(kind);
     try {
       await fn();
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof EmailTakenError) setEmailTaken(true);
+      else setError(authErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -108,11 +141,19 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
     run('submit', async () => {
       if (isSignup) {
         if (password.length < 8) throw new Error('Use at least 8 characters for your password.');
+        if (password !== confirm) throw new Error('The passwords don’t match. Type the same password twice.');
         const referralCode = await checkedReferral();
         const { needsConfirmation } = await signUpWithEmail({ email: email.trim(), password, fullName: fullName.trim(), as: audience, referralCode });
         if (needsConfirmation) setCheckInbox(email.trim());
       } else {
-        await signInWithEmail(email.trim(), password);
+        if (lockedUntil > Date.now()) throw new Error(`Too many attempts. Try again in ${lockLeft} seconds.`);
+        try {
+          await signInWithEmail(email.trim(), password);
+          failures.current = [];
+        } catch (err) {
+          noteFailedSignIn();
+          throw err;
+        }
       }
     });
   };
@@ -195,10 +236,38 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            {isSignup ? (
+              <Field
+                label="Confirm password"
+                type="password"
+                autoComplete="new-password"
+                icon={<KeyRound />}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                error={mismatch ? 'The passwords don’t match.' : null}
+                hint={confirm && !mismatch ? 'Passwords match.' : undefined}
+                required
+              />
+            ) : (
+              <Link to="/reset-password" state={{ email: email.trim() }} className="auth-form__forgot">
+                Forgot password?
+              </Link>
+            )}
             {referralField}
+            {emailTaken && (
+              <p className="auth-form__error" role="alert">
+                This email is already registered. Please <Link to={signInPath}>sign in instead</Link>.
+              </p>
+            )}
             {error && <p className="auth-form__error" role="alert">{error}</p>}
-            <Button type="submit" size="lg" block loading={busy === 'submit'} disabled={!email || !password || (isSignup && !fullName.trim())}>
-              {isSignup ? (audience === 'mentor' ? 'Apply as a mentor' : 'Create account') : 'Sign in'}
+            <Button
+              type="submit"
+              size="lg"
+              block
+              loading={busy === 'submit'}
+              disabled={!email || !password || (isSignup && (!fullName.trim() || !confirm || mismatch)) || lockLeft > 0}
+            >
+              {isSignup ? (audience === 'mentor' ? 'Apply as a mentor' : 'Create account') : lockLeft > 0 ? `Try again in ${lockLeft}s` : 'Sign in'}
             </Button>
           </motion.form>
         ) : (
