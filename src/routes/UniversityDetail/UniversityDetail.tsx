@@ -11,6 +11,7 @@ import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { fetchUniversity } from '../../features/universities/api';
 import { feeOf, requirementsOf, type University } from '../../features/universities/types';
 import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
+import { UniLogo } from '../../features/universities/UniLogo';
 import { fetchOpenApplication } from '../../features/applications/api';
 import { useAuth } from '../../features/auth/useAuth';
 import { ResultsStrip } from '../../features/results/ResultsStrip';
@@ -82,6 +83,10 @@ export default function UniversityDetail() {
           <Skeleton shape="block" height="220px" label="Loading university" />
         ) : (
           <motion.div className="uni__body" variants={staggerParent} initial="hidden" animate="show">
+            <motion.div className="uni__hero" variants={riseItem} data-cover={uni.cover_image_url ? '' : undefined}>
+              {uni.cover_image_url && <img className="uni__cover" src={uni.cover_image_url} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.hidden = true; }} />}
+              <UniLogo u={uni} size="lg" />
+            </motion.div>
             <ResultsStrip results={results} cutoffLink={uni.cutoff_link} />
             <motion.div className="uni__meta" variants={riseItem}>
               <p className="uni__where">

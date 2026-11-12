@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ExternalLink, FileText, FileUp, Mail, Pencil, Plus, Sparkles, Trash2, Type, UserRound } from 'lucide-react';
+import { ExternalLink, FileText, FileUp, ImageUp, Mail, Pencil, Plus, Sparkles, Trash2, Type, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Sheet/Sheet';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
@@ -9,7 +9,8 @@ import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { Tag } from '../../components/Chip/Chip';
 import { scrapeUniversity } from '../../features/admin/api';
-import { asArray, useAdminData } from '../../features/admin/useAdminData';
+import { IMAGE_HINT, uploadUniversityImage, type UniversityImageKind } from '../../features/admin/universityImage';
+import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
 import { COUNTRIES } from '../../features/universities/countries';
 import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
 import { feeOf, requirementsOf, type FormFields, type University } from '../../features/universities/types';
@@ -138,6 +139,8 @@ export default function AdminUniversities() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fill, setFill] = useState<Fill>({ status: 'idle' });
+  const [uploading, setUploading] = useState<UniversityImageKind | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   // Bumped whenever another form opens, so a slow auto-fill never lands in the wrong university.
   const fillRun = useRef(0);
 
@@ -147,6 +150,7 @@ export default function AdminUniversities() {
   const open = (f: Form) => {
     fillRun.current++;
     setFill({ status: 'idle' });
+    setUploadError(null);
     setFormError(null);
     setForm(f);
   };
@@ -185,9 +189,25 @@ export default function AdminUniversities() {
     }
   };
 
+  // The admin's own logo / cover photo, stored in university_assets (migration 0020).
+  const upload = async (kind: UniversityImageKind, file: File) => {
+    if (!form) return;
+    const run = fillRun.current;
+    setUploading(kind);
+    setUploadError(null);
+    try {
+      const url = await uploadUniversityImage(file, kind, form.slug || slugify(form.name) || 'new');
+      if (run === fillRun.current) setForm((f) => (f ? { ...f, [kind === 'logo' ? 'logoUrl' : 'coverUrl']: url } : f));
+    } catch (err) {
+      if (run === fillRun.current) setUploadError(errorMessage(err));
+    } finally {
+      setUploading(null);
+    }
+  };
+
   const save = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form) return;
+    if (!form || uploading) return;
     if (feeCents === null || feeCents < 100) {
       setFormError('Enter the university’s application fee in GHS, e.g. 250 or 250.50 (minimum GHS 1).');
       return;
@@ -320,7 +340,7 @@ export default function AdminUniversities() {
                   Cancel
                 </Button>
               )}
-              <Button type="submit" form="uni-form" loading={saving}>
+              <Button type="submit" form="uni-form" loading={saving} disabled={uploading !== null}>
                 {form.id ? 'Save changes' : 'Save university'}
               </Button>
             </>
@@ -346,40 +366,50 @@ export default function AdminUniversities() {
                 {fill.status === 'error' && <Notice tone="error">{fill.message}</Notice>}
                 {fill.status === 'done' && <Notice tone="success">{fill.message}</Notice>}
               </div>
-              {(form.logoUrl || form.coverUrl || fill.status === 'loading') && (
-                <div className="uni-images" aria-busy={fill.status === 'loading' || undefined}>
-                  <figure className="uni-images__item">
-                    <figcaption>Logo</figcaption>
-                    {form.logoUrl ? (
-                      <img className="uni-images__logo" src={form.logoUrl} alt="University logo" />
-                    ) : fill.status === 'loading' ? (
-                      <Skeleton shape="block" height="72px" label="Finding logo" />
-                    ) : (
-                      <p className="uni-images__empty">No logo</p>
-                    )}
-                    {form.logoUrl && (
-                      <button type="button" className="uni-images__remove" onClick={() => set('logoUrl', '')}>
-                        <Trash2 aria-hidden="true" /> Remove logo
-                      </button>
-                    )}
-                  </figure>
-                  <figure className="uni-images__item uni-images__item--cover">
-                    <figcaption>Cover image</figcaption>
-                    {form.coverUrl ? (
-                      <img className="uni-images__cover" src={form.coverUrl} alt="University cover" />
-                    ) : fill.status === 'loading' ? (
-                      <Skeleton shape="block" height="120px" label="Finding cover image" />
-                    ) : (
-                      <p className="uni-images__empty">No cover image</p>
-                    )}
-                    {form.coverUrl && (
-                      <button type="button" className="uni-images__remove" onClick={() => set('coverUrl', '')}>
-                        <Trash2 aria-hidden="true" /> Remove cover
-                      </button>
-                    )}
-                  </figure>
-                </div>
-              )}
+              {/* Logo + cover: Auto-Fill finds them, or the admin uploads their own. */}
+              <div className="uni-images" aria-busy={fill.status === 'loading' || uploading !== null || undefined}>
+                {(['logo', 'cover'] as const).map((kind) => {
+                  const url = kind === 'logo' ? form.logoUrl : form.coverUrl;
+                  const label = kind === 'logo' ? 'Logo' : 'Cover photo';
+                  const busy = uploading === kind;
+                  return (
+                    <figure key={kind} className={`uni-images__item${kind === 'cover' ? ' uni-images__item--cover' : ''}`}>
+                      <figcaption>{label}</figcaption>
+                      {url ? (
+                        <img className={kind === 'logo' ? 'uni-images__logo' : 'uni-images__cover'} src={url} alt={kind === 'logo' ? 'University logo' : 'University cover'} />
+                      ) : fill.status === 'loading' || busy ? (
+                        <Skeleton shape="block" height={kind === 'logo' ? '72px' : '120px'} label={busy ? `Uploading ${label.toLowerCase()}` : `Finding ${label.toLowerCase()}`} />
+                      ) : (
+                        <p className="uni-images__empty">{kind === 'logo' ? 'No logo' : 'No cover image'}</p>
+                      )}
+                      <div className="uni-images__actions">
+                        <label className="btn uni-images__upload" data-variant="secondary" data-size="sm" data-loading={busy || undefined} aria-disabled={uploading !== null || undefined}>
+                          <ImageUp aria-hidden="true" /> {busy ? 'Uploading…' : url ? 'Replace' : 'Upload'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                            className="visually-hidden"
+                            aria-label={`Upload ${label.toLowerCase()}`}
+                            disabled={uploading !== null}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = '';
+                              if (file) void upload(kind, file);
+                            }}
+                          />
+                        </label>
+                        {url && (
+                          <button type="button" className="uni-images__remove" onClick={() => set(kind === 'logo' ? 'logoUrl' : 'coverUrl', '')}>
+                            <Trash2 aria-hidden="true" /> Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="uni-images__hint">{IMAGE_HINT[kind]}</p>
+                    </figure>
+                  );
+                })}
+              </div>
+              {uploadError && <Notice tone="error">{uploadError}</Notice>}
               <Field
                 label="Cut-Off Points Link"
                 type="url"

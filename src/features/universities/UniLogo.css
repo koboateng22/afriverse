@@ -1,0 +1,42 @@
+/* University logo tile: a fixed square in both states (image / initials), so it
+   can never push the card's text around. */
+@layer components {
+  .uni-logo {
+    --size: 56px;
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: var(--size);
+    block-size: var(--size);
+    border-radius: 12px;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow: inset 0 0 0 1px var(--glass-edge-strong), 0 6px 16px -10px color-mix(in oklab, var(--void) 80%, transparent);
+
+    &[data-size='lg'] { --size: 72px; border-radius: 16px; }
+
+    & img {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: cover;
+      background: var(--cream);
+    }
+
+    /* Initials: brand green with a soft top light, cream lettering. */
+    &[data-kind='mono'] {
+      background:
+        radial-gradient(120% 90% at 30% 0%, color-mix(in oklab, var(--emerald) 55%, transparent), transparent 70%),
+        var(--deep-green);
+      color: var(--cream);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: calc(var(--size) * 0.3);
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-align: center;
+    }
+    &[data-kind='mono'][data-long] { font-size: calc(var(--size) * 0.2); letter-spacing: 0; }
+  }
+}

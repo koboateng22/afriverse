@@ -78,3 +78,26 @@
   }
   .uni__prose { font-size: var(--step--1); color: var(--text-2); white-space: pre-line; }
 }
+
+@layer components {
+  /* Cover photo with the logo tile over its lower-left corner; just the logo when there's no cover. */
+  .uni__hero { position: relative; }
+  .uni__hero[data-cover] { padding-block-end: 36px; }
+  .uni__cover {
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: 16 / 7;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-edge);
+    background: var(--surface-1);
+  }
+  .uni__hero[data-cover] > .uni-logo {
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    inset-block-end: 0;
+    box-shadow: 0 0 0 3px var(--bg), 0 10px 24px -12px color-mix(in oklab, var(--void) 80%, transparent);
+  }
+  /* Cover failed to load: fall back to the plain layout. */
+  .uni__hero[data-cover]:has(> .uni__cover[hidden]) { padding-block-end: 0; & > .uni-logo { position: static; } }
+}

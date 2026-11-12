@@ -1,4 +1,4 @@
--- Which of supabase/migrations/0001 … 0019 are in this database?
+-- Which of supabase/migrations/0001 … 0020 are in this database?
 -- Checks for something each migration creates, so it works however the
 -- migration was applied (SQL Editor paste or `supabase db push`).
 -- Read-only. Run it with scripts/check-migrations.sh, or paste it into the
@@ -75,6 +75,8 @@ from (values
   ('0019_university_ownership',    exists (select 1 from col where c = 'universities.ownership')
                                    and exists (select 1 from col where c = 'universities.programmes')
                                    and exists (select 1 from col where c = 'universities.tuition_info'),
-                                   'universities.ownership (+ source), programmes, admission requirements, tuition')
+                                   'universities.ownership (+ source), programmes, admission requirements, tuition'),
+  ('0020_university_asset_uploads', exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'university assets: admin upload'),
+                                   'admins can upload university logos and cover photos')
 ) as m(migration, applied, checks)
 order by migration;

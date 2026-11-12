@@ -10,6 +10,7 @@ import { Notice } from '../../components/Notice/Notice';
 import { Field, SelectField } from '../../components/Field/Field';
 import { fetchUniversities } from '../../features/universities/api';
 import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
+import { UniLogo } from '../../features/universities/UniLogo';
 import { useAuth } from '../../features/auth/useAuth';
 import { ResultsStrip } from '../../features/results/ResultsStrip';
 import { useMyResults } from '../../features/results/useMyResults';
@@ -37,9 +38,7 @@ function UniCard({ u }: { u: University }) {
   const programmes = u.programmes ?? [];
   return (
     <MotionLink to={`/apply-university/${u.slug}`} className="uni-card" variants={riseItem} whileHover={lift} whileTap={press} data-ownership={group}>
-      <span className="uni-card__mono" aria-hidden="true">
-        {u.logo_url ? <img src={u.logo_url} alt="" loading="lazy" /> : (u.short_name ?? u.name.slice(0, 3))}
-      </span>
+      <UniLogo u={u} />
       <span className="uni-card__text">
         <span className="uni-card__name">{u.name}</span>
         <span className="uni-card__where">
@@ -55,13 +54,15 @@ function UniCard({ u }: { u: University }) {
           )}
         </span>
       </span>
-      <span className="uni-card__price">
-        <span className="uni-card__total">{formatMoney(feeOf(u), 'GHS')}</span>
+      <span className="uni-card__foot">
         <span className="uni-card__all-in">
           {u.service_fee_cents > 0 ? `University fee + ${formatMoney(u.service_fee_cents, 'GHS')} service` : 'University fee, no service fee'}
         </span>
+        <span className="uni-card__price">
+          <span className="uni-card__total">{formatMoney(feeOf(u), 'GHS')}</span>
+          <ArrowRight className="uni-card__go" aria-hidden="true" />
+        </span>
       </span>
-      <ArrowRight className="uni-card__go" aria-hidden="true" />
     </MotionLink>
   );
 }

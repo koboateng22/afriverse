@@ -27,43 +27,47 @@
     }
   }
 
+  /* Card: logo + text on top (the text always gets the room left of nothing),
+     price row underneath. The logo tile is a fixed square (UniLogo.css). */
   .uni-card {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-4);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    /* The text row takes the slack, so price rows line up across a row of cards. */
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: 'logo text' 'foot foot';
+    align-items: start;
+    gap: var(--space-3) var(--space-4);
     padding: var(--space-4) var(--space-5);
     border-radius: var(--radius-md);
-    background: var(--surface-1);
-    border: 1px solid var(--line);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
     transition: box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
-    &:hover { box-shadow: var(--shadow-bloom); border-color: color-mix(in oklab, var(--emerald) 40%, transparent); }
+    & > .uni-logo { grid-area: logo; }
+    &:hover { box-shadow: var(--glass-inset), var(--shadow-bloom); border-color: color-mix(in oklab, var(--emerald) 40%, transparent); }
     &:hover .uni-card__go { transform: translateX(3px); }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   }
-  .uni-card__mono {
-    display: grid;
-    place-items: center;
-    flex: none;
-    min-inline-size: 52px;
-    block-size: 52px;
-    padding-inline: var(--space-2);
-    border-radius: var(--radius-sm);
-    background: var(--deep-green);
-    color: var(--cream);
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: var(--step--2);
-  }
-  .uni-card__text { flex: 1 1 10rem; display: grid; gap: 2px; min-inline-size: 0; }
-  .uni-card__name { font-weight: 800; color: var(--text); }
-  .uni-card__where { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--step--1); color: var(--text-3); & svg { inline-size: 14px; block-size: 14px; } }
-  .uni-card__price { display: grid; justify-items: end; flex: none; text-align: end; }
-  .uni-card__total { font-weight: 800; color: var(--gold); }
-  .uni-card__all-in { font-size: var(--step--2); color: var(--text-3); }
-  .uni-card__mono img { inline-size: 100%; block-size: 100%; object-fit: contain; padding: 6px; border-radius: inherit; background: var(--cream); }
+  .uni-card__text { grid-area: text; display: grid; gap: 2px; min-inline-size: 0; align-self: center; }
+  .uni-card__name { font-weight: 800; color: var(--text); line-height: 1.25; overflow-wrap: anywhere; }
+  .uni-card__where { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--step--1); color: var(--text-3); & svg { flex: none; inline-size: 14px; block-size: 14px; } }
   .uni-card__tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: var(--space-1); }
   .uni-card__progs { font-size: var(--step--2); color: var(--text-3); }
+
+  /* Price row: what the fee covers on the left, total + arrow on the right. */
+  .uni-card__foot {
+    grid-area: foot;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--glass-edge);
+  }
+  .uni-card__all-in { min-inline-size: 0; font-size: var(--step--2); color: var(--text-3); }
+  .uni-card__price { display: inline-flex; align-items: center; gap: var(--space-2); flex: none; }
+  .uni-card__total { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .uni-card__go { flex: none; inline-size: 18px; block-size: 18px; color: var(--text-3); transition: transform var(--dur-fast) var(--ease-out); }
 
   /* ── Filters: segmented tabs + search ─────────────────────────── */
   .uni-filters { display: grid; gap: var(--space-4); }
@@ -155,6 +159,4 @@
     }
     &[open] summary { margin-block-end: var(--space-2); }
   }
-
-  .uni-card__go { flex: none; inline-size: 18px; block-size: 18px; color: var(--text-3); transition: transform var(--dur-fast) var(--ease-out); }
 }

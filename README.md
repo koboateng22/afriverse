@@ -36,7 +36,7 @@ npm run dev               # http://localhost:5173
 
 ```bash
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push      # applies supabase/migrations/0001 … 0019
+npx supabase db push      # applies supabase/migrations/0001 … 0020
 ```
 
 Then open the Supabase SQL editor and run **`supabase/seed.sql`** once. It loads the 5 universities (with fees), 8 opportunities, 8 careers, 4 course tracks × 3 lessons, the Pro plan (GHS 40) and the Pro insider guides. Migration `0010` also creates the private `application-documents` storage bucket and its policies. (`npx supabase db reset` runs it automatically on a local stack.)
