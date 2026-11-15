@@ -1,19 +1,42 @@
 @layer components {
   .learn { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
   .learn__hub { display: grid; gap: var(--space-3); }
+  /* One column: heading, then the filter bar, then the card grid, stacked.
+     (Columns belong to .learn__grid only; making this section a multi-column
+     grid put the filter bar beside the cards and stretched the pills.) */
   .learn__courses { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
-  @media (min-width: 768px) { .learn__courses { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); } }
   .learn__h2 { font-size: var(--step-1); }
+
+  /* One row of pills that scrolls sideways on narrow screens (scrollbar hidden). */
   .learn__filters {
     display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: var(--space-2);
+    min-inline-size: 0;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     margin-inline: calc(-1 * var(--gutter));
     padding: 2px var(--gutter);
     &::-webkit-scrollbar { display: none; }
+    /* Pills keep a fixed height and never stretch or squash, whatever the container does. */
+    & .chip { flex: 0 0 auto; block-size: 40px; min-block-size: 40px; align-self: center; white-space: nowrap; }
   }
-  .learn__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: var(--space-4); }
+
+  /* Course cards: 1 column on phones, 2 on tablets, 3 on desktop. */
+  .learn__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+    @media (min-width: 640px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    /* The empty state spans the whole row. */
+    & > .empty { grid-column: 1 / -1; }
+  }
 
   .course-card {
     display: grid;

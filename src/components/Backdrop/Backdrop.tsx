@@ -6,9 +6,9 @@ export type BackdropProps = {
 };
 
 /**
- * Fixed decorative layer behind every screen: soft, slow-drifting gradient
- * orbs (emerald, gold, terracotta) on Ink. No lines, no patterns — only
- * transform/opacity animate, so it stays cheap on low-end phones.
+ * Fixed decorative layer behind every screen: soft, static gradient orbs
+ * (emerald, gold, terracotta) on Ink. No lines, no patterns, no motion: the
+ * background stays calm and costs nothing to render.
  */
 export function Backdrop({ tone = 'quiet' }: BackdropProps) {
   return (
@@ -27,7 +27,7 @@ export function Backdrop({ tone = 'quiet' }: BackdropProps) {
   );
 }
 
-/** App-wide SVG film grain at 3% opacity, stepped jitter. */
+/** App-wide SVG film grain at 3% opacity (static). */
 export function GrainOverlay() {
   return (
     <svg className="grain" aria-hidden="true" focusable="false">

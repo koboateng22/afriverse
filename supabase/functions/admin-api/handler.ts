@@ -5,6 +5,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { handle, HttpError, json, readJson } from '../_shared/http.ts';
 import { requireUser, serviceClient } from '../_shared/supabase.ts';
 import { bool, httpsUrl, int, isoDate, oneOf, optStr, slug, str, strArray, uuid } from '../_shared/validate.ts';
+import { youtubeId } from '../_shared/youtube.ts';
 
 type Payload = Record<string, unknown>;
 type Action = (svc: SupabaseClient, p: Payload, adminId: string) => Promise<unknown>;
@@ -150,11 +151,11 @@ function courseInput(p: Payload) {
 }
 
 function lessonInput(p: Payload) {
-  let youtube = str(p.youtube_id, 'youtube_id', { min: 11, max: 200 });
-  // Accept a pasted URL and keep only the 11-character id.
-  const m = youtube.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
-  if (m) youtube = m[1];
-  if (!/^[A-Za-z0-9_-]{11}$/.test(youtube)) throw new HttpError(400, 'invalid_input', 'youtube_id: paste a YouTube link or the 11-character video id');
+  // Accept any YouTube link (long ones with tracking params too) and keep only the 11-character id.
+  const youtube = youtubeId(str(p.youtube_id, 'youtube_id', { min: 11, max: 2000 }));
+  if (!youtube) {
+    throw new HttpError(400, 'invalid_input', 'youtube_id: paste a YouTube video link (youtube.com/watch?v=…, youtu.be/…, /embed/…, /shorts/…) or the 11-character video id', { field: 'youtube_id' });
+  }
   return {
     course_id: uuid(p.course_id, 'course_id'),
     position: int(p.position, 'position', { min: 1, max: 200 }),

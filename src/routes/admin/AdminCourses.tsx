@@ -10,6 +10,7 @@ import { Tag } from '../../components/Chip/Chip';
 import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
 import { FIELDS } from '../../features/onboarding/options';
 import type { Course, CourseLesson } from '../../features/courses/types';
+import { youtubeId } from '../../features/courses/youtube';
 import { riseItem, staggerParent } from '../../lib/motion';
 
 type CourseRow = Course & { lessons: CourseLesson[] };
@@ -18,12 +19,6 @@ type LessonForm = { id?: string; course_id: string; position: string; title: str
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'] as const;
 
-/** Pulls the 11-char id out of a pasted YouTube link (server re-checks). */
-function videoId(input: string): string | null {
-  const m = input.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
-  if (m) return m[1];
-  return /^[A-Za-z0-9_-]{11}$/.test(input.trim()) ? input.trim() : null;
-}
 
 export default function AdminCourses() {
   const { data, error, mutate } = useAdminData<CourseRow[]>('courses.list');
@@ -46,9 +41,15 @@ export default function AdminCourses() {
   const saveLesson = async (e: FormEvent) => {
     e.preventDefault();
     if (!lesson) return;
+    const id = youtubeId(lesson.youtube_id);
+    if (!id) {
+      setFormError('Paste a YouTube video link, e.g. https://www.youtube.com/watch?v=… or https://youtu.be/…');
+      return;
+    }
     setSaving(true);
     setFormError(null);
-    const err = await mutate(lesson.id ? 'lessons.update' : 'lessons.create', { ...lesson, position: Number(lesson.position) });
+    // Send just the id: long links with tracking parameters never hit a length limit.
+    const err = await mutate(lesson.id ? 'lessons.update' : 'lessons.create', { ...lesson, youtube_id: id, position: Number(lesson.position) });
     setSaving(false);
     if (err) setFormError(err);
     else setLesson(null);
@@ -61,7 +62,7 @@ export default function AdminCourses() {
     else setLesson(null);
   };
 
-  const preview = lesson ? videoId(lesson.youtube_id) : null;
+  const preview = lesson ? youtubeId(lesson.youtube_id) : null;
 
   return (
     <section className="admin-section" aria-labelledby="c-h">
@@ -146,7 +147,8 @@ export default function AdminCourses() {
               <Field label="Channel" value={lesson.channel} onChange={(e) => setLesson({ ...lesson, channel: e.target.value })} />
             </div>
             <Field label="Title" value={lesson.title} onChange={(e) => setLesson({ ...lesson, title: e.target.value })} required />
-            <Field label="YouTube link or video id" value={lesson.youtube_id} onChange={(e) => setLesson({ ...lesson, youtube_id: e.target.value })} required error={lesson.youtube_id && !preview ? 'That doesn’t look like a YouTube link' : null} />
+            <Field label="YouTube link or video id" value={lesson.youtube_id} onChange={(e) => setLesson({ ...lesson, youtube_id: e.target.value })} required hint="youtube.com/watch?v=…, youtu.be/…, /embed/…, /shorts/… or the video id"
+              error={lesson.youtube_id.trim().length >= 11 && !preview ? 'We can’t find a video id in that link. Paste the video’s own link from YouTube.' : null} />
             {preview && <img className="admin-lesson-thumb" src={`https://i.ytimg.com/vi/${preview}/hqdefault.jpg`} alt="Video thumbnail preview" />}
             <TextAreaField label="Summary" maxLength={400} value={lesson.summary} onChange={(e) => setLesson({ ...lesson, summary: e.target.value })} />
             {formError && <Notice tone="error">{formError}</Notice>}

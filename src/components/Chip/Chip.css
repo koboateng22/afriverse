@@ -6,6 +6,10 @@
     align-items: center;
     gap: var(--space-2);
     min-block-size: 40px;
+    /* Fixed height: a chip never stretches with its container (flex/grid stretch). */
+    block-size: 40px;
+    flex-shrink: 0;
+    align-self: center;
     padding-inline: var(--space-4);
     border-radius: var(--radius-pill);
     border: 1px solid var(--glass-edge-strong);

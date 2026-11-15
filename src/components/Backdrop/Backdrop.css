@@ -8,8 +8,8 @@
     background: var(--bg);
   }
 
-  /* Each orb is a radial gradient (soft edge without a costly filter) that
-     drifts on its own long, out-of-phase loop. */
+  /* Each orb is a radial gradient (soft edge without a costly filter).
+     Static on purpose: the background stays calm, nothing drifts or pulses. */
   .backdrop__orb {
     position: absolute;
     inline-size: var(--orb-size);
@@ -17,14 +17,12 @@
     border-radius: 50%;
     background: radial-gradient(closest-side, var(--orb-color), transparent);
     opacity: var(--orb-opacity, 0.5);
-    will-change: transform;
 
     &[data-orb='emerald'] {
       --orb-size: max(70vmax, 560px);
       --orb-color: color-mix(in oklab, var(--emerald) 55%, transparent);
       inset-block-start: -30vmax;
       inset-inline-start: -25vmax;
-      animation: orb-drift-a 38s var(--ease-out) infinite alternate;
     }
     &[data-orb='gold'] {
       --orb-size: max(50vmax, 420px);
@@ -32,7 +30,6 @@
       --orb-opacity: 0.35;
       inset-block-start: 10vmax;
       inset-inline-end: -25vmax;
-      animation: orb-drift-b 46s var(--ease-out) infinite alternate;
     }
     &[data-orb='terracotta'] {
       --orb-size: max(60vmax, 480px);
@@ -40,7 +37,6 @@
       --orb-opacity: 0.32;
       inset-block-end: -35vmax;
       inset-inline-start: 5vmax;
-      animation: orb-drift-c 52s var(--ease-out) infinite alternate;
     }
     &[data-orb='deep'] {
       --orb-size: max(45vmax, 380px);
@@ -48,7 +44,6 @@
       --orb-opacity: 0.45;
       inset-block-end: 5vmax;
       inset-inline-end: -10vmax;
-      animation: orb-drift-a 60s var(--ease-out) infinite alternate-reverse;
     }
   }
 
@@ -56,7 +51,7 @@
   .backdrop__orb { transition: opacity 900ms var(--ease-out); }
   .backdrop[data-tone='vip'] .backdrop__orb { opacity: 0; }
 
-  /* ── VIP (Pro paywall): emerald → black, very slow radial drift ───── */
+  /* ── VIP (Pro paywall): emerald → black, static ───────────────────── */
   .backdrop__vip {
     position: absolute;
     inset: 0;
@@ -70,17 +65,14 @@
   .backdrop__aurora {
     position: absolute;
     inset: -40%;
-    will-change: transform;
     &[data-aurora='emerald'] {
       background: radial-gradient(closest-side at 50% 35%,
         color-mix(in oklab, var(--emerald) 42%, transparent),
         color-mix(in oklab, var(--deep-green) 26%, transparent) 45%,
         transparent 75%);
-      animation: vip-drift 32s ease-in-out infinite alternate;
     }
     &[data-aurora='gold'] {
       background: radial-gradient(closest-side at 70% 75%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 70%);
-      animation: vip-drift 44s ease-in-out infinite alternate-reverse;
     }
   }
 
@@ -99,6 +91,5 @@
     z-index: var(--z-grain);
     pointer-events: none;
     opacity: var(--grain-opacity);
-    animation: grain 1.2s steps(5) infinite;
   }
 }
