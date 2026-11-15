@@ -22,7 +22,7 @@
 
     /* Spotlight / featured: brand-gradient rim, bigger title. */
     &[data-spotlight] {
-      --card-rim: linear-gradient(140deg, var(--emerald), var(--gold) 50%, color-mix(in oklab, var(--terracotta) 70%, transparent) 80%, transparent);
+      --card-rim: linear-gradient(140deg, var(--brand-bright), var(--emerald) 50%, color-mix(in oklab, var(--deep-green) 70%, transparent) 80%, transparent);
       padding: var(--space-6);
       & .opp-card__title { font-size: var(--step-2); }
       & .opp-card__summary { -webkit-line-clamp: 3; line-clamp: 3; }
@@ -39,7 +39,7 @@
     inset: 0;
     z-index: var(--z-card-fx);
     border-radius: inherit;
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent), 0 0 56px 6px color-mix(in oklab, var(--terracotta) 38%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand-bright) 50%, transparent), 0 0 56px 6px color-mix(in oklab, var(--emerald) 34%, transparent);
     opacity: 0;
     pointer-events: none;
   }
@@ -71,8 +71,8 @@
     &[data-saving] {
       background: radial-gradient(
         closest-side,
-        color-mix(in oklab, var(--gold) 26%, transparent) 0%,
-        color-mix(in oklab, var(--terracotta) 26%, transparent) 32%,
+        color-mix(in oklab, var(--brand-bright) 26%, transparent) 0%,
+        color-mix(in oklab, var(--emerald) 24%, transparent) 32%,
         color-mix(in oklab, var(--emerald) 16%, transparent) 58%,
         transparent 72%
       );
@@ -86,7 +86,7 @@
     aspect-ratio: 1;
     border-radius: 50%;
     background:
-      radial-gradient(closest-side, color-mix(in oklab, var(--gold) 22%, transparent), transparent 70%),
+      radial-gradient(closest-side, color-mix(in oklab, var(--brand-bright) 22%, transparent), transparent 70%),
       radial-gradient(closest-side at 30% 70%, color-mix(in oklab, var(--emerald) 34%, transparent), transparent 80%);
     animation: float 9s var(--ease-out) infinite;
   }
@@ -109,8 +109,8 @@
     font-size: var(--step--1);
     font-weight: 800;
     color: var(--ink);
-    background: linear-gradient(150deg, color-mix(in oklab, var(--gold) 80%, var(--cream)), var(--gold));
-    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--gold) 60%, transparent);
+    background: linear-gradient(150deg, color-mix(in oklab, var(--brand-bright) 80%, var(--cream)), var(--brand-bright));
+    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--brand-bright) 60%, transparent);
   }
   .opp-card[data-status='open'] .opp-card__mono,
   .opp-card[data-status='rolling'] .opp-card__mono {
@@ -131,7 +131,7 @@
     font-weight: 800;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--brand-bright);
     & svg { inline-size: 12px; block-size: 12px; }
   }
 
@@ -199,7 +199,7 @@
     background: color-mix(in oklab, var(--deep-green) 40%, transparent);
     border: 1px solid color-mix(in oklab, var(--emerald) 28%, transparent);
     & li { display: flex; gap: var(--space-2); font-size: var(--step--1); color: var(--text); }
-    & svg { flex: none; inline-size: 14px; block-size: 14px; margin-block-start: 4px; color: var(--gold); }
+    & svg { flex: none; inline-size: 14px; block-size: 14px; margin-block-start: 4px; color: var(--brand-bright); }
   }
 
   /* ── Bento shapes ───────────────────────────────────────────────── */

@@ -46,8 +46,8 @@
     border-radius: 50%;
     border: 2px solid var(--emerald);
     animation: pulse-ring 2.4s var(--ease-out) infinite;
-    &[data-delay='1'] { animation-delay: 0.8s; border-color: var(--gold); }
-    &[data-delay='2'] { animation-delay: 1.6s; border-color: var(--terracotta); }
+    &[data-delay='1'] { animation-delay: 0.8s; border-color: var(--brand-bright); }
+    &[data-delay='2'] { animation-delay: 1.6s; border-color: var(--brand-strong); }
   }
   .feed-loader__mark { animation: float 3s var(--ease-out) infinite; }
   .feed-loader__copy { display: grid; gap: var(--space-2); text-align: center; & h1 { font-size: var(--step-3); } }

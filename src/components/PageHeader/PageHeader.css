@@ -12,6 +12,11 @@
   .page-header__text { flex: 1 1 16rem; display: grid; gap: var(--space-2); min-inline-size: 0; }
   .page-header__title { font-size: var(--step-3); max-inline-size: 18ch; overflow-wrap: anywhere; hyphens: auto; }
   .page-header__lede { max-inline-size: 46ch; }
+  /* Desktop: titles get room for one or two lines instead of a narrow stack. */
+  @media (min-width: 1024px) {
+    .page-header__title { max-inline-size: 30ch; }
+    .page-header__lede { max-inline-size: 62ch; }
+  }
 
   .page-header__back {
     display: inline-flex;
@@ -48,7 +53,7 @@
     inset: 0;
     background:
       radial-gradient(60% 90% at 18% 0%, color-mix(in oklab, var(--emerald) 30%, transparent), transparent 70%),
-      radial-gradient(45% 70% at 88% 10%, color-mix(in oklab, var(--gold) 13%, transparent), transparent 70%),
+      radial-gradient(45% 70% at 88% 10%, color-mix(in oklab, var(--brand-bright) 12%, transparent), transparent 70%),
       radial-gradient(40% 60% at 60% 60%, color-mix(in oklab, var(--deep-green) 30%, transparent), transparent 75%);
   }
   .header-art__emblem {

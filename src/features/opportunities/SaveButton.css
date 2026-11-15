@@ -37,6 +37,6 @@
     border: 2px solid var(--terracotta);
     pointer-events: none;
     animation: pulse-ring var(--dur-slow) var(--ease-out) forwards;
-    &[data-late] { border-color: var(--gold); animation-delay: 120ms; opacity: 0; }
+    &[data-late] { border-color: var(--brand-bright); animation-delay: 120ms; opacity: 0; }
   }
 }

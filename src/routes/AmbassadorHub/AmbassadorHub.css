@@ -17,10 +17,10 @@
     border-radius: 50%;
     background: conic-gradient(
       from 90deg,
-      color-mix(in oklab, var(--gold) 80%, transparent),
+      color-mix(in oklab, var(--brand-bright) 80%, transparent),
       color-mix(in oklab, var(--emerald) 70%, transparent) 35%,
-      color-mix(in oklab, var(--gold) 35%, transparent) 65%,
-      color-mix(in oklab, var(--gold) 80%, transparent)
+      color-mix(in oklab, var(--brand-bright) 35%, transparent) 65%,
+      color-mix(in oklab, var(--brand-bright) 80%, transparent)
     );
     filter: blur(40px);
     opacity: 0.5;
@@ -38,13 +38,13 @@
     border-radius: var(--radius-lg);
     text-align: center;
     background:
-      radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 60%),
+      radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--brand-bright) 12%, transparent), transparent 60%),
       var(--glass-sheen),
       color-mix(in oklab, var(--void) 78%, transparent);
     border: 1px solid transparent;
     -webkit-backdrop-filter: var(--glass-filter);
     backdrop-filter: var(--glass-filter);
-    box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-gold);
+    box-shadow: var(--glass-inset), var(--shadow-float), var(--glow-brand);
 
     /* Gold rim (mask-drawn 1px ring), as on the Pro card. */
     &::before {
@@ -54,7 +54,7 @@
       z-index: var(--z-card-fx);
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(150deg, var(--gold), color-mix(in oklab, var(--gold) 20%, transparent) 40%, color-mix(in oklab, var(--emerald) 45%, transparent) 70%, var(--gold));
+      background: linear-gradient(150deg, var(--brand-bright), color-mix(in oklab, var(--brand-bright) 20%, transparent) 40%, color-mix(in oklab, var(--emerald) 45%, transparent) 70%, var(--brand-bright));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -67,7 +67,7 @@
     font-weight: 800;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--brand-bright);
   }
   .amb-code__value {
     font-family: var(--font-display);
@@ -111,7 +111,7 @@
     border: 1px solid var(--glass-edge);
     box-shadow: var(--glass-inset);
     min-inline-size: 0;
-    &[data-tone='gold'] { --accent: var(--gold); border-color: color-mix(in oklab, var(--gold) 35%, transparent); }
+    &[data-tone='brand'] { --accent: var(--brand-bright); border-color: color-mix(in oklab, var(--brand-bright) 35%, transparent); }
     &[data-tone='emerald'] { --accent: color-mix(in oklab, var(--emerald) 60%, var(--cream)); border-color: color-mix(in oklab, var(--emerald) 40%, transparent); }
   }
   .amb-stat__icon {
@@ -133,7 +133,7 @@
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
   }
-  .amb-stat[data-tone='gold'] .amb-stat__value { color: var(--gold); }
+  .amb-stat[data-tone='brand'] .amb-stat__value { color: var(--brand-bright); }
   .amb-stat__label { font-size: var(--step--1); font-weight: 700; color: var(--text); }
   .amb-stat__hint { font-size: var(--step--2); color: var(--text-3); }
 
@@ -161,7 +161,7 @@
       inline-size: 26px;
       block-size: 26px;
       border-radius: 50%;
-      background: var(--gold);
+      background: var(--brand-bright);
       color: var(--ink);
       font-size: var(--step--2);
       font-weight: 800;

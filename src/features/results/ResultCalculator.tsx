@@ -236,7 +236,7 @@ export function ResultCalculator({ userId, initial, onSaved }: ResultCalculatorP
           </p>
 
           <div className="calc__pick">
-            <Button variant="gold" block icon={<Camera aria-hidden="true" />} loading={scanning} onClick={() => cameraRef.current?.click()}>
+            <Button block icon={<Camera aria-hidden="true" />} loading={scanning} onClick={() => cameraRef.current?.click()}>
               Take a photo
             </Button>
             <Button variant="secondary" block icon={<ImageUp aria-hidden="true" />} disabled={scanning} onClick={() => galleryRef.current?.click()}>

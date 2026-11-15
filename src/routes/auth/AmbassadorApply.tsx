@@ -59,7 +59,7 @@ export default function AmbassadorApply() {
       <AuthLayout eyebrow="Campus Ambassadors" title="Apply to be a Campus Ambassador" lede={intro}>
         <div className="auth-form auth-form__form">
           <p className="auth-form__note">You need a free student account to apply.</p>
-          <Link className="btn" data-variant="gold" data-size="lg" to="/signup" state={{ from: '/ambassador-apply' }}>
+          <Link className="btn" data-variant="primary" data-size="lg" to="/signup" state={{ from: '/ambassador-apply' }}>
             Create a student account
           </Link>
           <Link className="btn" data-variant="secondary" data-size="lg" to="/login" state={{ from: '/ambassador-apply' }}>
@@ -80,7 +80,7 @@ export default function AmbassadorApply() {
   if (profile.role === 'ambassador') {
     return (
       <AuthLayout eyebrow="Campus Ambassadors" title="You’re already an ambassador">
-        <Link className="btn" data-variant="gold" data-size="lg" to="/ambassador">
+        <Link className="btn" data-variant="primary" data-size="lg" to="/ambassador">
           Open your Ambassador Hub
         </Link>
       </AuthLayout>
@@ -141,7 +141,7 @@ export default function AmbassadorApply() {
           hint={`${why.trim().length}/${WHY_MAX} · at least ${WHY_MIN} characters`}
           required
         />
-        <Button type="submit" variant="gold" size="lg" block loading={busy} icon={<Gift aria-hidden="true" />}>
+        <Button type="submit" size="lg" block loading={busy} icon={<Gift aria-hidden="true" />}>
           Send my application
         </Button>
       </form>

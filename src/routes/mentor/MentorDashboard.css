@@ -14,7 +14,7 @@
     border: 1px solid var(--line);
     & h2 { font-size: var(--step-2); }
 
-    &[data-status='pending'] { border-color: color-mix(in oklab, var(--gold) 40%, transparent); }
+    &[data-status='pending'] { border-color: color-mix(in oklab, var(--brand-bright) 40%, transparent); }
     &[data-status='approved'] { border-color: color-mix(in oklab, var(--emerald) 50%, transparent); }
     &[data-status='rejected'] { border-color: color-mix(in oklab, var(--terracotta) 45%, transparent); }
   }
@@ -26,7 +26,7 @@
     block-size: 48px;
     border-radius: 50%;
     background: var(--highlight-soft);
-    color: var(--gold);
+    color: var(--brand-bright);
     & svg { inline-size: 24px; block-size: 24px; }
   }
   .mentor-dash__card[data-status='approved'] .mentor-dash__icon { background: var(--accent-soft); color: var(--cream); }
@@ -41,7 +41,7 @@
 }
 
 @layer components {
-  .mentor-dash__rate { font-weight: 700; color: var(--gold); }
+  .mentor-dash__rate { font-weight: 700; color: var(--brand-bright); }
   .mentor-dash__h2 { font-size: var(--step-1); }
   .mentor-dash__form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
   .mentor-dash__next {
@@ -52,7 +52,7 @@
     border-radius: var(--radius-md);
     background: var(--accent-soft);
     font-size: var(--step--1);
-    & svg { flex: none; inline-size: 20px; block-size: 20px; color: var(--gold); }
+    & svg { flex: none; inline-size: 20px; block-size: 20px; color: var(--brand-bright); }
     &:hover { background: color-mix(in oklab, var(--emerald) 26%, transparent); }
   }
 }
@@ -66,12 +66,12 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--line);
     background: var(--surface-1);
-    &[data-review='pending'] { border-color: color-mix(in oklab, var(--gold) 45%, transparent); }
+    &[data-review='pending'] { border-color: color-mix(in oklab, var(--brand-bright) 45%, transparent); }
     &[data-review='approved'] { border-color: color-mix(in oklab, var(--emerald) 55%, transparent); }
     &[data-review='rejected'] { border-color: color-mix(in oklab, var(--terracotta) 50%, transparent); }
   }
   .mentor-dash__h3 { padding-inline: var(--space-1); font-weight: 700; font-size: var(--step-0); }
   .mentor-dash__review { font-size: var(--step--1); color: var(--text-2); }
-  .mentor-dash__review[data-review='pending'] { color: var(--gold); }
+  .mentor-dash__review[data-review='pending'] { color: var(--brand-bright); }
   .mentor-dash__review[data-review='rejected'] { color: color-mix(in oklab, var(--terracotta) 60%, var(--cream)); }
 }

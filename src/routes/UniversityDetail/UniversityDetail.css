@@ -1,13 +1,26 @@
 @layer components {
   .uni { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
   .uni__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  /* Phones/tablets: one column, wrappers dissolve; order = details → fee → "after you pay" → pay. */
+  .uni__main, .uni__aside { display: contents; }
+  .uni__main > * { order: 1; }
+  .uni__fee { order: 2; }
+  .uni__main > .uni__section:last-child { order: 3; }
+  .uni__aside > :not(.uni__fee) { order: 4; }
+  /* Desktop: details left; fee breakdown + Pay in a sticky panel on the right. */
+  @media (min-width: 1024px) {
+    .uni__body { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); align-items: start; gap: var(--space-7); }
+    .uni__main { display: grid; gap: var(--space-5); min-inline-size: 0; }
+    .uni__aside { display: grid; gap: var(--space-4); position: sticky; inset-block-start: var(--space-6); }
+    .uni__main > *, .uni__aside > * { order: 0; }
+  }
   .uni__where {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
     font-weight: 600;
     color: var(--text-2);
-    & svg { inline-size: 18px; block-size: 18px; color: var(--gold); }
+    & svg { inline-size: 18px; block-size: 18px; color: var(--brand-bright); }
   }
   .uni__desc { font-size: var(--step-0); }
 
@@ -17,10 +30,10 @@
     padding: var(--space-5);
     border-radius: var(--radius-md);
     background: var(--surface-1);
-    border: 1px solid color-mix(in oklab, var(--gold) 35%, transparent);
+    border: 1px solid color-mix(in oklab, var(--brand-bright) 35%, transparent);
   }
   .uni__fee-label { font-family: var(--font-body); font-size: var(--step--1); font-weight: 700; color: var(--text-3); letter-spacing: 0; }
-  .uni__fee-amount { font-family: var(--font-display); font-size: var(--step-3); font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .uni__fee-amount { font-family: var(--font-display); font-size: var(--step-3); font-weight: 800; color: var(--brand-bright); font-variant-numeric: tabular-nums; }
   .uni__fee-note { font-size: var(--step--1); }
   .uni__fee-parts {
     display: grid;
@@ -74,7 +87,7 @@
       border: 1px solid var(--glass-edge);
       font-size: var(--step--1);
     }
-    & svg { inline-size: 14px; block-size: 14px; color: var(--gold); }
+    & svg { inline-size: 14px; block-size: 14px; color: var(--brand-bright); }
   }
   .uni__prose { font-size: var(--step--1); color: var(--text-2); white-space: pre-line; }
 }

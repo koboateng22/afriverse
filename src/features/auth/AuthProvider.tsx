@@ -68,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         return;
       }
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+      // PASSWORD_RECOVERY: a reset code was verified; load the profile like a sign-in.
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'PASSWORD_RECOVERY') {
         // SIGNED_IN also fires when a tab regains focus; only block the UI
         // when the user actually changed.
         if (next && loadedFor.current === next.user.id && event === 'SIGNED_IN') return;

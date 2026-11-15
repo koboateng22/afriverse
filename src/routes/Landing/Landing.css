@@ -14,7 +14,7 @@
     animation: gradient-shift 9s var(--ease-out) infinite;
   }
 
-  .landing__emblem { filter: drop-shadow(0 12px 32px color-mix(in oklab, var(--gold) 30%, transparent)); animation: float 8s var(--ease-out) infinite; }
+  .landing__emblem { filter: drop-shadow(0 12px 32px color-mix(in oklab, var(--brand-bright) 30%, transparent)); animation: float 8s var(--ease-out) infinite; }
 
   .landing__pillars { display: grid; gap: var(--space-6); padding-block-end: var(--space-8); }
   .landing__pillar {

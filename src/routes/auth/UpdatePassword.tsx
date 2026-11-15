@@ -10,10 +10,10 @@ import { FullscreenLoader } from '../../components/FullscreenLoader/FullscreenLo
 import { useToast } from '../../components/Toast/Toast';
 import '../../features/auth/AuthForm.css';
 
-// The reset link signs the user in (Supabase exchanges the code in the URL); give it a moment.
+// A verified reset code (or an old-style reset link) signs the user in; give it a moment.
 const LINK_WAIT_MS = 8000;
 
-/** /update-password — where the reset email lands: choose a new password, then go home. */
+/** /update-password: after the reset code is verified, choose a new password, then go home. */
 export default function UpdatePassword() {
   const { session, profile, loading } = useAuth();
   const navigate = useNavigate();
@@ -48,13 +48,13 @@ export default function UpdatePassword() {
     }
   };
 
-  if (!session && !expired) return <FullscreenLoader label="Opening your reset link" />;
+  if (!session && !expired) return <FullscreenLoader label="Opening password reset" />;
 
   return (
     <AuthLayout
       eyebrow="Account help"
-      title={session ? 'Choose a new password' : 'This link has expired'}
-      lede={session ? 'Use at least 8 characters. You’ll stay signed in on this device.' : 'Reset links work once and expire after a while. Ask for a new one.'}
+      title={session ? 'Choose a new password' : 'This reset has expired'}
+      lede={session ? 'Use at least 8 characters. You’ll stay signed in on this device.' : 'Reset codes work once and expire after a while. Ask for a new one.'}
       footer={
         <p>
           <Link to="/login">Back to sign in</Link>
@@ -80,7 +80,7 @@ export default function UpdatePassword() {
         </form>
       ) : (
         <Button size="lg" block onClick={() => navigate('/reset-password')}>
-          Send a new reset link
+          Send a new reset code
         </Button>
       )}
     </AuthLayout>

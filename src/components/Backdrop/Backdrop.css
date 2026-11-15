@@ -26,14 +26,14 @@
     }
     &[data-orb='gold'] {
       --orb-size: max(50vmax, 420px);
-      --orb-color: color-mix(in oklab, var(--gold) 34%, transparent);
+      --orb-color: color-mix(in oklab, var(--brand-bright) 34%, transparent);
       --orb-opacity: 0.35;
       inset-block-start: 10vmax;
       inset-inline-end: -25vmax;
     }
     &[data-orb='terracotta'] {
       --orb-size: max(60vmax, 480px);
-      --orb-color: color-mix(in oklab, var(--terracotta) 36%, transparent);
+      --orb-color: color-mix(in oklab, var(--deep-green) 55%, transparent);
       --orb-opacity: 0.32;
       inset-block-end: -35vmax;
       inset-inline-start: 5vmax;
@@ -72,7 +72,7 @@
         transparent 75%);
     }
     &[data-aurora='gold'] {
-      background: radial-gradient(closest-side at 70% 75%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 70%);
+      background: radial-gradient(closest-side at 70% 75%, color-mix(in oklab, var(--brand-bright) 12%, transparent), transparent 70%);
     }
   }
 

@@ -16,8 +16,8 @@
   .chat__empty-icon {
     inline-size: 28px;
     block-size: 28px;
-    color: var(--gold);
-    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--gold) 60%, transparent));
+    color: var(--brand-bright);
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--brand-bright) 60%, transparent));
     animation: float 4s var(--ease-out) infinite;
   }
   .chat__empty-title { font-weight: 700; color: var(--text); max-inline-size: 30ch; }
@@ -58,7 +58,7 @@
     block-size: 30px;
     border-radius: 50%;
     color: var(--ink);
-    background: radial-gradient(circle at 30% 25%, color-mix(in oklab, var(--gold) 70%, var(--cream)), var(--gold) 45%, var(--emerald) 100%);
+    background: radial-gradient(circle at 30% 25%, color-mix(in oklab, var(--brand-bright) 70%, var(--cream)), var(--brand-bright) 45%, var(--emerald) 100%);
     box-shadow: var(--glass-inset), 0 0 18px -2px color-mix(in oklab, var(--emerald) 70%, transparent);
     & svg { inline-size: 15px; block-size: 15px; }
   }
@@ -77,7 +77,7 @@
     box-shadow:
       var(--glass-inset),
       0 12px 32px -16px color-mix(in oklab, var(--emerald) 55%, transparent),
-      0 0 28px -14px color-mix(in oklab, var(--gold) 45%, transparent);
+      0 0 28px -14px color-mix(in oklab, var(--brand-bright) 45%, transparent);
     & p { color: var(--text); white-space: pre-wrap; }
 
     /* Emerald → gold rim, drawn only in the 1px border ring. */
@@ -88,7 +88,7 @@
       z-index: var(--z-card-fx);
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(120deg, var(--emerald), var(--gold) 35%, color-mix(in oklab, var(--emerald) 60%, transparent) 65%, var(--gold));
+      background: linear-gradient(120deg, var(--emerald), var(--brand-bright) 35%, color-mix(in oklab, var(--emerald) 60%, transparent) 65%, var(--brand-bright));
       -webkit-mask:
         linear-gradient(#000 0 0) content-box,
         linear-gradient(#000 0 0);
@@ -118,7 +118,7 @@
     margin-block-end: var(--space-1);
     font-size: var(--step--2);
     font-weight: 700;
-    color: var(--gold);
+    color: var(--brand-bright);
   }
 
   /* ── Typing indicator ───────────────────────────────────────────── */
@@ -132,7 +132,7 @@
     inline-size: 8px;
     block-size: 8px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, var(--cream), var(--gold) 40%, var(--emerald));
+    background: radial-gradient(circle at 35% 30%, var(--cream), var(--brand-bright) 40%, var(--emerald));
     animation: typing-glow 1.2s var(--ease-out) infinite;
     &:nth-child(3) { animation-delay: 0.16s; }
     &:nth-child(4) { animation-delay: 0.32s; }
@@ -215,7 +215,7 @@
     font-size: var(--step--1);
     font-weight: 600;
     transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
-    & svg { flex: none; inline-size: 16px; block-size: 16px; color: var(--gold); }
+    & svg { flex: none; inline-size: 16px; block-size: 16px; color: var(--brand-bright); }
     &:hover { border-color: color-mix(in oklab, var(--emerald) 60%, transparent); box-shadow: var(--glass-inset), var(--glow-emerald); }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   }

@@ -13,5 +13,5 @@
     &[aria-current='step'] { inline-size: 28px; }
   }
 
-  .progress-dots__active { position: absolute; inset: 0; border-radius: inherit; background: var(--gold); }
+  .progress-dots__active { position: absolute; inset: 0; border-radius: inherit; background: var(--brand-bright); }
 }

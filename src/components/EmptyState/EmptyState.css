@@ -16,7 +16,7 @@
     block-size: 56px;
     border-radius: 50%;
     background: var(--surface-2);
-    color: var(--gold);
+    color: var(--brand-bright);
     animation: float 5s var(--ease-out) infinite;
     & svg { inline-size: 26px; block-size: 26px; }
   }

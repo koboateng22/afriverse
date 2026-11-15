@@ -17,7 +17,7 @@ import './AmbassadorHub.css';
 
 const cedis = (cents: number) => formatMoney(Math.round(cents), 'GHS');
 
-type Stat = { label: string; value: number; icon: LucideIcon; tone: 'plain' | 'gold' | 'emerald'; money?: boolean; hint: string };
+type Stat = { label: string; value: number; icon: LucideIcon; tone: 'plain' | 'brand' | 'emerald'; money?: boolean; hint: string };
 
 /** Campus Ambassadors: their referral code, sign-ups, upgrades and earnings. Payouts are manual (admin, MoMo). */
 export default function AmbassadorHub() {
@@ -53,7 +53,7 @@ export default function AmbassadorHub() {
     ? [
         { label: 'Total sign-ups', value: stats.signups, icon: UsersRound, tone: 'plain', hint: 'Joined with your code' },
         { label: 'Pro upgrades', value: stats.upgrades, icon: Sparkles, tone: 'plain', hint: 'Paid for Pro' },
-        { label: 'Pending earnings', value: stats.pending_cents, icon: Hourglass, tone: 'gold', money: true, hint: 'Paid at month end' },
+        { label: 'Pending earnings', value: stats.pending_cents, icon: Hourglass, tone: 'brand', money: true, hint: 'Paid at month end' },
         { label: 'Total paid out', value: stats.paid_cents, icon: BadgeCheck, tone: 'emerald', money: true, hint: 'Sent to your MoMo' },
       ]
     : [];
@@ -63,7 +63,6 @@ export default function AmbassadorHub() {
       <div className="container amb">
         <PageHeader
           back={{ to: '/profile', label: 'You' }}
-          artTone="gold"
           eyebrow="Campus Ambassador"
           title="Ambassador Hub"
           lede="Share your code. Every friend who joins with it and goes Pro earns you GH₵ 5."
@@ -96,7 +95,7 @@ export default function AmbassadorHub() {
                   <Button variant="secondary" icon={copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} onClick={() => void copy(stats.referral_code)}>
                     {copied ? 'Copied' : 'Copy'}
                   </Button>
-                  <a className="btn amb-code__wa" data-variant="gold" href={whatsappShareUrl(stats.referral_code)} target="_blank" rel="noopener noreferrer">
+                  <a className="btn amb-code__wa" data-variant="primary" href={whatsappShareUrl(stats.referral_code)} target="_blank" rel="noopener noreferrer">
                     <MessageCircle aria-hidden="true" /> Share to WhatsApp
                   </a>
                 </div>

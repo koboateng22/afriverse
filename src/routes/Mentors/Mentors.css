@@ -14,7 +14,7 @@
     background: color-mix(in oklab, var(--deep-green) 45%, transparent);
     border: 1px solid color-mix(in oklab, var(--emerald) 30%, transparent);
     font-size: var(--step--1);
-    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--gold); }
+    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--brand-bright); }
   }
 
   .mentor-card {
@@ -39,7 +39,7 @@
     border-radius: 50%;
     background: var(--gradient-brand);
     color: var(--ink);
-    box-shadow: var(--glass-inset), 0 8px 20px -8px color-mix(in oklab, var(--gold) 55%, transparent);
+    box-shadow: var(--glass-inset), 0 8px 20px -8px color-mix(in oklab, var(--brand-bright) 55%, transparent);
     font-family: var(--font-display);
     font-weight: 800;
   }
@@ -47,5 +47,5 @@
   .mentor-card__name { font-weight: 800; color: var(--text); }
   .mentor-card__headline { font-size: var(--step--1); color: var(--text-2); }
   .mentor-card__tags { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-  .mentor-card__rate { flex: none; font-weight: 800; color: var(--gold); font-size: var(--step--1); }
+  .mentor-card__rate { flex: none; font-weight: 800; color: var(--brand-bright); font-size: var(--step--1); }
 }

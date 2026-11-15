@@ -1,12 +1,24 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Gift, KeyRound, Lock, Mail, MailCheck, Phone, UserRound } from 'lucide-react';
+import { Gift, KeyRound, Lock, Mail, Phone, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
-import { spring } from '../../lib/motion';
 import { normalizeCode, referralCodeValid, rememberReferral } from '../ambassador/api';
-import { authErrorMessage, EmailTakenError, sendPhoneOtp, signInWithEmail, signInWithGoogle, signUpWithEmail, toE164, verifyPhoneOtp, type SignupAs } from './api';
+import {
+  authErrorMessage,
+  EmailTakenError,
+  resendEmailCode,
+  sendEmailSignInCode,
+  sendPhoneOtp,
+  signInWithEmail,
+  signInWithGoogle,
+  signUpWithEmail,
+  toE164,
+  verifyPhoneOtp,
+  type SignupAs,
+} from './api';
+import { EmailCodeStep } from './EmailCodeStep';
 import './AuthForm.css';
 
 export type AuthFormProps = {
@@ -16,6 +28,8 @@ export type AuthFormProps = {
 
 type Method = 'email' | 'phone';
 type CodeCheck = 'idle' | 'checking' | 'valid' | 'invalid';
+/** The "Verify Code" step: which email the code went to, and what it's for. */
+type Verify = { email: string; type: 'signup' | 'email'; intro?: ReactNode };
 
 // Client-side brake on repeated failed sign-ins (Supabase's own rate limit is the real guard).
 const MAX_FAILED_SIGNINS = 5;
@@ -51,7 +65,9 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState<'submit' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [checkInbox, setCheckInbox] = useState<string | null>(null);
+  const [verify, setVerify] = useState<Verify | null>(null);
+  // Login only: sign in with an emailed code instead of a password.
+  const [withCode, setWithCode] = useState(false);
   const [referral, setReferral] = useState(codeFromUrl);
   const [codeCheck, setCodeCheck] = useState<CodeCheck>('idle');
 
@@ -144,13 +160,50 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
         if (password !== confirm) throw new Error('The passwords don’t match. Type the same password twice.');
         const referralCode = await checkedReferral();
         const { needsConfirmation } = await signUpWithEmail({ email: email.trim(), password, fullName: fullName.trim(), as: audience, referralCode });
-        if (needsConfirmation) setCheckInbox(email.trim());
+        if (needsConfirmation) {
+          setVerify({
+            email: email.trim(),
+            type: 'signup',
+            intro: (
+              <>
+                We sent a 6-digit code to <strong>{email.trim()}</strong>. Enter it to confirm your email
+                {audience === 'mentor' ? '; then the team reviews your mentor application.' : ' and continue to onboarding.'}
+              </>
+            ),
+          });
+        }
+      } else if (withCode) {
+        if (!/^\S+@\S+\.\S+$/.test(email.trim())) throw new Error('Enter the email address you signed up with.');
+        await sendEmailSignInCode(email.trim());
+        setVerify({
+          email: email.trim(),
+          type: 'email',
+          intro: (
+            <>
+              If <strong>{email.trim()}</strong> has an Afriversity account, a 6-digit sign-in code is on its way.
+            </>
+          ),
+        });
       } else {
         if (lockedUntil > Date.now()) throw new Error(`Too many attempts. Try again in ${lockLeft} seconds.`);
         try {
           await signInWithEmail(email.trim(), password);
           failures.current = [];
         } catch (err) {
+          // Signed up but never confirmed: send a fresh code and ask for it here.
+          if (/email not confirmed/i.test(String((err as { message?: unknown } | null)?.message ?? ''))) {
+            await resendEmailCode(email.trim(), 'signup').catch(() => {}); // a recent code may still be valid
+            setVerify({
+              email: email.trim(),
+              type: 'signup',
+              intro: (
+                <>
+                  Your email isn’t confirmed yet. We sent a 6-digit code to <strong>{email.trim()}</strong>.
+                </>
+              ),
+            });
+            return;
+          }
           noteFailedSignIn();
           throw err;
         }
@@ -174,17 +227,8 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
     });
   };
 
-  if (checkInbox) {
-    return (
-      <motion.div className="auth-form__inbox" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={spring} role="status">
-        <MailCheck aria-hidden="true" />
-        <h2>Check your inbox</h2>
-        <p>
-          We sent a confirmation link to <strong>{checkInbox}</strong>. Open it on this device to continue
-          {audience === 'mentor' ? ' — your mentor application will then be reviewed.' : ' to onboarding.'}
-        </p>
-      </motion.div>
-    );
+  if (verify) {
+    return <EmailCodeStep email={verify.email} type={verify.type} intro={verify.intro} onBack={() => setVerify(null)} />;
   }
 
   return (
@@ -226,16 +270,18 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
               <Field label="Full name" autoComplete="name" icon={<UserRound />} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
             )}
             <Field label="Email" type="email" inputMode="email" autoComplete="email" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Field
-              label="Password"
-              type="password"
-              autoComplete={isSignup ? 'new-password' : 'current-password'}
-              icon={<Lock />}
-              hint={isSignup ? 'At least 8 characters.' : undefined}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            {!withCode && (
+              <Field
+                label="Password"
+                type="password"
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+                icon={<Lock />}
+                hint={isSignup ? 'At least 8 characters.' : undefined}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            )}
             {isSignup ? (
               <Field
                 label="Confirm password"
@@ -248,6 +294,8 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
                 hint={confirm && !mismatch ? 'Passwords match.' : undefined}
                 required
               />
+            ) : withCode ? (
+              <p className="auth-form__note">We’ll email you a 6-digit code. No password needed.</p>
             ) : (
               <Link to="/reset-password" state={{ email: email.trim() }} className="auth-form__forgot">
                 Forgot password?
@@ -265,10 +313,30 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
               size="lg"
               block
               loading={busy === 'submit'}
-              disabled={!email || !password || (isSignup && (!fullName.trim() || !confirm || mismatch)) || lockLeft > 0}
+              disabled={!email || (!withCode && !password) || (isSignup && (!fullName.trim() || !confirm || mismatch)) || (!withCode && lockLeft > 0)}
             >
-              {isSignup ? (audience === 'mentor' ? 'Apply as a mentor' : 'Create account') : lockLeft > 0 ? `Try again in ${lockLeft}s` : 'Sign in'}
+              {isSignup
+                ? audience === 'mentor'
+                  ? 'Apply as a mentor'
+                  : 'Create account'
+                : withCode
+                  ? 'Email me a code'
+                  : lockLeft > 0
+                    ? `Try again in ${lockLeft}s`
+                    : 'Sign in'}
             </Button>
+            {!isSignup && (
+              <button
+                type="button"
+                className="auth-form__switch"
+                onClick={() => {
+                  setWithCode((v) => !v);
+                  setError(null);
+                }}
+              >
+                {withCode ? 'Sign in with your password instead' : 'Sign in with an email code instead'}
+              </button>
+            )}
           </motion.form>
         ) : (
           <motion.form

@@ -19,7 +19,7 @@
   .file-field[data-state='done'] .file-field__drop { border-style: solid; border-color: color-mix(in oklab, var(--emerald) 55%, transparent); background: var(--accent-soft); }
   .file-field[data-invalid] .file-field__drop { border-color: var(--terracotta); }
 
-  .file-field__icon { flex: none; inline-size: 24px; block-size: 24px; color: var(--gold); }
+  .file-field__icon { flex: none; inline-size: 24px; block-size: 24px; color: var(--brand-bright); }
   .file-field[data-state='done'] .file-field__icon { color: color-mix(in oklab, var(--emerald) 50%, var(--cream)); }
   /* Uploading: the drop zone itself shimmers (no spinner). */
   .file-field[data-state='uploading'] .file-field__drop {
@@ -37,7 +37,7 @@
       pointer-events: none;
     }
   }
-  .file-field__icon[data-uploading] { color: var(--gold); animation: float 1.6s var(--ease-out) infinite; }
+  .file-field__icon[data-uploading] { color: var(--brand-bright); animation: float 1.6s var(--ease-out) infinite; }
   .file-field__text { flex: 1; display: grid; gap: 2px; min-inline-size: 0; }
   .file-field__main { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-field__sub { font-size: var(--step--2); color: var(--text-3); }

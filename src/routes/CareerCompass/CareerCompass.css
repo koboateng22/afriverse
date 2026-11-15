@@ -27,7 +27,7 @@
       z-index: var(--z-card-fx);
       border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(140deg, color-mix(in oklab, var(--emerald) 75%, transparent), color-mix(in oklab, var(--gold) 40%, transparent) 45%, var(--glass-edge) 75%);
+      background: linear-gradient(140deg, color-mix(in oklab, var(--emerald) 75%, transparent), color-mix(in oklab, var(--brand-bright) 40%, transparent) 45%, var(--glass-edge) 75%);
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -42,7 +42,7 @@
     gap: var(--space-1);
     padding-inline-start: var(--space-5);
     font-size: var(--step--1);
-    & li::marker { color: var(--gold); font-weight: 700; }
+    & li::marker { color: var(--brand-bright); font-weight: 700; }
   }
   .career-card__watch {
     justify-self: start;
@@ -53,9 +53,9 @@
     margin-block-start: var(--space-2);
     padding-inline: var(--space-4);
     border-radius: var(--radius-pill);
-    background: color-mix(in oklab, var(--gold) 12%, var(--glass-solid));
-    border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
-    color: color-mix(in oklab, var(--gold) 82%, var(--cream));
+    background: color-mix(in oklab, var(--brand-bright) 12%, var(--glass-solid));
+    border: 1px solid color-mix(in oklab, var(--brand-bright) 30%, transparent);
+    color: color-mix(in oklab, var(--brand-bright) 82%, var(--cream));
     font-weight: 700;
     font-size: var(--step--1);
     & svg { inline-size: 18px; block-size: 18px; }

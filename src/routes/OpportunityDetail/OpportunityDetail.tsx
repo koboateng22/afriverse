@@ -94,104 +94,108 @@ export default function OpportunityDetail() {
           </div>
         ) : (
           <motion.div className="opp__body" variants={staggerParent} initial="hidden" animate="show">
-            <motion.div className="opp__tags" variants={riseItem}>
-              {match && <span className="opp__match">{match.score}% match</span>}
-              <Tag tone={countdown.tone}>{countdown.label}</Tag>
-              <Tag>{FUNDING_LABEL[o.funding]}</Tag>
-              <Tag>{o.host_country}</Tag>
-            </motion.div>
+            {/* Phones: both wrappers are display: contents and CSS order keeps the
+                sequence tags → countdown → details → apply. Desktop: details on the
+                left, a sticky aside with the key facts and the Apply button on the right. */}
+            <div className="opp__main">
+              <motion.p variants={riseItem} className="opp__desc">
+                {o.description}
+              </motion.p>
 
-            {o.status === 'open' && o.deadline && (
-              <motion.section variants={riseItem} aria-label="Time left to apply" className="opp__countdown">
-                <p className="eyebrow">Closes {formatDay(o.deadline)}</p>
-                <Countdown deadline={o.deadline} />
+              {o.cycle_note && (
+                <motion.div variants={riseItem}>
+                  <Notice tone="info">{o.cycle_note}</Notice>
+                </motion.div>
+              )}
+
+              <motion.section variants={riseItem} className="opp__section" aria-labelledby="elig-h">
+                <h2 id="elig-h">Who can apply</h2>
+                <p className="opp__open-to">{o.open_to}</p>
+                <ul role="list" className="opp__list">
+                  {o.eligibility.map((e) => (
+                    <li key={e}>
+                      <Check aria-hidden="true" />
+                      <span>{e}</span>
+                    </li>
+                  ))}
+                </ul>
               </motion.section>
-            )}
 
-            <motion.p variants={riseItem} className="opp__desc">
-              {o.description}
-            </motion.p>
+              <motion.section variants={riseItem} className="opp__section" aria-labelledby="ben-h">
+                <h2 id="ben-h">What you get</h2>
+                <ul role="list" className="opp__list">
+                  {o.benefits.map((b) => (
+                    <li key={b}>
+                      <Check aria-hidden="true" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.section>
 
-            {o.cycle_note && (
-              <motion.div variants={riseItem}>
-                <Notice tone="info">{o.cycle_note}</Notice>
+              {o.is_pro && (
+                <motion.section variants={riseItem} className="pro-guide" data-locked={plan !== 'pro' || undefined} aria-labelledby="pro-h">
+                  <div className="pro-guide__head">
+                    <Sparkles aria-hidden="true" />
+                    <h2 id="pro-h">Insider application guide</h2>
+                    <Tag tone="gold">Pro</Tag>
+                  </div>
+                  {plan === 'pro' ? (
+                    insights ? (
+                      <ol className="pro-guide__list">
+                        {insights.map((t) => (
+                          <li key={t}>{t}</li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <Skeleton width="100%" height="60px" shape="block" label="Loading guide" />
+                    )
+                  ) : planLoading ? null : (
+                    <>
+                      <LockedGuide />
+                      <div className="pro-guide__upsell">
+                        <Lock aria-hidden="true" />
+                        <p>Step-by-step tips drawn from this programme's own rules — included with Pro.</p>
+                        <button type="button" className="pro-guide__cta" onClick={() => openPaywall('Insider application guides are part of Pro.')}>
+                          Unlock with Pro
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </motion.section>
+              )}
+            </div>
+            <aside className="opp__aside" aria-label="Key facts">
+              <motion.div className="opp__tags" variants={riseItem}>
+                {match && <span className="opp__match">{match.score}% match</span>}
+                <Tag tone={countdown.tone}>{countdown.label}</Tag>
+                <Tag>{FUNDING_LABEL[o.funding]}</Tag>
+                <Tag>{o.host_country}</Tag>
               </motion.div>
-            )}
-
-            <motion.section variants={riseItem} className="opp__section" aria-labelledby="elig-h">
-              <h2 id="elig-h">Who can apply</h2>
-              <p className="opp__open-to">{o.open_to}</p>
-              <ul role="list" className="opp__list">
-                {o.eligibility.map((e) => (
-                  <li key={e}>
-                    <Check aria-hidden="true" />
-                    <span>{e}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.section>
-
-            <motion.section variants={riseItem} className="opp__section" aria-labelledby="ben-h">
-              <h2 id="ben-h">What you get</h2>
-              <ul role="list" className="opp__list">
-                {o.benefits.map((b) => (
-                  <li key={b}>
-                    <Check aria-hidden="true" />
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.section>
-
-            {o.is_pro && (
-              <motion.section variants={riseItem} className="pro-guide" data-locked={plan !== 'pro' || undefined} aria-labelledby="pro-h">
-                <div className="pro-guide__head">
-                  <Sparkles aria-hidden="true" />
-                  <h2 id="pro-h">Insider application guide</h2>
-                  <Tag tone="gold">Pro</Tag>
-                </div>
-                {plan === 'pro' ? (
-                  insights ? (
-                    <ol className="pro-guide__list">
-                      {insights.map((t) => (
-                        <li key={t}>{t}</li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <Skeleton width="100%" height="60px" shape="block" label="Loading guide" />
-                  )
-                ) : planLoading ? null : (
-                  <>
-                    <LockedGuide />
-                    <div className="pro-guide__upsell">
-                      <Lock aria-hidden="true" />
-                      <p>Step-by-step tips drawn from this programme's own rules — included with Pro.</p>
-                      <button type="button" className="pro-guide__cta" onClick={() => openPaywall('Insider application guides are part of Pro.')}>
-                        Unlock with Pro
-                      </button>
-                    </div>
-                  </>
-                )}
-              </motion.section>
-            )}
-
-            <motion.div variants={riseItem} className="opp__actions">
-              <motion.a
-                href={o.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opp__apply"
-                data-muted={canApply ? undefined : true}
-                whileHover={lift}
-                whileTap={press}
-              >
-                {canApply ? 'Apply on the official site' : 'View the official page'}
-                <ArrowUpRight aria-hidden="true" />
-              </motion.a>
-              <p className="opp__verified">
-                <Info aria-hidden="true" /> Details checked against the official page. Always confirm dates there before applying.
-              </p>
-            </motion.div>
+              {o.status === 'open' && o.deadline && (
+                <motion.section variants={riseItem} aria-label="Time left to apply" className="opp__countdown">
+                  <p className="eyebrow">Closes {formatDay(o.deadline)}</p>
+                  <Countdown deadline={o.deadline} />
+                </motion.section>
+              )}
+              <motion.div variants={riseItem} className="opp__actions">
+                <motion.a
+                  href={o.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="opp__apply"
+                  data-muted={canApply ? undefined : true}
+                  whileHover={lift}
+                  whileTap={press}
+                >
+                  {canApply ? 'Apply on the official site' : 'View the official page'}
+                  <ArrowUpRight aria-hidden="true" />
+                </motion.a>
+                <p className="opp__verified">
+                  <Info aria-hidden="true" /> Details checked against the official page. Always confirm dates there before applying.
+                </p>
+              </motion.div>
+            </aside>
           </motion.div>
         )}
       </div>

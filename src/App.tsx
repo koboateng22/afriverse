@@ -8,7 +8,7 @@ import { isStudent, STUDENT_ROLES } from './features/profiles/types';
 import { PlanProvider } from './features/billing/PlanProvider';
 import { PaywallProvider } from './features/billing/PaywallModal';
 import { Backdrop, GrainOverlay } from './components/Backdrop/Backdrop';
-import { BottomNav, MENTOR_NAV, navMatches, STUDENT_NAV } from './components/BottomNav/BottomNav';
+import { BottomNav, MENTOR_NAV, navMatches, STUDENT_NAV, STUDENT_SECTIONS } from './components/BottomNav/BottomNav';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { ToastProvider } from './components/Toast/Toast';
 import { FullscreenLoader } from './components/FullscreenLoader/FullscreenLoader';
@@ -168,7 +168,7 @@ function AnimatedRoutes() {
           </Routes>
         </Suspense>
       </AnimatePresence>
-      {showStudentNav && <BottomNav items={STUDENT_NAV} />}
+      {showStudentNav && <BottomNav items={STUDENT_NAV} sections={STUDENT_SECTIONS} />}
       {showMentorNav && <BottomNav items={MENTOR_NAV} />}
     </>
   );

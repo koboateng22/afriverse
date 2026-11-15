@@ -58,6 +58,13 @@
       inline-size: min(100% - 2 * var(--gutter), var(--container-reading));
     }
   }
+  /* Desktop: detail pages and the profile become two columns (main + side
+     panel), so they use the full content width instead of a narrow strip. */
+  @media (min-width: 1024px) {
+    .container:is(.opp, .uni, .profile, .paywall) {
+      inline-size: min(100% - 2 * var(--gutter), var(--container));
+    }
+  }
 
   /* Failsafe: a leaving screen (pinned by <PageTransition>) is hidden once its
      exit should be long over, so two screens' text can never stay overlapped. */

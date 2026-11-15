@@ -32,7 +32,7 @@
   .list-row__badge {
     padding: 0 var(--space-2);
     border-radius: var(--radius-pill);
-    background: var(--gold);
+    background: var(--brand-bright);
     color: var(--ink);
     font-size: var(--step--2);
     font-weight: 800;

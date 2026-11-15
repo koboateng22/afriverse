@@ -24,7 +24,7 @@
     text-align: start;
     border-radius: var(--radius-sm);
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-    &[data-active] .video-card__thumb { box-shadow: 0 0 0 2px var(--gold); }
+    &[data-active] .video-card__thumb { box-shadow: 0 0 0 2px var(--brand-bright); }
     &:hover .video-card__play { transform: scale(1.08); }
   }
   .video-card__thumb {

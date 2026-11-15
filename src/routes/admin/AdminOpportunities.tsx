@@ -225,7 +225,7 @@ export default function AdminOpportunities() {
                 {o.is_verified && <Tag tone="emerald"><BadgeCheck aria-hidden="true" /> Verified</Tag>}
                 {o.is_pro && <Tag tone="gold">Pro guide</Tag>}
                 {!o.published && <Tag>Draft</Tag>}
-                <Button variant={o.featured ? 'gold' : 'secondary'} size="sm" icon={<Star aria-hidden="true" />} onClick={() => void toggleFeatured(o)} aria-pressed={o.featured}>
+                <Button variant={o.featured ? 'primary' : 'secondary'} size="sm" icon={<Star aria-hidden="true" />} onClick={() => void toggleFeatured(o)} aria-pressed={o.featured}>
                   {o.featured ? 'Featured' : 'Feature'}
                 </Button>
                 <Button variant="secondary" size="sm" icon={<Pencil aria-hidden="true" />} onClick={() => { setFormError(null); setForm(toForm(o)); }}>

@@ -134,7 +134,7 @@ export default function AdminApplications() {
                 </span>
               </div>
               <div className="admin-row__aside">
-                <Tag tone={a.status === 'Offer' || a.status === 'Paid' ? 'gold' : unpaid(a.status) || a.status === 'Rejected' ? 'urgent' : 'emerald'}>{a.status}</Tag>
+                <Tag tone={a.status === 'Offer' || a.status === 'Paid' ? 'emerald' : unpaid(a.status) || a.status === 'Rejected' ? 'urgent' : 'emerald'}>{a.status}</Tag>
                 {!unpaid(a.status) && (
                   <Button
                     variant="secondary"

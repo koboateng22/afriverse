@@ -51,12 +51,28 @@
     --text-on-gold: var(--ink);
     --text-on-emerald: var(--cream);
 
+    /* ── Brand: ONE primary colour, Afriversity green ─────────────
+       --brand          fills: primary buttons, active navigation, selected states
+       --brand-strong   pressed / dark fills (cream text stays ≥ 4.5:1)
+       --brand-bright   text, icons and fine accents on the dark background (≈ 8:1 on ink)
+       --brand-soft     tinted backgrounds (selected rows, notices, pills)
+       Gold is NOT a second brand colour: it means Pro (--premium) only.
+       Terracotta means urgent / error only. */
+    --brand: var(--emerald);
+    --brand-strong: var(--deep-green);
+    --brand-bright: #3FBF8C;
+    --brand-soft: color-mix(in oklab, var(--emerald) 16%, transparent);
+    --brand-line: color-mix(in oklab, var(--emerald) 42%, transparent);
+    --text-on-brand-bright: var(--ink);
+    --premium: var(--gold);
+    --premium-soft: color-mix(in oklab, var(--gold) 16%, transparent);
+
     /* ── Roles ─────────────────────────────────────────────────── */
-    --accent: var(--emerald);
-    --accent-strong: var(--deep-green);
+    --accent: var(--brand);
+    --accent-strong: var(--brand-strong);
     --accent-soft: color-mix(in oklab, var(--emerald) 18%, transparent);
-    --highlight: var(--gold);
-    --highlight-soft: color-mix(in oklab, var(--gold) 16%, transparent);
+    --highlight: var(--brand-bright);
+    --highlight-soft: var(--brand-soft);
     --urgent: var(--terracotta);
     --urgent-soft: color-mix(in oklab, var(--terracotta) 16%, transparent);
     --danger: var(--terracotta);
@@ -162,6 +178,7 @@
       0 18px 50px -18px color-mix(in oklab, var(--emerald) 55%, transparent);
     --glow-emerald: 0 0 0 1px color-mix(in oklab, var(--emerald) 55%, transparent), 0 0 32px -4px color-mix(in oklab, var(--emerald) 60%, transparent);
     --glow-gold: 0 0 40px -6px color-mix(in oklab, var(--gold) 55%, transparent);
+    --glow-brand: 0 0 40px -8px color-mix(in oklab, var(--brand-bright) 45%, transparent);
 
     /* Shimmer sweep used by every skeleton. */
     --shimmer: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.07) 40%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0.07) 60%, transparent 80%);
@@ -169,8 +186,8 @@
     /* ── Focus ─────────────────────────────────────────────────── */
     --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--emerald);
 
-    /* ── Brand gradient (emerald → gold → terracotta) ── */
-    --gradient-brand: linear-gradient(120deg, var(--emerald), var(--gold) 55%, var(--terracotta));
+    /* ── Brand gradient: one hue, light → deep green ── */
+    --gradient-brand: linear-gradient(120deg, var(--brand-bright), var(--emerald) 55%, var(--deep-green));
 
     /* ── Grain intensity ───────────────────────────────────────── */
     --grain-opacity: 0.03;
@@ -190,12 +207,20 @@
     color-scheme: dark;
   }
 
-  /* Laptop and up: wider pages, and the bottom bar becomes a sidebar. */
+  /* Tablet and up: the bottom bar becomes a left sidebar (an icon rail until
+     1024px), and pages get desktop widths. */
   @media (min-width: 768px) {
     :root {
       --container: 1200px;
       --container-wide: 1200px;
       --nav-h: 0px;
+      --sidebar-w: 76px;
     }
+  }
+  @media (min-width: 1024px) {
+    :root { --sidebar-w: 248px; }
+  }
+  @media (min-width: 1600px) {
+    :root { --container: 1320px; --container-wide: 1320px; }
   }
 }

@@ -1,6 +1,11 @@
 @layer components {
   .learn { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
-  .learn__hub { display: grid; gap: var(--space-3); }
+  .learn__hub {
+    display: grid;
+    gap: var(--space-3);
+    /* Desktop: the three tools sit side by side instead of as full-width rows. */
+    @media (min-width: 1024px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
   /* One column: heading, then the filter bar, then the card grid, stacked.
      (Columns belong to .learn__grid only; making this section a multi-column
      grid put the filter bar beside the cards and stretched the pills.) */

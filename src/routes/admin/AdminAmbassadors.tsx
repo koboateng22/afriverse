@@ -245,7 +245,7 @@ export default function AdminAmbassadors() {
                   </span>
                 </div>
                 <div className="admin-row__aside">
-                  {a.referral_code && <Tag tone="gold">{a.referral_code}</Tag>}
+                  {a.referral_code && <Tag tone="emerald">{a.referral_code}</Tag>}
                   <span className="admin-row__money" title="Pending">{cedis(a.ambassador_pending_earnings_cents)} pending</span>
                   <span className="admin-row__meta">{cedis(a.ambassador_total_paid_cents)} paid</span>
                   <Button size="sm" variant={a.ambassador_pending_earnings_cents > 0 ? 'primary' : 'secondary'} icon={<Wallet aria-hidden="true" />} onClick={() => review(a)}>

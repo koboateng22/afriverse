@@ -16,6 +16,27 @@ sign_in_sign_ups = 25
 
 [auth.email]
 enable_confirmations = true
+# Emails carry a 6-digit code ({{ .Token }}) instead of a link, so they work on any
+# device or browser. Keep these in step with the hosted project:
+# Dashboard → Authentication → Sign In / Providers → Email (OTP length, OTP expiry).
+otp_length = 6
+otp_expiry = 3600
+# One email per address per minute (the app's "Send a new code" cooldown matches).
+max_frequency = "60s"
+
+# Local templates. The hosted project uses Dashboard → Authentication → Emails
+# (or `node scripts/push-email-templates.mjs`, which uploads these same files).
+[auth.email.template.confirmation]
+subject = "Your Afriversity confirmation code"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your Afriversity sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Your Afriversity password reset code"
+content_path = "./supabase/templates/recovery.html"
 
 # Paystack signs its webhooks (HMAC-SHA512); it never sends a Supabase JWT.
 [functions.paystack-webhook]

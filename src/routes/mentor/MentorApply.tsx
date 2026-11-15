@@ -1,15 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Briefcase, Coins, KeyRound, Link2, Lock, Mail, MailCheck, UserRound } from 'lucide-react';
+import { Briefcase, Coins, KeyRound, Link2, Lock, Mail, UserRound } from 'lucide-react';
 import { AuthLayout } from '../../features/auth/AuthLayout';
 import { RedirectIfSignedIn } from '../../features/auth/RedirectIfSignedIn';
 import { authErrorMessage, EmailTakenError, signUpWithEmail } from '../../features/auth/api';
+import { EmailCodeStep } from '../../features/auth/EmailCodeStep';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
 import { useToast } from '../../components/Toast/Toast';
 import { formatMoney, toCents } from '../../lib/money';
-import { spring } from '../../lib/motion';
 import '../../features/auth/AuthForm.css';
 
 // Same range as mentors.proposed_rate_cents (0010): GHS 10 – 100,000.
@@ -71,13 +70,16 @@ export default function MentorApply() {
         }
       >
         {sentTo ? (
-          <motion.div className="auth-form__inbox" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={spring} role="status">
-            <MailCheck aria-hidden="true" />
-            <h2>Check your inbox</h2>
-            <p>
-              We sent a confirmation link to <strong>{sentTo}</strong>. Confirm your email; then the team reviews your application, rate and LinkedIn.
-            </p>
-          </motion.div>
+          <EmailCodeStep
+            email={sentTo}
+            type="signup"
+            intro={
+              <>
+                We sent a 6-digit code to <strong>{sentTo}</strong>. Enter it to confirm your email; then the team reviews your application, rate and LinkedIn.
+              </>
+            }
+            onBack={() => setSentTo(null)}
+          />
         ) : (
           <form className="auth-form auth-form__form" onSubmit={submit} noValidate>
             <Field label="Full name" autoComplete="name" icon={<UserRound />} value={f.name} onChange={set('name')} maxLength={120} required />

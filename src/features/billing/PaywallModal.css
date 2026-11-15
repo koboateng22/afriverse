@@ -9,6 +9,6 @@
     color: var(--text);
     font-weight: 600;
     font-size: var(--step--1);
-    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--gold); margin-block-start: 2px; }
+    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--brand-bright); margin-block-start: 2px; }
   }
 }

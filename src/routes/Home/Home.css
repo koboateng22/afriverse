@@ -10,7 +10,8 @@
     font-size: var(--step-3);
     max-inline-size: 15ch;
     hyphens: auto;
-    @media (min-width: 720px) { font-size: var(--step-4); }
+    /* Desktop: one confident line, not a phone-sized poster that pushes the feed down. */
+    @media (min-width: 1024px) { max-inline-size: 30ch; }
   }
 
   .home__sentinel { block-size: 1px; margin-block-end: -1px; }

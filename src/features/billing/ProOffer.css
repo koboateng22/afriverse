@@ -8,6 +8,16 @@
    ────────────────────────────────────────────────────────────── */
 @layer components {
   .pro-offer { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  /* Desktop /paywall (not the compact modal): plan card left, how-to-pay + button right. */
+  @media (min-width: 1024px) {
+    .pro-offer:not([data-compact]) {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-5) var(--space-7);
+      & > .pro-offer__tier { grid-column: 1; grid-row: 1 / span 5; }
+      & > :not(.pro-offer__tier) { grid-column: 2; }
+    }
+  }
 
   .pro-offer__tier {
     position: relative;

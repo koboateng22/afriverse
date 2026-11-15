@@ -66,7 +66,8 @@
     white-space: nowrap;
 
     & svg { inline-size: 1em; block-size: 1em; }
-    &[data-tone='gold'] { background: var(--highlight-soft); color: var(--gold); }
+    /* Gold = Pro / needs-attention only (see tokens: --premium). */
+    &[data-tone='gold'] { background: var(--premium-soft); color: var(--premium); }
     &[data-tone='urgent'] { background: var(--urgent-soft); color: color-mix(in oklab, var(--terracotta) 72%, var(--cream)); }
     &[data-tone='emerald'] { background: var(--accent-soft); color: color-mix(in oklab, var(--emerald) 50%, var(--cream)); }
   }

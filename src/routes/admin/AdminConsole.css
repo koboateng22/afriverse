@@ -54,7 +54,7 @@
   .admin-row__title { font-weight: 800; color: var(--text); }
   .admin-row__meta { font-size: var(--step--1); color: var(--text-3); overflow-wrap: anywhere; }
   .admin-row__aside { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-  .admin-row__money { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .admin-row__money { font-weight: 800; color: var(--brand-bright); font-variant-numeric: tabular-nums; }
 
   .admin-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
   .admin-form__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: var(--space-3); }
@@ -78,7 +78,7 @@
     border-radius: var(--radius-sm);
     background: var(--highlight-soft);
     & div { display: flex; justify-content: space-between; font-size: var(--step--1); }
-    & strong { color: var(--gold); font-size: var(--step-1); font-variant-numeric: tabular-nums; }
+    & strong { color: var(--brand-bright); font-size: var(--step-1); font-variant-numeric: tabular-nums; }
   }
 
   .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: var(--space-3); }
@@ -103,7 +103,7 @@
     & th:first-child, & td:first-child { text-align: start; }
     & thead th { color: var(--text-3); font-weight: 700; font-size: var(--step--2); text-transform: uppercase; letter-spacing: var(--tracking-caps); }
     & tbody th { color: var(--text); }
-    & .revenue-table__net { color: var(--gold); font-weight: 800; }
+    & .revenue-table__net { color: var(--brand-bright); font-weight: 800; }
   }
   .table-scroll { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--surface-1); }
 
@@ -137,14 +137,14 @@
   .admin-section__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
   /* Ambassadors: payout panel + verification lists. */
-  .amb-admin__totals dd { color: var(--gold); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .amb-admin__totals dd { color: var(--brand-bright); font-weight: 800; font-variant-numeric: tabular-nums; }
   .amb-admin__pay {
     display: grid;
     gap: var(--space-3);
     padding: var(--space-4);
     border-radius: var(--radius-md);
     background: var(--highlight-soft);
-    border: 1px solid color-mix(in oklab, var(--gold) 30%, transparent);
+    border: 1px solid color-mix(in oklab, var(--brand-bright) 30%, transparent);
   }
   .amb-admin__list { display: grid; gap: var(--space-2); }
   .amb-admin__why { font-size: var(--step--1); color: var(--text-2); font-style: italic; overflow-wrap: anywhere; }
@@ -156,7 +156,7 @@
     padding: var(--space-4);
     border-radius: var(--radius-md);
     background: var(--highlight-soft);
-    border: 1px solid color-mix(in oklab, var(--gold) 25%, transparent);
+    border: 1px solid color-mix(in oklab, var(--brand-bright) 25%, transparent);
   }
   .admin-review__title { display: flex; align-items: center; gap: var(--space-2); font-size: var(--step-1); }
   .admin-review__count {
@@ -166,7 +166,7 @@
     block-size: 26px;
     padding-inline: var(--space-2);
     border-radius: var(--radius-pill);
-    background: var(--gold);
+    background: var(--brand-bright);
     color: var(--ink);
     font-size: var(--step--2);
     font-weight: 800;
@@ -186,7 +186,7 @@
     font-weight: 800;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--brand-bright);
   }
   .uni-form__note { font-size: var(--step--1); color: var(--text-3); }
 
@@ -283,7 +283,7 @@
     &[data-on] { border-color: color-mix(in oklab, var(--emerald) 65%, transparent); background: var(--accent-soft); }
     & input { grid-area: box; inline-size: 20px; block-size: 20px; margin: 0; accent-color: var(--emerald); }
   }
-  .builder__icon { grid-area: icon; inline-size: 20px; block-size: 20px; color: var(--gold); }
+  .builder__icon { grid-area: icon; inline-size: 20px; block-size: 20px; color: var(--brand-bright); }
   .builder__label { grid-area: label; font-weight: 700; font-size: var(--step--1); color: var(--text); overflow-wrap: anywhere; }
   .builder__kind { grid-area: kind; font-size: var(--step--2); color: var(--text-3); }
 
@@ -301,7 +301,7 @@
     font-size: var(--step--1);
     color: var(--text-2);
     & svg { inline-size: 14px; block-size: 14px; }
-    &:hover { color: var(--text); border-color: var(--gold); }
+    &:hover { color: var(--text); border-color: var(--brand-bright); }
     &:active { transform: scale(0.96); background: var(--surface-2); }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   }
@@ -320,7 +320,7 @@
       border: 1px solid var(--line);
       font-size: var(--step--1);
     }
-    & li > svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--gold); }
+    & li > svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--brand-bright); }
     & li > span { flex: 1; min-inline-size: 0; overflow-wrap: anywhere; color: var(--text); }
   }
   .builder__remove {
@@ -343,11 +343,11 @@
     padding: var(--space-4);
     border-radius: var(--radius-md);
     background: var(--highlight-soft);
-    border: 1px solid color-mix(in oklab, var(--gold) 25%, transparent);
+    border: 1px solid color-mix(in oklab, var(--brand-bright) 25%, transparent);
     & ol { display: grid; gap: var(--space-1); padding-inline-start: var(--space-5); font-size: var(--step--1); color: var(--text); }
-    & li::marker { color: var(--gold); font-weight: 800; }
+    & li::marker { color: var(--brand-bright); font-weight: 800; }
   }
-  .builder__preview-h { font-size: var(--step--2); font-weight: 800; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--gold); }
+  .builder__preview-h { font-size: var(--step--2); font-weight: 800; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--brand-bright); }
 }
 
 @layer components {
@@ -361,7 +361,7 @@
     border: 1px solid var(--line);
     & > * { justify-self: stretch; }
     & > .tag { justify-self: start; }
-    &[data-state='pending'] { border-color: color-mix(in oklab, var(--gold) 50%, transparent); }
+    &[data-state='pending'] { border-color: color-mix(in oklab, var(--brand-bright) 50%, transparent); }
   }
   .rate-review__nums {
     display: grid;
@@ -371,7 +371,7 @@
     & span { font-size: var(--step--1); color: var(--text-3); }
     & strong { font-family: var(--font-display); font-size: var(--step-2); color: var(--text); font-variant-numeric: tabular-nums; }
   }
-  .rate-review[data-state='pending'] .rate-review__nums div:first-child strong { color: var(--gold); }
+  .rate-review[data-state='pending'] .rate-review__nums div:first-child strong { color: var(--brand-bright); }
   .rate-review__split { font-size: var(--step--1); color: var(--text-2); }
 }
 
@@ -390,7 +390,7 @@
       background: var(--surface-1);
       border: 1px solid var(--line);
     }
-    & li > svg { flex: none; inline-size: 20px; block-size: 20px; color: var(--gold); }
+    & li > svg { flex: none; inline-size: 20px; block-size: 20px; color: var(--brand-bright); }
   }
   .doc-list__text { flex: 1; display: grid; min-inline-size: 0; }
   .doc-list__label { font-weight: 700; font-size: var(--step--1); color: var(--text); }

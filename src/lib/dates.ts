@@ -27,11 +27,11 @@ export function countdownFor(o: Pick<Opportunity, 'status' | 'deadline' | 'opens
     if (d < 0) return { label: 'Deadline passed', tone: 'neutral', days: d };
     if (d === 0) return { label: 'Closes today', tone: 'urgent', days: 0 };
     if (d === 1) return { label: 'Closes tomorrow', tone: 'urgent', days: 1 };
-    return { label: `Closes in ${d} days`, tone: d <= 14 ? 'urgent' : 'gold', days: d };
+    return { label: `Closes in ${d} days`, tone: d <= 14 ? 'urgent' : 'neutral', days: d };
   }
   if (o.status === 'rolling') return { label: 'Rolling intake', tone: 'emerald', days: null };
   if (o.status === 'upcoming') {
-    return o.opens_on ? { label: `Opens ${formatDay(o.opens_on)}`, tone: 'gold', days: daysUntil(o.opens_on, now) } : { label: 'Between rounds', tone: 'neutral', days: null };
+    return o.opens_on ? { label: `Opens ${formatDay(o.opens_on)}`, tone: 'neutral', days: daysUntil(o.opens_on, now) } : { label: 'Between rounds', tone: 'neutral', days: null };
   }
   return { label: 'Closed this cycle', tone: 'neutral', days: null };
 }
