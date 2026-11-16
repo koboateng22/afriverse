@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Check, CreditCard, FileText, Headset, MessageCircle, Smartphone } from 'lucide-react';
+import { Check, CreditCard, FileText, Headset, MessageCircle, Smartphone, Tag } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
+import { Field } from '../../components/Field/Field';
 import { Magnetic } from '../../components/Magnetic/Magnetic';
 import { Notice } from '../../components/Notice/Notice';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem, staggerParent } from '../../lib/motion';
-import { fetchProPlan } from './api';
+import { FunctionError } from '../../lib/functions';
+import { checkPromoCode, discountedCents, fetchProPlan } from './api';
 import { startCheckout } from './paystack';
 import type { PlanRow } from './types';
 import './ProOffer.css';
@@ -19,9 +21,13 @@ const METHODS: Array<{ id: Method; title: string; detail: string; icon: typeof C
   { id: 'momo', title: 'Mobile Money', detail: 'MTN, Telecel, AirtelTigo. One month, renew when you like.', icon: Smartphone },
 ];
 
-// Shown until the plan row arrives, or if it can't be read. Mirrors migration 0016
+// Shown until the plan row arrives, or if it can't be read. Mirrors migration 0022
 // and paystack-init's DEFAULT_PRO, which charges this price when the row is missing.
-const FALLBACK_PRICE = { amount_cents: 4000, currency: 'GHS' };
+const FALLBACK_PRICE = { amount_cents: 3500, currency: 'GHS' };
+const INVALID_CODE = 'Invalid or expired code.';
+
+type Promo = { code: string; percentage: number };
+type PromoMsg = { tone: 'success' | 'error'; text: string };
 const DEFAULT_FEATURES = [
   'Direct WhatsApp access to a Human Counselor',
   'CV & Essay Strategy Sessions',
@@ -38,14 +44,19 @@ const iconFor = (feature: string) =>
 /**
  * Pro plan (human support) + payment method + one gold CTA. Used by /paywall and
  * the paywall modal. Never waits on the plan fetch: the button is always live, and
- * until (or unless) the plan row is read the screen shows the GH₵ 40 fallback.
- * paystack-init still prices the charge from the database.
+ * until (or unless) the plan row is read the screen shows the GH₵ 35 fallback.
+ * A promo code lowers the shown price; paystack-init re-checks the code and prices
+ * the charge from the database either way.
  */
 export function ProOffer({ compact }: { compact?: boolean }) {
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [method, setMethod] = useState<Method>('card');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [promo, setPromo] = useState<Promo | null>(null);
+  const [promoMsg, setPromoMsg] = useState<PromoMsg | null>(null);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -60,16 +71,55 @@ export function ProOffer({ compact }: { compact?: boolean }) {
   }, []);
 
   const shown = plan ?? FALLBACK_PRICE;
-  const price = formatMoney(shown.amount_cents, shown.currency);
+  const listPrice = formatMoney(shown.amount_cents, shown.currency);
+  const payCents = promo ? discountedCents(shown.amount_cents, promo.percentage) : shown.amount_cents;
+  const price = formatMoney(payCents, shown.currency);
+
+  const applyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    const code = codeInput.trim().toUpperCase();
+    if (!code) return;
+    setChecking(true);
+    setPromoMsg(null);
+    try {
+      const percentage = await checkPromoCode(code);
+      if (percentage) {
+        setPromo({ code, percentage });
+        setCodeInput(code);
+        setPromoMsg({ tone: 'success', text: `Code applied! ${percentage}% off.` });
+      } else {
+        setPromo(null);
+        setPromoMsg({ tone: 'error', text: INVALID_CODE });
+      }
+    } catch {
+      setPromoMsg({ tone: 'error', text: 'We couldn’t check that code. Check your connection and try again.' });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const removeCode = () => {
+    setPromo(null);
+    setCodeInput('');
+    setPromoMsg(null);
+  };
   const features = plan && Array.isArray(plan.features) && plan.features.length > 0 ? plan.features : DEFAULT_FEATURES;
 
   const pay = async () => {
     setBusy(true);
     setError(null);
     try {
-      await startCheckout({ type: 'subscription', method }); // redirects to Paystack
+      // The code goes to the server, which re-checks it and prices the charge.
+      await startCheckout({ type: 'subscription', method, ...(promo ? { promo_code: promo.code } : {}) }); // redirects to Paystack
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof FunctionError && e.code === 'invalid_promo') {
+        // Switched off since it was applied: back to the full price, nothing charged.
+        setPromo(null);
+        setPromoMsg({ tone: 'error', text: INVALID_CODE });
+        setError(`That code no longer works, so nothing was charged. Pro is ${listPrice} a month without it.`);
+      } else {
+        setError(errorMessage(e));
+      }
       setBusy(false);
     }
   };
@@ -83,10 +133,62 @@ export function ProOffer({ compact }: { compact?: boolean }) {
           <div className="pro-offer__head">
             <span className="pro-offer__badge">Pro</span>
             <p className="pro-offer__price">
+              {promo && (
+                <>
+                  <span className="visually-hidden">Was </span>
+                  <del className="pro-offer__was">{listPrice}</del>
+                  <span className="visually-hidden">, now </span>
+                </>
+              )}
               {price}
               <small> / month</small>
             </p>
           </div>
+
+          <form className="promo" onSubmit={applyCode} noValidate>
+            <div className="promo__row">
+              <Field
+                label="Have a promo code?"
+                icon={<Tag />}
+                placeholder="e.g. WAITLIST20"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={32}
+                value={codeInput}
+                onChange={(e) => {
+                  const next = e.target.value.toUpperCase();
+                  setCodeInput(next);
+                  // Editing an applied code un-applies it, so the price shown is always what's charged.
+                  if (promo && next.trim() !== promo.code) {
+                    setPromo(null);
+                    setPromoMsg(null);
+                  }
+                }}
+              />
+              {promo ? (
+                <Button variant="secondary" onClick={removeCode}>
+                  Remove
+                </Button>
+              ) : (
+                <Button type="submit" variant="secondary" loading={checking} disabled={!codeInput.trim()}>
+                  Apply
+                </Button>
+              )}
+            </div>
+            {promoMsg && (
+              <p className="promo__msg" data-tone={promoMsg.tone} role={promoMsg.tone === 'error' ? 'alert' : 'status'}>
+                {promoMsg.text}
+              </p>
+            )}
+            {promo && (
+              <p className="promo__note">
+                {method === 'card'
+                  ? `Your card renews at ${price} every month.`
+                  : `This month costs ${price}. Use the code again when you renew.`}
+              </p>
+            )}
+          </form>
           <ul className="pro-offer__highlights" role="list" aria-label="Human support">
             {features.slice(0, HIGHLIGHTED).map((f) => {
               const Icon = iconFor(f);

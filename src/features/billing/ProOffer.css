@@ -189,3 +189,30 @@
   .pro-offer__cta .btn:not(:focus-visible) { box-shadow: var(--shadow-bloom-gold); }
   .pro-offer__fine { text-align: center; font-size: var(--step--2); color: var(--text-3); }
 }
+
+/* Promo code (below the price). */
+@layer components {
+  .pro-offer__was {
+    margin-inline-end: var(--space-2);
+    font-size: 0.6em;
+    font-weight: 700;
+    color: var(--text-3);
+    -webkit-text-fill-color: var(--text-3);
+    text-decoration-thickness: 2px;
+  }
+  .promo { display: grid; gap: var(--space-2); }
+  .promo__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--space-3);
+    & > .btn { min-block-size: 52px; }
+  }
+  .promo__msg {
+    font-size: var(--step--1);
+    font-weight: 700;
+    &[data-tone='success'] { color: var(--brand-bright); }
+    &[data-tone='error'] { color: var(--terracotta); }
+  }
+  .promo__note { font-size: var(--step--2); color: var(--text-3); }
+}

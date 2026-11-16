@@ -39,7 +39,7 @@ export function RenewalBanner() {
     text = `Pro ends ${formatDay(current.expires_at.slice(0, 10))}. Add another month to keep it.`;
   } else if (!isPro && !dismissed) {
     tone = 'nudge';
-    text = 'Pro: a human counsellor on WhatsApp, CV & essay strategy sessions and priority support — GH₵ 40 a month.';
+    text = 'Pro: a human counsellor on WhatsApp, CV & essay strategy sessions and priority support — GH₵ 35 a month.';
   }
 
   return (

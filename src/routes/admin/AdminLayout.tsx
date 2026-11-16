@@ -18,6 +18,7 @@ const AdminMentors = lazy(() => import('./AdminMentors'));
 const AdminAmbassadors = lazy(() => import('./AdminAmbassadors'));
 const AdminApplications = lazy(() => import('./AdminApplications'));
 const AdminPlans = lazy(() => import('./AdminPlans'));
+const AdminPromos = lazy(() => import('./AdminPromos'));
 const AdminSettings = lazy(() => import('./AdminSettings'));
 
 const TABS = [
@@ -29,6 +30,7 @@ const TABS = [
   { to: '/admin/ambassadors', label: 'Ambassadors' },
   { to: '/admin/applications', label: 'Applications' },
   { to: '/admin/plans', label: 'Pro plan' },
+  { to: '/admin/promos', label: 'Promo codes' },
   { to: '/admin/settings', label: 'Settings' },
 ];
 
@@ -77,6 +79,7 @@ export default function AdminLayout() {
                   <Route path="ambassadors" element={<AdminAmbassadors />} />
                   <Route path="applications" element={<AdminApplications />} />
                   <Route path="plans" element={<AdminPlans />} />
+                  <Route path="promos" element={<AdminPromos />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Routes>

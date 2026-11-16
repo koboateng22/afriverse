@@ -57,14 +57,14 @@ async function ensurePaystackPlan(svc: SupabaseClient, plan: { amount_cents: num
 }
 
 /**
- * The Pro row as migration 0016 sets it: GH₵ 40 (4000 pesewas) a month, human support.
+ * The Pro row as migration 0022 sets it: GH₵ 35 (3500 pesewas) a month, human support.
  * Used only when the row is missing (e.g. a database built without seed.sql).
  */
 const DEFAULT_PRO = {
   code: 'pro',
   name: 'Pro',
   tagline: 'A real counsellor in your corner',
-  amount_cents: 4000,
+  amount_cents: 3500,
   currency: 'GHS',
   period_days: 30,
   ai_daily_limit: null,
@@ -87,13 +87,52 @@ async function proPlan(svc: SupabaseClient): Promise<ProPlan> {
   const { data, error } = await read();
   if (error) throw error;
   if (data) return data as ProPlan;
-  console.warn('paystack-init: no pro plan row, creating it at the default GHS 40 price');
+  console.warn('paystack-init: no pro plan row, creating it at the default GHS 35 price');
   // ignoreDuplicates: a concurrent checkout may have created it first; never overwrite an admin's price.
   await must(svc.from('plans').upsert(DEFAULT_PRO, { onConflict: 'code', ignoreDuplicates: true }));
   const again = await read();
   if (again.error) throw again.error;
   if (!again.data) throw new HttpError(500, 'plan_missing', 'The Pro plan could not be created. Run migration 0016.');
   return again.data as ProPlan;
+}
+
+type Promo = { id: string; code: string; discount_percentage: number; paystack_plan_code: string | null; paystack_plan_amount: number | null };
+
+/** Pro's price after a percentage off, in whole pesewas: 3500 at 20% off = 2800. */
+export function discounted(baseCents: number, percentage: number): number {
+  return Math.round((baseCents * (100 - percentage)) / 100);
+}
+
+/** The active promo code the student typed, re-checked here (the browser's check is only a preview). */
+async function activePromo(svc: SupabaseClient, raw: unknown): Promise<Promo | null> {
+  const typed = optStr(raw, 'promo_code', 40);
+  if (!typed || !typed.trim()) return null;
+  const code = typed.trim().toUpperCase();
+  const { data, error } = await svc
+    .from('promo_codes')
+    .select('id, code, discount_percentage, paystack_plan_code, paystack_plan_amount')
+    .eq('code', code)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new HttpError(400, 'invalid_promo', 'Invalid or expired code.');
+  return data as Promo;
+}
+
+/**
+ * Card + promo code: Paystack charges a plan's own amount (it ignores `amount` when a plan
+ * is given), so a discounted card subscription needs a Paystack plan at the discounted
+ * price. One per code, re-created when the discounted amount changes. Its renewals stay
+ * at the discounted price.
+ */
+async function ensurePromoPlan(svc: SupabaseClient, promo: Promo, amount: number): Promise<string> {
+  if (promo.paystack_plan_code && promo.paystack_plan_amount === amount) return promo.paystack_plan_code;
+  const created = await paystackRequest<{ plan_code: string }>('/plan', {
+    method: 'POST',
+    body: { name: `Afriversity Pro — GHS ${amount / 100}/month (${promo.code})`, interval: 'monthly', amount, currency: 'GHS' },
+  });
+  await must(svc.from('promo_codes').update({ paystack_plan_code: created.plan_code, paystack_plan_amount: amount }).eq('id', promo.id));
+  return created.plan_code;
 }
 
 async function priceSubscription(svc: SupabaseClient, userId: string, body: Record<string, unknown>): Promise<Priced> {
@@ -109,23 +148,39 @@ async function priceSubscription(svc: SupabaseClient, userId: string, body: Reco
     throw new HttpError(409, 'already_subscribed', 'Your card already renews Pro every month. Manage it from your profile.');
   }
 
-  const planCode = method === 'card' ? await ensurePaystackPlan(svc, plan) : undefined;
+  // Price = the plan row, minus the promo code's percentage when a valid code is sent.
+  const promo = await activePromo(svc, body.promo_code);
+  const amount = promo ? discounted(plan.amount_cents, promo.discount_percentage) : plan.amount_cents;
+
+  const planCode = method === 'card' ? (promo ? await ensurePromoPlan(svc, promo, amount) : await ensurePaystackPlan(svc, plan)) : undefined;
   const sub = await must(
     svc
       .from('subscriptions')
-      .insert({ user_id: userId, plan: 'pro', status: 'pending', currency: 'GHS', amount_cents: plan.amount_cents, billing: method === 'card' ? 'card_recurring' : 'momo_once' })
+      .insert({
+        user_id: userId,
+        plan: 'pro',
+        status: 'pending',
+        currency: 'GHS',
+        amount_cents: amount,
+        billing: method === 'card' ? 'card_recurring' : 'momo_once',
+        promo_code_used: promo?.code ?? null,
+      })
       .select('id')
       .single(),
   );
   return {
     kind: 'subscription',
-    amount: plan.amount_cents,
+    amount,
     relatedId: (sub as { id: string }).id,
     channels: method === 'card' ? ['card'] : ['mobile_money'],
     planCode,
-    platformFee: plan.amount_cents,
+    platformFee: amount,
     payeeShare: 0,
-    extraMeta: { plan: 'pro', billing: method },
+    extraMeta: {
+      plan: 'pro',
+      billing: method,
+      ...(promo ? { promo_code: promo.code, discount_percentage: promo.discount_percentage, list_price_cents: plan.amount_cents } : {}),
+    },
   };
 }
 

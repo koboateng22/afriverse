@@ -5,7 +5,7 @@ import { invokeFunction } from '../../lib/functions';
 
 export type CheckoutRequest =
   /** card = monthly auto-renew (Paystack plan); momo = one month, renew manually. */
-  | { type: 'subscription'; method: 'card' | 'momo' }
+  | { type: 'subscription'; method: 'card' | 'momo'; promo_code?: string }
   | { type: 'application'; university_id: string }
   | { type: 'mentor'; mentor_id: string; scheduled_at: string; topic?: string };
 

@@ -14,7 +14,7 @@ async function must<T>(p: PromiseLike<{ data: T; error: unknown }>): Promise<T> 
   const { data, error } = await p;
   if (error) {
     const e = error as { code?: string; message?: string };
-    if (e.code === '23505') throw new HttpError(409, 'duplicate', 'Something with that slug or reference already exists');
+    if (e.code === '23505') throw new HttpError(409, 'duplicate', 'Something with that slug, code or reference already exists');
     if (e.code === '23503') throw new HttpError(409, 'in_use', 'This record is referenced by other data');
     if (e.code === '23514') throw new HttpError(400, 'invalid_input', e.message ?? 'A value is out of range');
     throw error;
@@ -27,6 +27,13 @@ const LEVELS = ['High school', 'Undergraduate', "Master's", 'PhD', 'Working prof
 const APP_STATUSES = ['Pending Payment', 'Paid', 'Submitted', 'In Review', 'Offer', 'Rejected', 'Withdrawn', 'Failed'] as const;
 const BUCKET = 'application-documents';
 const RESULTS_BUCKET = 'results_slips';
+
+/** A promo code as stored: capitals, digits, - and _, 3–32 characters. */
+function promoCode(v: unknown): string {
+  const code = str(v, 'code', { min: 3, max: 32 }).trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{3,32}$/.test(code)) throw new HttpError(400, 'invalid_input', 'Codes use letters, numbers, - and _ only (3–32 characters), e.g. WAITLIST20.');
+  return code;
+}
 
 // ── Universities ─────────────────────────────────────────────────────────
 const slugify = (t: string) =>
@@ -517,6 +524,37 @@ const ACTIONS: Record<string, Action> = {
     // A new price needs a new Paystack plan; existing card subscribers keep their old price.
     if (amount !== current.amount_cents) patch.paystack_plan_code = null;
     return must(svc.from('plans').update(patch).eq('code', 'pro').select('*').single());
+  },
+  // ── Promo codes ───────────────────────────────────────────────────────
+  // Each code takes a percentage off Pro. Uses = paid checkouts (subscriptions.promo_code_used).
+  'promos.list': async (svc) => {
+    const codes = (await must(
+      svc.from('promo_codes').select('id, code, discount_percentage, is_active, created_at').order('created_at', { ascending: false }),
+    )) as Array<{ code: string }>;
+    const uses = (await must(svc.rpc('promo_code_uses'))) as Array<{ code: string; uses: number }> | null;
+    const byCode = new Map((uses ?? []).map((u) => [u.code, Number(u.uses)]));
+    return codes.map((c) => ({ ...c, uses: byCode.get(c.code) ?? 0 }));
+  },
+  'promos.create': async (svc, p) =>
+    must(
+      svc
+        .from('promo_codes')
+        .insert({
+          code: promoCode(p.code),
+          discount_percentage: int(p.discount_percentage, 'discount_percentage', { min: 1, max: 90 }),
+          is_active: p.is_active === undefined ? true : bool(p.is_active, 'is_active'),
+        })
+        .select('id, code, discount_percentage, is_active, created_at')
+        .single(),
+    ),
+  'promos.update': async (svc, p) => {
+    const patch: Record<string, unknown> = {};
+    if (p.is_active !== undefined) patch.is_active = bool(p.is_active, 'is_active');
+    // A new percentage means a new discounted Paystack plan at the next card checkout;
+    // card subscribers already on the old one keep their price.
+    if (p.discount_percentage !== undefined) patch.discount_percentage = int(p.discount_percentage, 'discount_percentage', { min: 1, max: 90 });
+    if (Object.keys(patch).length === 0) throw new HttpError(400, 'invalid_input', 'Nothing to change');
+    return must(svc.from('promo_codes').update(patch).eq('id', uuid(p.id, 'id')).select('id, code, discount_percentage, is_active, created_at').single());
   },
 };
 

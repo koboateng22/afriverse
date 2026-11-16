@@ -132,7 +132,7 @@ export default function Profile() {
               to="/paywall"
               icon={Sparkles}
               label={`${planLabel(plan)} plan`}
-              detail={plan && current?.expires_at ? `Active until ${formatDay(current.expires_at.slice(0, 10))}` : 'GH₵ 40 a month — human support'}
+              detail={plan && current?.expires_at ? `Active until ${formatDay(current.expires_at.slice(0, 10))}` : 'GH₵ 35 a month — human support'}
             />
             <ListRow onClick={() => void talkToCounselor()} icon={Headset} label="Talk to a counsellor" detail={isPro ? 'Chat with a real person on WhatsApp' : 'Human counsellor access with Pro'} badge={isPro ? undefined : 'Pro'} />
             <ListRow

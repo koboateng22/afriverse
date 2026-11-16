@@ -14,6 +14,21 @@ export async function fetchProPlan(): Promise<PlanRow | null> {
   return data as PlanRow | null;
 }
 
+/**
+ * Preview of a promo code: its percentage off, or null if it doesn't exist or is switched off.
+ * paystack-init checks the code again and prices the charge, so this only drives the display.
+ */
+export async function checkPromoCode(code: string): Promise<number | null> {
+  const { data, error } = await getSupabase().rpc('promo_code_discount', { p_code: code.trim() });
+  if (error) throw error;
+  return typeof data === 'number' && data > 0 ? data : null;
+}
+
+/** Pro's price after a percentage off, in whole pesewas (the same sum paystack-init does). */
+export function discountedCents(baseCents: number, percentage: number): number {
+  return Math.round((baseCents * (100 - percentage)) / 100);
+}
+
 export async function fetchFreeAiLimit(): Promise<number> {
   const { data } = await getSupabase().from('app_settings').select('value').eq('key', 'free_ai_daily_limit').maybeSingle();
   return Number(data?.value ?? 50);

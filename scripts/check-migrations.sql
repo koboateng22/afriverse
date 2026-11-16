@@ -1,4 +1,4 @@
--- Which of supabase/migrations/0001 … 0021 are in this database?
+-- Which of supabase/migrations/0001 … 0022 are in this database?
 -- Checks for something each migration creates, so it works however the
 -- migration was applied (SQL Editor paste or `supabase db push`).
 -- Read-only. Run it with scripts/check-migrations.sh, or paste it into the
@@ -81,6 +81,10 @@ from (values
   ('0021_applications',            to_regclass('public.ambassador_applications') is not null
                                    and to_regclass('public.mentor_applications') is not null
                                    and to_regprocedure('public.apply_ambassador(text, text, text, text)') is not null,
-                                   'ambassador + mentor applications, pending_ambassador role')
+                                   'ambassador + mentor applications, pending_ambassador role'),
+  ('0022_promo_codes',             to_regclass('public.promo_codes') is not null
+                                   and exists (select 1 from col where c = 'subscriptions.promo_code_used')
+                                   and to_regprocedure('public.promo_code_discount(text)') is not null,
+                                   'promo_codes (+ WAITLIST20), subscriptions.promo_code_used, Pro at GHS 35')
 ) as m(migration, applied, checks)
 order by migration;
