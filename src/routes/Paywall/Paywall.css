@@ -22,6 +22,6 @@
 
   /* Laptop and up: one centred column, vertically balanced on the screen. */
   @media (min-width: 768px) {
-    .paywall { align-content: center; min-block-size: calc(100dvh - var(--space-6) - var(--space-8)); }
+    .paywall { align-content: center; min-block-size: calc(100svh - var(--space-6) - var(--space-8)); }
   }
 }

@@ -7,7 +7,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { isStudent, STUDENT_ROLES } from './features/profiles/types';
 import { PlanProvider } from './features/billing/PlanProvider';
 import { PaywallProvider } from './features/billing/PaywallModal';
-import { Backdrop, GrainOverlay } from './components/Backdrop/Backdrop';
+import { Backdrop } from './components/Backdrop/Backdrop';
 import { BottomNav, MENTOR_NAV, navMatches, STUDENT_NAV, STUDENT_SECTIONS } from './components/BottomNav/BottomNav';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { ToastProvider } from './components/Toast/Toast';
@@ -84,7 +84,6 @@ function AnimatedRoutes() {
   const path = location.pathname;
   const showStudentNav = isStudent(profile?.role) && Boolean(profile.onboarded_at) && navMatches(STUDENT_NAV, path) && !path.startsWith('/checkout');
   const showMentorNav = profile?.role === 'mentor' && navMatches(MENTOR_NAV, path);
-  const heroBackdrop = path === '/' || path === '/signup' || path === '/ambassador-apply' || path === '/mentor-apply';
   // The admin console animates its own sub-pages, so the whole group shares one key.
   const routeKey = path.startsWith('/admin') ? '/admin' : path;
   usePrefetchTabs(isStudent(profile?.role));
@@ -97,7 +96,7 @@ function AnimatedRoutes() {
 
   return (
     <>
-      <Backdrop tone={path === '/paywall' ? 'vip' : heroBackdrop ? 'hero' : 'quiet'} />
+      <Backdrop />
       {/* "sync": old and new screens overlap → a real crossfade, not fade-out-then-in.
           Each route gets its OWN keyed Suspense boundary inside AnimatePresence: a lazy
           route suspending (React.lazy suspends on first render even when the chunk is
@@ -184,7 +183,6 @@ export function App() {
             <PaywallProvider>
               <ToastProvider>
                 <AnimatedRoutes />
-                <GrainOverlay />
               </ToastProvider>
             </PaywallProvider>
           </PlanProvider>

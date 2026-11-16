@@ -3,8 +3,11 @@
   *, *::before, *::after { box-sizing: border-box; }
   * { margin: 0; }
   html { -webkit-text-size-adjust: none; text-size-adjust: none; }
-  html:focus-within { scroll-behavior: smooth; }
-  body { min-block-size: 100dvh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  /* No `html:focus-within { scroll-behavior: smooth }`: on iOS Safari and Android Chrome it turns the
+     browser's own scroll corrections (keyboard opening, focused field kept in view, address bar
+     resizing) into animated scrolls that pull against the user's finger. In-page smooth scrolling
+     is opted into per call with `behavior: 'smooth'`. */
+  body { min-block-size: 100svh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   img, picture, video, canvas, svg { display: block; max-inline-size: 100%; }
   input, button, textarea, select { font: inherit; color: inherit; }
   button { background: none; border: 0; padding: 0; cursor: pointer; }

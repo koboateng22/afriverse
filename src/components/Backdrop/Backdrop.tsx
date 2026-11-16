@@ -1,41 +1,10 @@
 import './Backdrop.css';
 
-export type BackdropProps = {
-  /** 'hero' = brighter orbs for landing/signup; 'quiet' = app screens; 'vip' = the Pro paywall. */
-  tone?: 'hero' | 'quiet' | 'vip';
-};
-
 /**
- * Fixed decorative layer behind every screen: soft, static gradient orbs
- * (emerald, gold, terracotta) on Ink. No lines, no patterns, no motion: the
- * background stays calm and costs nothing to render.
+ * Fixed layer behind every screen, painted in the one page colour (--bg).
+ * Deliberately flat: no orbs, gradients, vignette or grain, so the page reads as a
+ * single continuous surface behind the sidebar and the content, with no seams.
  */
-export function Backdrop({ tone = 'quiet' }: BackdropProps) {
-  return (
-    <div className="backdrop" data-tone={tone} aria-hidden="true">
-      <span className="backdrop__orb" data-orb="emerald" />
-      <span className="backdrop__orb" data-orb="gold" />
-      <span className="backdrop__orb" data-orb="terracotta" />
-      <span className="backdrop__orb" data-orb="deep" />
-      <span className="backdrop__vignette" />
-      {/* VIP layer: always mounted so it can cross-fade in/out with the route. */}
-      <span className="backdrop__vip">
-        <span className="backdrop__aurora" data-aurora="emerald" />
-        <span className="backdrop__aurora" data-aurora="gold" />
-      </span>
-    </div>
-  );
-}
-
-/** App-wide SVG film grain at 3% opacity (static). */
-export function GrainOverlay() {
-  return (
-    <svg className="grain" aria-hidden="true" focusable="false">
-      <filter id="afv-grain">
-        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
-        <feColorMatrix type="saturate" values="0" />
-      </filter>
-      <rect width="100%" height="100%" filter="url(#afv-grain)" />
-    </svg>
-  );
+export function Backdrop() {
+  return <div className="backdrop" aria-hidden="true" />;
 }

@@ -190,7 +190,6 @@
     --gradient-brand: linear-gradient(120deg, var(--brand-bright), var(--emerald) 55%, var(--deep-green));
 
     /* ── Grain intensity ───────────────────────────────────────── */
-    --grain-opacity: 0.03;
 
     /* ── Stacking ──────────────────────────────────────────────── */
     --z-backdrop: -1;
@@ -202,7 +201,6 @@
     --z-nav: 40;
     --z-sheet: 60;
     --z-toast: 80;
-    --z-grain: -1;
 
     color-scheme: dark;
   }

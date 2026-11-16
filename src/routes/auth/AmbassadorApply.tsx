@@ -49,7 +49,9 @@ export default function AmbassadorApply() {
     setPhone((v) => v || profile.phone || '');
   }, [profile]);
 
-  if (loading) return <FullscreenLoader label="Loading" />;
+  // Only before the first profile load. A later background refresh must not swap the form out
+  // for a loader: that collapsed the page and threw the student back to the top mid-form.
+  if (loading && !profile) return <FullscreenLoader label="Loading" />;
 
   const intro = 'Share Afriversity on your campus and earn GH₵ 5 every time a student you invited goes Pro. Paid by MoMo every month.';
 

@@ -125,7 +125,7 @@
     z-index: var(--z-content);
     display: grid;
     gap: var(--space-6);
-    min-block-size: 100dvh;
+    min-block-size: 100svh;
     padding-block: var(--space-9) var(--space-9);
   }
   .skeleton-screen__header { display: grid; gap: var(--space-3); }

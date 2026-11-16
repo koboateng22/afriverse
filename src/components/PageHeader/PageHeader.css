@@ -48,14 +48,9 @@
     mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
   }
   .header-art__layer { position: absolute; inset: 0; will-change: transform; }
-  .header-art__aurora {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(60% 90% at 18% 0%, color-mix(in oklab, var(--emerald) 30%, transparent), transparent 70%),
-      radial-gradient(45% 70% at 88% 10%, color-mix(in oklab, var(--brand-bright) 12%, transparent), transparent 70%),
-      radial-gradient(40% 60% at 60% 60%, color-mix(in oklab, var(--deep-green) 30%, transparent), transparent 75%);
-  }
+  /* No glow behind page headers: it ended in a visible band across the page.
+     The page background stays one flat colour. */
+  .header-art__aurora { display: none; }
   .header-art__emblem {
     position: absolute;
     inset-block-start: 8%;
@@ -65,10 +60,5 @@
     opacity: 0.07;
     rotate: -10deg;
     filter: grayscale(0.2) blur(0.5px);
-  }
-  .header-art[data-tone='gold'] .header-art__aurora {
-    background:
-      radial-gradient(60% 90% at 50% 0%, color-mix(in oklab, var(--gold) 16%, transparent), transparent 70%),
-      radial-gradient(50% 80% at 15% 20%, color-mix(in oklab, var(--emerald) 22%, transparent), transparent 75%);
   }
 }

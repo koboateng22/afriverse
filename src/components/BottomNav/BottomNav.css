@@ -95,10 +95,9 @@
       flex-direction: column;
       gap: var(--space-5);
       padding: var(--space-5) var(--space-3);
-      background: color-mix(in oklab, var(--surface-1) 92%, transparent);
-      border-inline-end: 1px solid var(--line);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
-      backdrop-filter: blur(24px) saturate(1.4);
+      /* Exactly the page colour, no border or blur: the sidebar sits on the same
+         continuous surface as the content instead of reading as a separate panel. */
+      background: var(--bg);
       pointer-events: auto;
       overflow-y: auto;
       scrollbar-width: none;

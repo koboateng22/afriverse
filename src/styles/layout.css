@@ -39,12 +39,14 @@
   .screen {
     position: relative;
     z-index: var(--z-content);
-    min-block-size: 100dvh;
+    /* svh, not dvh: dvh changes while the mobile address bar slides in and out, which resized
+       the page mid-scroll and made the browser re-anchor the scroll position. */
+    min-block-size: 100svh;
     /* Decorative marks may bleed past the container; never past the viewport. */
     overflow-x: clip;
     padding-block: var(--space-6) calc(var(--nav-h) + var(--space-8) + var(--safe-bottom));
   }
-  .screen[data-bare] { padding-block-end: var(--space-9); }
+  .screen[data-bare] { padding-block-end: calc(var(--space-9) + var(--safe-bottom)); }
   @media (min-width: 768px) {
     /* The left sidebar replaces the bottom bar on screens that have one. */
     body:has(.bottom-nav) .screen { padding-inline-start: var(--sidebar-w); }

@@ -1,5 +1,9 @@
 @layer components {
-  .auth { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+  /* pan-y: the browser handles vertical scrolling natively, with no gesture handlers in the way. */
+  .auth { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); touch-action: pan-y; }
+  /* When the keyboard opens, the browser scrolls the focused field into view: leave room
+     below it so the field (and the submit button under it) isn't hidden behind the keyboard. */
+  .auth :is(input, textarea, select, button[type='submit']) { scroll-margin-block: var(--space-8) var(--space-10); }
   .auth__bar { display: flex; align-items: center; justify-content: space-between; }
 
 
