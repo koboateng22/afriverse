@@ -120,7 +120,9 @@ function opportunityInput(p: Payload) {
     slug: slug(p.slug, 'slug'),
     title: str(p.title, 'title', { min: 3, max: 160 }),
     provider: str(p.provider, 'provider', { min: 2, max: 160 }),
-    kind: oneOf(p.kind, 'kind', ['scholarship', 'fellowship', 'program', 'award'] as const),
+    kind: oneOf(p.kind, 'kind', ['scholarship', 'fellowship', 'program', 'award', 'internship'] as const),
+    // 0023: optional card image (https). Without one the card shows its category gradient.
+    cover_image_url: httpsUrl(p.cover_image_url, 'cover_image_url', true),
     summary: str(p.summary, 'summary', { min: 10, max: 300 }),
     description: str(p.description, 'description', { min: 10, max: 3000 }),
     eligibility: strArray(p.eligibility ?? [], 'eligibility', { maxItems: 12, maxLen: 300 }),

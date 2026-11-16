@@ -10,6 +10,11 @@ import { Notice } from '../../components/Notice/Notice';
 import { HeaderArt, useHeaderParallax } from '../../components/PageHeader/HeaderArt';
 import { OpportunityCard } from '../../features/opportunities/OpportunityCard';
 import { fetchOpportunities } from '../../features/opportunities/api';
+import { fetchMentors } from '../../features/mentors/api';
+import type { Mentor } from '../../features/mentors/types';
+import { fetchUniversities } from '../../features/universities/api';
+import type { University } from '../../features/universities/types';
+import { buildTopMatches } from '../../features/home/topMatches';
 import { useMatches, type Match } from '../../features/opportunities/matcher';
 import { useSaved } from '../../features/opportunities/saved';
 import { packBento, useGridColumns } from '../../features/opportunities/bento';
@@ -20,9 +25,10 @@ import { usePaywall } from '../../features/billing/PaywallModal';
 import { useAuth } from '../../features/auth/useAuth';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem, staggerParent } from '../../lib/motion';
+import { TopMatches } from './TopMatches';
 import './Home.css';
 
-type FilterId = 'matched' | 'all' | 'open' | 'saved' | 'scholarship' | 'program';
+type FilterId = 'matched' | 'all' | 'open' | 'saved' | 'scholarship' | 'internship' | 'program';
 
 const FILTERS: Array<{ id: FilterId; label: string }> = [
   { id: 'all', label: 'All' },
@@ -30,6 +36,7 @@ const FILTERS: Array<{ id: FilterId; label: string }> = [
   { id: 'open', label: 'Open now' },
   { id: 'saved', label: 'Saved' },
   { id: 'scholarship', label: 'Scholarships' },
+  { id: 'internship', label: 'Internships' },
   { id: 'program', label: 'Programmes' },
 ];
 
@@ -46,18 +53,13 @@ function applyFilter(list: Row[], f: FilterId, saved: Set<string>): Row[] {
       return list.filter((o) => saved.has(o.id));
     case 'scholarship':
       return list.filter((o) => o.kind === 'scholarship' || o.kind === 'fellowship');
+    case 'internship':
+      return list.filter((o) => o.kind === 'internship');
     case 'program':
       return list.filter((o) => o.kind === 'program' || o.kind === 'award');
     default:
       return list;
   }
-}
-
-function greeting(now = new Date()): string {
-  const h = now.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
 }
 
 const EMPTY_COPY: Record<FilterId, string> = {
@@ -66,6 +68,7 @@ const EMPTY_COPY: Record<FilterId, string> = {
   open: 'Nothing is open this week — check "All" for upcoming rounds.',
   saved: 'Tap the heart on any opportunity to keep it here.',
   scholarship: 'No scholarships are listed right now.',
+  internship: 'No internships are listed right now.',
   program: 'No programmes are listed right now.',
 };
 
@@ -76,6 +79,9 @@ export default function Home() {
   const { matches, error: matchError } = useMatches();
   const [items, setItems] = useState<Opportunity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // For the Top matches shelf only; if either fails to load, the shelf simply leaves it out.
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [universities, setUniversities] = useState<University[]>([]);
   const [filter, setFilter] = useState<FilterId>('all');
   const { saved, toggle, error: saveError } = useSaved(profile?.id);
   const [stuck, setStuck] = useState(false);
@@ -95,6 +101,19 @@ export default function Home() {
   }, []);
 
   useEffect(load, [load]);
+
+  useEffect(() => {
+    let active = true;
+    fetchMentors()
+      .then((list) => active && setMentors(list))
+      .catch(() => undefined);
+    fetchUniversities()
+      .then((list) => active && setUniversities(list))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Pro students land on their matches; free students on everything.
   useEffect(() => {
@@ -119,7 +138,11 @@ export default function Home() {
     return hero ? [hero, ...visible.filter((o) => o.id !== spotlightId)] : visible;
   }, [visible, spotlightId]);
   const sizes = useMemo(() => packBento(ordered.length, cols, ordered.length ? 0 : null), [ordered.length, cols]);
-  const firstName = profile?.full_name?.split(' ')[0];
+  const firstName = profile?.full_name?.trim().split(/\s+/)[0];
+  const topItems = useMemo(
+    () => (items ? buildTopMatches({ opportunities: items, matches, profile, mentors, universities }) : []),
+    [items, matches, profile, mentors, universities],
+  );
 
   const choose = (f: FilterId) => {
     if (f === 'matched' && !isPro) {
@@ -136,19 +159,28 @@ export default function Home() {
         <motion.header ref={parallax.ref} className="home__header" variants={staggerParent} initial="hidden" animate="show">
           <HeaderArt y={parallax.artY} scale={parallax.artScale} />
           <motion.div className="home__header-text" style={{ y: parallax.textY, opacity: parallax.textOpacity }}>
-            <motion.p className="eyebrow" variants={riseItem}>
-              {greeting()}
-              {firstName ? `, ${firstName}` : ''}
-            </motion.p>
             <motion.h1 className="home__title" variants={riseItem}>
-              Opportunities worth your next move
+              Welcome back{firstName ? `, ${firstName}` : ''}{' '}
+              <span className="home__wave" aria-hidden="true">
+                👋
+              </span>
             </motion.h1>
+            <motion.p className="home__lede" variants={riseItem}>
+              Here are your top matches for today.
+            </motion.p>
           </motion.div>
         </motion.header>
 
+        {!error && <TopMatches items={topItems} loading={!items} />}
+
         <RenewalBanner />
 
-        <div ref={sentinel} className="home__sentinel" aria-hidden="true" />
+        {/* The sentinel sits at the bottom of this block, right above the filters: once it
+            scrolls out of view, the filters are pinned. */}
+        <div className="home__feed-head">
+          <h2 className="home__section-title">All opportunities</h2>
+          <div ref={sentinel} className="home__sentinel" aria-hidden="true" />
+        </div>
         <div className="home__filters" data-stuck={stuck || undefined}>
           <div className="home__filters-scroll" role="radiogroup" aria-label="Filter opportunities">
             {FILTERS.map((f) => (

@@ -1,0 +1,59 @@
+/* Category accents for feed cards. Set data-cat on a card; everything below reads --cat. */
+@layer components {
+  [data-cat='scholarship'] { --cat: var(--cat-scholarship); }
+  [data-cat='internship'] { --cat: var(--cat-internship); }
+  [data-cat='mentorship'] { --cat: var(--cat-mentorship); }
+  [data-cat='university'] { --cat: var(--cat-university); }
+
+  [data-cat] {
+    /* Icon and label colour: the accent lifted toward cream so it reads on dark glass. */
+    --cat-ink: color-mix(in oklab, var(--cat) 58%, var(--cream));
+    --cat-wash: color-mix(in oklab, var(--cat) 10%, transparent);
+  }
+
+  /* Large category icon on a softly glowing circle. */
+  .cat-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: var(--cat-icon-size, 44px);
+    block-size: var(--cat-icon-size, 44px);
+    border-radius: 50%;
+    color: var(--cat-ink);
+    background: radial-gradient(circle at 50% 35%, color-mix(in oklab, var(--cat) 34%, transparent), color-mix(in oklab, var(--cat) 14%, transparent) 70%);
+    border: 1px solid color-mix(in oklab, var(--cat) 40%, transparent);
+    box-shadow: 0 0 24px -6px color-mix(in oklab, var(--cat) 70%, transparent), inset 0 1px 0 color-mix(in oklab, var(--cream) 10%, transparent);
+    & svg { inline-size: 46%; block-size: 46%; stroke-width: 1.75; }
+    &[data-size='lg'] { --cat-icon-size: 72px; }
+    &[data-size='sm'] { --cat-icon-size: 32px; }
+  }
+
+  /* Media panel: the cover image, or a 10% wash of the accent with the icon centred. */
+  .cat-media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background:
+      radial-gradient(80% 90% at 50% 40%, var(--cat-wash), transparent 75%),
+      linear-gradient(160deg, var(--cat-wash), color-mix(in oklab, var(--cat) 3%, transparent));
+    border: 1px solid color-mix(in oklab, var(--cat) 18%, transparent);
+  }
+  .cat-media__img {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+  /* Small icon chip over a photo, so the category still shows. */
+  .cat-media__badge {
+    position: absolute;
+    inset-inline-start: var(--space-3);
+    inset-block-end: var(--space-3);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .cat-label { color: var(--cat-ink); font-weight: 800; }
+}

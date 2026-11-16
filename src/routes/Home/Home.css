@@ -1,9 +1,10 @@
 @layer components {
-  .home { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  /* Sections get room to breathe: greeting, Top matches, then the full feed. */
+  .home { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-7); }
 
   .home__header {
     position: relative;
-    padding-block: var(--space-6) var(--space-2);
+    padding-block: var(--space-6) 0;
   }
   .home__header-text { display: grid; gap: var(--space-2); will-change: transform; }
   .home__title {
@@ -13,8 +14,13 @@
     /* Desktop: one confident line, not a phone-sized poster that pushes the feed down. */
     @media (min-width: 1024px) { max-inline-size: 30ch; }
   }
+  .home__lede { font-size: var(--step-0); color: var(--text-2); }
+  .home__wave { display: inline-block; }
+  .home__section-title { font-size: var(--step-1); }
 
   .home__sentinel { block-size: 1px; margin-block-end: -1px; }
+  /* Pulls the filters up under their heading (grid gaps can't shrink per row). */
+  .home__feed-head { margin-block-end: calc(-1 * var(--space-5)); }
 
   /* Sticky filter bar — bleeds to the screen edges, turns to glass when pinned. */
   .home__filters {
@@ -27,13 +33,20 @@
     transition: background-color var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out),
       border-color var(--dur-mid) var(--ease-out);
 
+    /* Pinned: frosted, so the feed blurs softly underneath instead of a solid band. */
     &[data-stuck] {
-      background: var(--glass-fill-strong);
-      -webkit-backdrop-filter: var(--glass-filter);
-      backdrop-filter: var(--glass-filter);
+      background: color-mix(in oklab, var(--bg) 70%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      backdrop-filter: blur(20px) saturate(1.4);
       border-block-end-color: var(--glass-edge);
-      box-shadow: var(--shadow-float);
     }
+  }
+
+  /* The pills themselves are frosted glass too (the selected pill keeps its own fill). */
+  .home__filters .chip:not([data-selected]) {
+    background: color-mix(in oklab, var(--surface-1) 55%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
   }
 
   .home__filters-scroll {
@@ -62,7 +75,8 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(var(--bento-row), auto);
-    gap: var(--space-3);
+    /* 20px between cards at every width. */
+    gap: var(--space-5);
 
     & > [data-size='featured'] { grid-column: span 2; grid-row: span 2; }
     & > [data-size='wide'] { grid-column: span 2; }
@@ -72,9 +86,9 @@
   }
 
   @container feed (min-width: 600px) {
-    .bento { --bento-row: 196px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+    .bento { --bento-row: 196px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
   @container feed (min-width: 880px) {
-    .bento { --bento-row: 212px; gap: var(--space-5); }
+    .bento { --bento-row: 212px; }
   }
 }

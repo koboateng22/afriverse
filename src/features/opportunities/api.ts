@@ -1,15 +1,16 @@
 import { getSupabase } from '../../lib/supabase';
-import { OPPORTUNITY_COLUMNS, OPPORTUNITY_COLUMNS_BEFORE_0017, type Opportunity, type OpportunityStatus } from './types';
+import { OPPORTUNITY_COLUMNS, OPPORTUNITY_COLUMNS_BEFORE_0017, OPPORTUNITY_COLUMNS_BEFORE_0023, type Opportunity, type OpportunityStatus } from './types';
 
 const STATUS_ORDER: Record<OpportunityStatus, number> = { open: 0, rolling: 1, upcoming: 2, closed: 3 };
 
-// 42703 = undefined column: the database hasn't run migration 0017 (is_verified) yet.
+// 42703 = undefined column: the database hasn't run migration 0023 (cover_image_url) or 0017 (is_verified) yet.
 const missingColumn = (e: { code?: string } | null) => e?.code === '42703';
 
 /** Published opportunities: open first (soonest deadline), then rolling, upcoming, closed. */
 export async function fetchOpportunities(): Promise<Opportunity[]> {
   const list = (cols: string) => getSupabase().from('opportunities').select(cols).eq('published', true);
   let { data, error } = await list(OPPORTUNITY_COLUMNS);
+  if (missingColumn(error)) ({ data, error } = await list(OPPORTUNITY_COLUMNS_BEFORE_0023));
   if (missingColumn(error)) ({ data, error } = await list(OPPORTUNITY_COLUMNS_BEFORE_0017));
   if (error) throw error;
   const rows = (data ?? []) as unknown as Opportunity[];

@@ -10,6 +10,8 @@ import { SaveButton } from './SaveButton';
 import { MATCH_STRONG, type Match } from './matcher';
 import type { BentoSize } from './bento';
 import { FUNDING_LABEL, type Opportunity } from './types';
+import { categoryOf, KIND_ICON, KIND_LABEL } from './category';
+import { CategoryIcon, CategoryMedia } from './CategoryMedia';
 import './OpportunityCard.css';
 
 export type OpportunityCardProps = {
@@ -28,22 +30,15 @@ export type OpportunityCardProps = {
 
 type Ripple = { id: number; x: number; y: number; saving: boolean };
 
-function monogram(provider: string): string {
-  return provider
-    .replace(/[^A-Za-z ]/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-}
-
 export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, saved, onToggleSave, match, showReasons, spotlight, size }: OpportunityCardProps) {
   const countdown = countdownFor(o);
   const hero = spotlight || size === 'featured';
   const compact = size === 'square';
   const reasonsVisible = showReasons && !compact && match && match.reasons.length > 0;
+  const cat = categoryOf(o.kind);
+  const KindIcon = KIND_ICON[o.kind];
+  // Big tiles open with a media panel (cover image, or the category wash + icon).
+  const withMedia = size === 'featured' || size === 'tall';
 
   // ── Save micro-interaction ───────────────────────────────────────────
   // rotateX/rotateY are their own motion values, so the tilt composes with
@@ -91,6 +86,8 @@ export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, s
       data-size={size ?? 'row'}
       data-spotlight={hero || undefined}
       data-status={o.status}
+      data-cat={cat}
+      data-media={withMedia || undefined}
       data-glow={glow > 0 ? glow % 2 : undefined}
       style={{ rotateX, rotateY, transformPerspective: 900 }}
     >
@@ -114,17 +111,27 @@ export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, s
         </AnimatePresence>
       </span>
 
+      {withMedia && (
+        <div className="opp-card__media-wrap">
+          <CategoryMedia className="opp-card__media" image={o.cover_image_url} icon={KindIcon} />
+          <SaveButton saved={saved} onToggle={handleSave} label={o.title} />
+        </div>
+      )}
+
       <div className="opp-card__top">
-        <span className="opp-card__mono" aria-hidden="true">
-          {monogram(o.provider)}
-        </span>
+        {!withMedia && <CategoryIcon icon={KindIcon} />}
         <div className="opp-card__heading">
           {hero && (
             <p className="opp-card__kicker">
               <Sparkles aria-hidden="true" /> Spotlight
             </p>
           )}
-          <p className="opp-card__provider">{o.provider}</p>
+          <p className="opp-card__provider">
+            <span className="cat-label">{KIND_LABEL[o.kind]}</span>
+            <span aria-hidden="true"> · </span>
+            <span className="visually-hidden">, </span>
+            {o.provider}
+          </p>
           <h3 className="opp-card__title">
             {/* Stretched link: the whole card is the hit-area, still a real link for keyboards. */}
             <Link to={`/opportunity/${o.slug}`} className="opp-card__open">
@@ -132,7 +139,7 @@ export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, s
             </Link>
           </h3>
         </div>
-        <SaveButton saved={saved} onToggle={handleSave} label={o.title} />
+        {!withMedia && <SaveButton saved={saved} onToggle={handleSave} label={o.title} />}
       </div>
 
       {!compact && <p className="opp-card__summary">{o.summary}</p>}

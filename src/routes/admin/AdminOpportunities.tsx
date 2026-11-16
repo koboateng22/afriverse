@@ -25,11 +25,11 @@ type Row = Opportunity & {
 
 type FetchReport = { added: number; verified: number; feeds: Array<{ feed: string; added: number; error?: string }> };
 
-const KINDS = ['scholarship', 'fellowship', 'program', 'award'] as const;
+const KINDS = ['scholarship', 'fellowship', 'program', 'award', 'internship'] as const;
 const FUNDING = ['full', 'partial', 'stipend', 'free_training', 'prize'] as const;
 const STATUSES = ['open', 'rolling', 'upcoming', 'closed'] as const;
 
-type Form = Omit<Row, 'id' | 'eligibility' | 'benefits' | 'pro_insights' | 'deadline' | 'opens_on' | 'cycle_note'> & {
+type Form = Omit<Row, 'id' | 'eligibility' | 'benefits' | 'pro_insights' | 'deadline' | 'opens_on' | 'cycle_note' | 'cover_image_url'> & {
   id?: string;
   eligibility: string;
   benefits: string;
@@ -37,6 +37,7 @@ type Form = Omit<Row, 'id' | 'eligibility' | 'benefits' | 'pro_insights' | 'dead
   deadline: string;
   opens_on: string;
   cycle_note: string;
+  cover_image_url: string;
 };
 
 const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
@@ -44,7 +45,7 @@ const lines = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const blank: Form = {
   slug: '', title: '', provider: '', kind: 'scholarship', summary: '', description: '', eligibility: '', benefits: '', pro_insights: '',
   fields: [], levels: [], host_country: '', open_to: 'All African countries', funding: 'full', status: 'open', deadline: '', opens_on: '',
-  cycle_note: '', url: '', is_pro: false, featured: false, published: true, is_verified: false,
+  cycle_note: '', cover_image_url: '', url: '', is_pro: false, featured: false, published: true, is_verified: false,
 };
 
 const toForm = (o: Row): Form => ({
@@ -55,6 +56,7 @@ const toForm = (o: Row): Form => ({
   deadline: o.deadline ?? '',
   opens_on: o.opens_on ?? '',
   cycle_note: o.cycle_note ?? '',
+  cover_image_url: o.cover_image_url ?? '',
 });
 
 export default function AdminOpportunities() {
@@ -84,6 +86,7 @@ export default function AdminOpportunities() {
     deadline: f.deadline || null,
     opens_on: f.opens_on || null,
     cycle_note: f.cycle_note || null,
+    cover_image_url: f.cover_image_url.trim() || null,
   });
 
   const save = async (e: FormEvent) => {
@@ -255,6 +258,14 @@ export default function AdminOpportunities() {
               <Field label="Opens on" type="date" value={form.opens_on} onChange={(e) => set('opens_on', e.target.value)} />
             </div>
             <Field label="Official URL" type="url" placeholder="https://" value={form.url} onChange={(e) => set('url', e.target.value)} required />
+            <Field
+              label="Cover image URL (optional)"
+              type="url"
+              placeholder="https://"
+              hint="A wide photo (about 16:9) shown at the top of the card. Without one, the card uses its category colour."
+              value={form.cover_image_url}
+              onChange={(e) => set('cover_image_url', e.target.value)}
+            />
             <TextAreaField label="Summary (card)" maxLength={300} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
             <TextAreaField label="Description" maxLength={3000} value={form.description} onChange={(e) => set('description', e.target.value)} />
             <TextAreaField label="Cycle note" hint="e.g. which round is open, when the next opens" value={form.cycle_note} onChange={(e) => set('cycle_note', e.target.value)} />

@@ -66,6 +66,12 @@
     --text-on-brand-bright: var(--ink);
     --premium: var(--gold);
     --premium-soft: color-mix(in oklab, var(--gold) 16%, transparent);
+    /* Home feed category accents (accent only: icon, glow, 2px edge, 10% media wash).
+       Card surfaces stay the standard dark glass. */
+    --cat-scholarship: var(--emerald);
+    --cat-internship: var(--terracotta);
+    --cat-mentorship: #6B46C1;
+    --cat-university: var(--gold);
 
     /* ── Roles ─────────────────────────────────────────────────── */
     --accent: var(--brand);

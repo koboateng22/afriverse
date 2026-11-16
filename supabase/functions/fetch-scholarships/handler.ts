@@ -94,7 +94,7 @@ export function parseDeadline(text: string): Deadline {
 }
 
 // ── What kind of opportunity is it? ──────────────────────────────────────
-type Kind = 'scholarship' | 'fellowship' | 'program' | 'award';
+type Kind = 'scholarship' | 'fellowship' | 'program' | 'award' | 'internship';
 
 /** null for anything that isn't an opportunity we list (jobs, list posts, news). */
 export function kindOf(item: Pick<FeedItem, 'title' | 'categories'>): Kind | null {
@@ -107,7 +107,8 @@ export function kindOf(item: Pick<FeedItem, 'title' | 'categories'>): Kind | nul
     /scholarship|bursar/i.test(s) ? 'scholarship'
     : /fellowship|fellows\b/i.test(s) ? 'fellowship'
     : /\baward|\bprize|competition|challenge\b/i.test(s) ? 'award'
-    : /internship|training|programme|program\b|leadership|exchange|bootcamp|accelerator|incubator|summer school|academy/i.test(s) ? 'program'
+    : /internship|\binterns?\b/i.test(s) ? 'internship'
+    : /training|programme|program\b|leadership|exchange|bootcamp|accelerator|incubator|summer school|academy/i.test(s) ? 'program'
     : null;
   return pick(item.title) ?? pick(cats);
 }

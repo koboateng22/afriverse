@@ -1,0 +1,108 @@
+/* "Top matches" shelf on Home: wide cards in a horizontal, snap-scrolling row. */
+@layer components {
+  .top-matches { display: grid; gap: var(--space-4); min-inline-size: 0; }
+  .top-matches__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .top-matches__title { font-size: var(--step-1); }
+
+  /* Arrows only where there's a pointer to use them; touch screens swipe. */
+  .top-matches__nav { display: none; gap: var(--space-2); }
+  @media (hover: hover) and (min-width: 768px) { .top-matches__nav { display: flex; } }
+  .top-matches__arrow {
+    display: grid;
+    place-items: center;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 50%;
+    color: var(--text-2);
+    background: var(--glass-wash);
+    border: 1px solid var(--glass-edge);
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+    & svg { inline-size: 20px; block-size: 20px; }
+    &:hover:not(:disabled) { color: var(--text); background: var(--glass-wash-hover); }
+    &:disabled { opacity: 0.35; cursor: default; }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  /* Bleeds to the screen edges on phones so the next card peeks in. */
+  .top-matches__track {
+    display: flex;
+    gap: var(--space-4);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-1) var(--gutter) var(--space-3);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+  .top-matches__item {
+    flex: 0 0 min(84%, 380px);
+    display: flex;
+    scroll-snap-align: start;
+    @media (min-width: 768px) { flex-basis: 400px; }
+    @media (min-width: 1440px) { flex-basis: 440px; }
+  }
+
+  /* Wider and taller than feed tiles: media on top, generous padding. */
+  .match-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    inline-size: 100%;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    /* The 2px category edge on the left, plus the usual glass float. */
+    box-shadow: inset 2px 0 0 var(--cat), var(--glass-inset), var(--shadow-float);
+    color: var(--text);
+    transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
+
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-3px);
+        border-color: color-mix(in oklab, var(--cat) 35%, var(--glass-edge));
+        box-shadow: inset 2px 0 0 var(--cat), var(--glass-inset), var(--shadow-float), 0 18px 40px -24px color-mix(in oklab, var(--cat) 70%, transparent);
+      }
+    }
+    &:focus-visible { outline: none; box-shadow: inset 2px 0 0 var(--cat), var(--focus-ring); }
+  }
+  .match-card__media { aspect-ratio: 16 / 9; border-radius: calc(var(--radius-lg) - var(--space-3)); }
+  .match-card__body { display: grid; gap: var(--space-2); padding: 0 var(--space-2) var(--space-2); flex: 1; align-content: start; }
+  .match-card__kicker {
+    font-size: var(--step--2);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .match-card__title {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    line-height: var(--leading-snug);
+    letter-spacing: -0.01em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  .match-card__sub {
+    font-size: var(--step--1);
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .match-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .match-card { transition: none; &:hover { transform: none; } }
+  }
+}

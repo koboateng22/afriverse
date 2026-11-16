@@ -1,10 +1,12 @@
 /* ──────────────────────────────────────────────────────────────
    Opportunity card — one component, five shapes:
      row      full-width list card (default, outside the bento)
-     featured 2×2 hero tile: aurora art, display-size title
+     featured 2×2 hero tile: media panel, display-size title
      wide     2×1: classic row layout, every tag
-     tall     1×2: stacked header, longer summary
-     square   1×1: monogram, heart, title, countdown — nothing else
+     tall     1×2: media panel, longer summary
+     square   1×1: category icon, heart, title, countdown — nothing else
+   Every card keeps the dark glass surface; its category (data-cat, see
+   category.css) only sets the accent: icon glow, 2px left edge, media wash.
    Every shape is a flex column with the tags pinned to the bottom,
    so tiles sharing a grid row line up. Heights are never fixed:
    rows are `minmax(min, auto)`, so text can't be clipped or overlap.
@@ -20,9 +22,9 @@
 
     &[data-status='closed'] { opacity: 0.72; }
 
-    /* Spotlight / featured: brand-gradient rim, bigger title. */
+    /* Spotlight / featured: a rim in the card's category colour, bigger title. */
     &[data-spotlight] {
-      --card-rim: linear-gradient(140deg, var(--brand-bright), var(--emerald) 50%, color-mix(in oklab, var(--deep-green) 70%, transparent) 80%, transparent);
+      --card-rim: linear-gradient(140deg, var(--cat-ink), color-mix(in oklab, var(--cat) 70%, transparent) 50%, transparent 85%);
       padding: var(--space-6);
       & .opp-card__title { font-size: var(--step-2); }
       & .opp-card__summary { -webkit-line-clamp: 3; line-clamp: 3; }
@@ -52,6 +54,13 @@
     border-radius: inherit;
     overflow: hidden;
     pointer-events: none;
+    /* The 2px category edge on the left. An inset shadow follows the rounded corners. */
+    box-shadow: inset 2px 0 0 var(--cat, transparent);
+  }
+
+  /* The pointer spotlight (Card) picks up the category colour too. */
+  .opp-card[data-cat][data-interactive]::after {
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), color-mix(in oklab, var(--cat) 14%, transparent), transparent 62%);
   }
 
   .opp-card__ripple {
@@ -86,8 +95,8 @@
     aspect-ratio: 1;
     border-radius: 50%;
     background:
-      radial-gradient(closest-side, color-mix(in oklab, var(--brand-bright) 22%, transparent), transparent 70%),
-      radial-gradient(closest-side at 30% 70%, color-mix(in oklab, var(--emerald) 34%, transparent), transparent 80%);
+      radial-gradient(closest-side, color-mix(in oklab, var(--cat-ink) 16%, transparent), transparent 70%),
+      radial-gradient(closest-side at 30% 70%, color-mix(in oklab, var(--cat) 26%, transparent), transparent 80%);
     animation: float 9s var(--ease-out) infinite;
   }
 
@@ -98,27 +107,13 @@
     gap: var(--space-3);
   }
 
-  .opp-card__mono {
-    display: grid;
-    place-items: center;
-    flex: none;
-    inline-size: 44px;
-    block-size: 44px;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-display);
-    font-size: var(--step--1);
-    font-weight: 800;
-    color: var(--ink);
-    background: linear-gradient(150deg, color-mix(in oklab, var(--brand-bright) 80%, var(--cream)), var(--brand-bright));
-    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--brand-bright) 60%, transparent);
+  /* Media panel on big tiles (featured, tall): cover image or category wash. */
+  .opp-card__media-wrap {
+    position: relative;
+    & .save-btn { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-2); }
   }
-  .opp-card[data-status='open'] .opp-card__mono,
-  .opp-card[data-status='rolling'] .opp-card__mono {
-    background: linear-gradient(150deg, color-mix(in oklab, var(--emerald) 82%, var(--cream)), var(--deep-green));
-    color: var(--cream);
-    box-shadow: var(--glass-inset), 0 6px 16px -6px color-mix(in oklab, var(--emerald) 70%, transparent);
-  }
-  .opp-card[data-status='closed'] .opp-card__mono { background: var(--surface-3); color: var(--text-2); box-shadow: var(--glass-inset); }
+  .opp-card__media { block-size: 128px; }
+  .opp-card[data-size='featured'] .opp-card__media { block-size: clamp(150px, 22cqi, 200px); }
 
   .opp-card__heading { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
 
@@ -144,6 +139,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .opp-card__kicker { color: var(--cat-ink); }
 
   .opp-card__title {
     font-family: var(--font-display);
@@ -204,7 +200,7 @@
 
   /* ── Bento shapes ───────────────────────────────────────────────── */
 
-  /* Featured, tall and square stack the header: mono + heart on row one,
+  /* Featured, tall and square stack the header: icon + heart on row one,
      heading full-width below — the title gets every pixel of width. */
   .opp-card:is([data-size='featured'], [data-size='tall'], [data-size='square'], [data-spotlight]) {
     & .opp-card__top { flex-wrap: wrap; justify-content: space-between; }
@@ -215,7 +211,6 @@
     gap: var(--space-5);
     & .opp-card__title { font-size: var(--step-3); line-height: var(--leading-tight); letter-spacing: var(--tracking-display); }
     & .opp-card__summary { font-size: var(--step-0); max-inline-size: 48ch; }
-    & .opp-card__mono { inline-size: 52px; block-size: 52px; font-size: var(--step-0); }
   }
 
   .opp-card[data-size='tall'] {
@@ -225,7 +220,7 @@
   .opp-card[data-size='square'] {
     gap: var(--space-3);
     padding: var(--space-4);
-    & .opp-card__mono { inline-size: 38px; block-size: 38px; font-size: var(--step--2); }
+    & .cat-icon { --cat-icon-size: 38px; }
     & .opp-card__heading { padding-block-start: var(--space-1); }
     & .opp-card__title {
       font-size: var(--step-0);
@@ -240,7 +235,7 @@
   }
 
   /* Narrow phones (feed < 420px ≈ 2 columns of ~140px): tighter padding on
-     every non-hero tile so monogram + 44px heart share one row. */
+     every non-hero tile so the icon + 44px heart share one row. */
   @container feed (max-width: 420px) {
     .bento > .opp-card:not([data-size='featured']) { padding: var(--space-4); gap: var(--space-3); }
   }
@@ -249,7 +244,7 @@
      than letting words break mid-letter or tags overflow the tile. */
   @container (max-width: 200px) {
     .opp-card__top { gap: var(--space-2); }
-    .opp-card__mono { inline-size: 36px; block-size: 36px; font-size: var(--step--2); }
+    .opp-card .cat-icon:not([data-size]) { --cat-icon-size: 36px; }
     .opp-card__title { font-size: var(--step--1); overflow-wrap: break-word; hyphens: manual; }
     .opp-card__summary { font-size: var(--step--2); }
     .opp-card .tag { white-space: normal; text-align: start; max-inline-size: 100%; }

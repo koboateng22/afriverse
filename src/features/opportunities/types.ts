@@ -1,5 +1,5 @@
 /** Row shape of public.opportunities. */
-export type OpportunityKind = 'scholarship' | 'fellowship' | 'program' | 'award';
+export type OpportunityKind = 'scholarship' | 'fellowship' | 'program' | 'award' | 'internship';
 export type OpportunityStatus = 'open' | 'rolling' | 'upcoming' | 'closed';
 export type Funding = 'full' | 'partial' | 'stipend' | 'free_training' | 'prize';
 
@@ -27,12 +27,16 @@ export type Opportunity = {
   featured: boolean;
   /** The link is the provider's own official page (migration 0017): green "Verified" badge. */
   is_verified?: boolean;
+  /** Optional https image shown at the top of the card (migration 0023). */
+  cover_image_url?: string | null;
 };
 
 export const OPPORTUNITY_COLUMNS =
-  'id, slug, title, provider, kind, summary, description, eligibility, benefits, fields, levels, host_country, open_to, funding, status, deadline, opens_on, cycle_note, url, is_pro, featured, is_verified';
-/** The same without is_verified, for a database that hasn't run migration 0017 yet. */
-export const OPPORTUNITY_COLUMNS_BEFORE_0017 = OPPORTUNITY_COLUMNS.replace(', is_verified', '');
+  'id, slug, title, provider, kind, summary, description, eligibility, benefits, fields, levels, host_country, open_to, funding, status, deadline, opens_on, cycle_note, url, is_pro, featured, is_verified, cover_image_url';
+/** Without cover_image_url, for a database that hasn't run migration 0023 yet. */
+export const OPPORTUNITY_COLUMNS_BEFORE_0023 = OPPORTUNITY_COLUMNS.replace(', cover_image_url', '');
+/** Without is_verified either, for a database that hasn't run migration 0017 yet. */
+export const OPPORTUNITY_COLUMNS_BEFORE_0017 = OPPORTUNITY_COLUMNS_BEFORE_0023.replace(', is_verified', '');
 
 export const FUNDING_LABEL: Record<Funding, string> = {
   full: 'Fully funded',
