@@ -1,7 +1,9 @@
-// scrape-university — admin "Auto-Fill from Website". Reads a university's
+// scrape-university — admin "Auto-Fill from Website". Reads a university’s
 // home page for its logo (apple-touch-icon / icon) and cover (og:image),
 // copies each image into the public university_assets bucket and returns
 // those URLs, so our pictures never break when the university changes its site.
+// With { for: 'opportunity' } it only takes the page's og:image (Admin → Opportunities
+// fills an opportunity's cover_image_url with it).
 //
 // It fetches URLs an admin typed, so it only talks to public hosts: IP
 // literals, internal names and anything resolving to a private address are
@@ -259,7 +261,10 @@ export const handler = handle(async (req) => {
   const caller = await requireUser(req, svc);
   if (caller.role !== 'admin') throw new HttpError(403, 'forbidden', 'Admins only');
 
-  const page = pageUrl((await readJson(req)).url);
+  const body = await readJson(req);
+  const page = pageUrl(body.url);
+  // { for: 'opportunity' }: just the page's og:image, as an opportunity card's cover.
+  const forOpportunity = body.for === 'opportunity';
   let res: Response, finalUrl: URL;
   try {
     ({ res, url: finalUrl } = await safeFetch(page, 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5', PAGE_TIMEOUT_MS));
@@ -275,11 +280,17 @@ export const handler = handle(async (req) => {
   const contentType = res.headers.get('content-type') ?? '';
   if (contentType && !/html|xml/i.test(contentType)) {
     await res.body?.cancel();
-    throw new HttpError(422, 'not_html', 'That link isn’t a web page. Use the university’s home page.');
+    throw new HttpError(422, 'not_html', forOpportunity ? 'That link isn’t a web page.' : 'That link isn’t a web page. Use the university’s home page.');
   }
 
   const html = new TextDecoder().decode(await readCapped(res, MAX_HTML_BYTES, true));
   const found = findImages(html, finalUrl);
+  if (forOpportunity) {
+    const cover = await storeFirst(svc, found.cover, 'cover', `opportunities/${folderOf(finalUrl)}`);
+    if (!cover) throw new HttpError(422, 'nothing_found', 'That page has no preview image (og:image). Paste an image link by hand, or leave it empty for the category colour.');
+    return json({ logo_url: null, cover_image_url: cover.url, source: { logo: null, cover: cover.from } });
+  }
+
   const folder = folderOf(finalUrl);
   const [logo, cover] = await Promise.all([storeFirst(svc, found.logo, 'logo', folder), storeFirst(svc, found.cover, 'cover', folder)]);
   if (!logo && !cover) throw new HttpError(422, 'nothing_found', 'No logo or cover image found on that website. Add them by hand.');

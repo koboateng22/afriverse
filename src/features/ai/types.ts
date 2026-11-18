@@ -23,8 +23,12 @@ export type ChatMessage = {
   /** Afriversity records the answer drew on (validated server-side). */
   related?: RelatedItem[];
   review?: LegacyEssayReview | EssayReviewV2;
-  /** 'library' = the AI was unavailable and the answer came from the careers table. */
-  source?: 'ai' | 'library';
+  /**
+   * 'library' = an older answer from the careers table when the AI was down.
+   * 'fallback' = this device only: the AI was busy or too slow; `retry` holds the message to send again.
+   */
+  source?: 'ai' | 'library' | 'fallback';
+  retry?: string;
 };
 
 export type AiConversation = {

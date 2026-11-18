@@ -5,7 +5,7 @@ import { Building2, CheckCircle2, Gift, Phone, UserRound } from 'lucide-react';
 import { AuthLayout } from '../../features/auth/AuthLayout';
 import { useAuth } from '../../features/auth/useAuth';
 import { applyAmbassador } from '../../features/ambassador/api';
-import { toE164 } from '../../features/auth/api';
+import { toE164 } from '../../lib/phone';
 import { Button } from '../../components/Button/Button';
 import { Field, TextAreaField } from '../../components/Field/Field';
 import { FullscreenLoader } from '../../components/FullscreenLoader/FullscreenLoader';

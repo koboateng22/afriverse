@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
-import { Building2, CalendarDays, Compass, FileText, GraduationCap, LayoutDashboard, MessageCircle, PenLine, Sparkles, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, Compass, FileText, GraduationCap, House, LayoutDashboard, MessageCircle, PenLine, Sparkles, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../../features/auth/useAuth';
 import { usePlan } from '../../features/billing/PlanProvider';
 import { Logo } from '../Logo/Logo';
@@ -16,7 +16,8 @@ type NavItem = {
 
 // Exactly three items per surface (acceptance check). Admin links never appear in either.
 export const STUDENT_NAV: NavItem[] = [
-  { to: '/home', label: 'Discover', icon: Compass, match: ['/home', '/opportunity'] },
+  // Home is the student's top matches; the full list (/discover) opens from it.
+  { to: '/home', label: 'Home', icon: House, match: ['/home', '/discover', '/opportunity'] },
   { to: '/courses', label: 'Learn', icon: GraduationCap, match: ['/courses', '/career-compass', '/mentors', '/essay-review'] },
   { to: '/profile', label: 'You', icon: UserRound, match: ['/profile', '/applications', '/apply-university', '/paywall', '/results', '/ambassador'] },
 ];
@@ -30,7 +31,8 @@ export type NavSection = { title?: string; items: NavItem[] };
 export const STUDENT_SECTIONS: NavSection[] = [
   {
     items: [
-      { to: '/home', label: 'Discover', icon: Compass, match: ['/home', '/opportunity'] },
+      { to: '/home', label: 'Home', icon: House, match: ['/home'] },
+      { to: '/discover', label: 'Discover', icon: Compass, match: ['/discover', '/opportunity'] },
       { to: '/apply-university', label: 'Universities', icon: Building2, match: ['/apply-university'] },
       { to: '/applications', label: 'My applications', icon: FileText, match: ['/applications'] },
     ],

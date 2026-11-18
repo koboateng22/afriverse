@@ -200,6 +200,14 @@
   .sheet .chat__log { min-block-size: 20dvh; }
 
   .chat__related { display: flex; flex-wrap: wrap; gap: var(--space-2); max-inline-size: min(88%, 520px); }
+
+  /* "High traffic" answer: a quieter bubble (no travelling rim) with Retry under it. */
+  .chat__bubble[data-fallback] {
+    color: var(--text-2);
+    border-style: dashed;
+    &::before { display: none; }
+  }
+  .chat__retry { display: flex; }
   .chat__related-chip {
     display: inline-flex;
     align-items: center;

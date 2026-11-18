@@ -6,6 +6,9 @@
 //   lesson  → tutor scoped to one course lesson (the lesson record; Groq can't watch the video).
 //   essay   → AI Essay Reviewer for INTERNATIONAL university applications (essay.ts):
 //             destination- and essay-type-aware review; it reviews, never rewrites the whole essay.
+// When Groq is rate-limited (429), erroring (5xx), too slow or unreadable, every mode
+// answers 200 { reply, is_fallback: true } instead of an error. Nothing is saved or
+// counted for that turn, so the app's Retry simply sends it again.
 // The AI is free for every signed-in student, Free or Pro (Pro is human support).
 // One daily allowance for everyone (app_settings.free_ai_daily_limit, set high
 // enough that it only stops spam) plus a short burst limit.
@@ -48,6 +51,18 @@ const DEFAULT_DAILY_LIMIT = 50;
 // Long enough to paste a CV or an essay draft into the chat (matches the composer).
 const MAX_MESSAGE_CHARS = 6000;
 export const NOT_IN_DATA = "I don't have that in Afriversity's data yet.";
+export const FALLBACK_REPLY = 'I am currently experiencing high traffic. Please try again in a minute.';
+// Chat answers must beat the app's 15-second timeout, so the fallback (not a
+// half-finished save) is what a slow turn produces. Essay reviews are longer jobs.
+const CHAT_TIMEOUT_MS = 13_000;
+
+/**
+ * True when the AI itself failed: Groq's 429 (ai_busy), 5xx (ai_error), a timeout,
+ * an empty or unreadable answer. Our own limits (429 daily_limit / slow_down) are not this.
+ */
+export function isAiOutage(err: unknown): boolean {
+  return (err instanceof HttpError && err.status >= 500 && err.code.startsWith('ai_')) || err instanceof SyntaxError;
+}
 
 // Standard JSON Schema (sent to the model in the prompt; the handler validates every field).
 const CAREER_SCHEMA = {
@@ -165,6 +180,11 @@ export const handler = handle(async (req) => {
   const a = await allowance(svc, caller.user.id);
   await enforceLimits(svc, caller.user.id, a);
 
+  const fallback = (err: unknown) => {
+    console.error(`ai fallback (${mode}):`, err instanceof Error ? err.message : err);
+    return json({ reply: FALLBACK_REPLY, is_fallback: true, conversation_id: conversationId, usage: { used: a.used, limit: a.limit, plan: a.plan } });
+  };
+
   const { data: profile } = await svc
     .from('profiles')
     .select('full_name, country, education_level, field_of_interest, goals')
@@ -210,7 +230,7 @@ export const handler = handle(async (req) => {
 
     const library = kb.careers;
     try {
-      const raw = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], json: { schema: CAREER_SCHEMA }, maxOutputTokens: 1500, timeoutMs: 40_000 });
+      const raw = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], json: { schema: CAREER_SCHEMA }, maxOutputTokens: 1500, timeoutMs: CHAT_TIMEOUT_MS });
       const parsed = JSON.parse(raw) as { reply?: unknown; careers?: unknown; related?: unknown };
       // Only data that exists in Supabase survives — anything else the model names is dropped.
       const careers = strList(parsed.careers, 3, 80)
@@ -226,22 +246,8 @@ export const handler = handle(async (req) => {
       }
       reply = { role: 'assistant', content: clip(parsed.reply, 6000) || NOT_IN_DATA, at: new Date().toISOString(), careers, related, source: 'ai' };
     } catch (err) {
-      if (err instanceof HttpError && err.status === 429) throw err;
-      // AI unavailable: answer from the careers library, clearly labelled, without repeating cards.
-      console.error('ai career fallback:', err instanceof Error ? err.message : err);
-      const field = profile?.field_of_interest;
-      const shown = new Set(messages.flatMap((m) => (m.careers ?? []).map((c) => c.title)));
-      const pool = library.filter((c) => !field || c.field === field);
-      const picks = (pool.length ? pool : library).filter((c) => !shown.has(c.title)).slice(0, 3);
-      reply = {
-        role: 'assistant',
-        content: picks.length
-          ? "The AI counsellor isn't available right now. Careers from our library that fit your field:"
-          : "The AI counsellor isn't available right now. Please try again shortly.",
-        at: new Date().toISOString(),
-        source: 'library',
-        careers: picks.map((c) => ({ title: c.title, field: c.field, why: c.summary, first_steps: (c.pathways as string[]).slice(0, 3), day_in_life_query: `day in the life of a ${c.title.toLowerCase()}` })),
-      };
+      if (isAiOutage(err)) return fallback(err);
+      throw err;
     }
   } else if (mode === 'lesson') {
     const text = str(body.message, 'message', { min: 1, max: MAX_MESSAGE_CHARS });
@@ -261,7 +267,13 @@ export const handler = handle(async (req) => {
       'Be concise: at most 4 short sentences or bullet lines starting with "• ". No greetings or filler. Never invent timestamps or quotes.',
     ].join('\n');
     // Groq models can't watch YouTube videos, so the tutor works from the lesson record only.
-    const answer = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], maxOutputTokens: 500 });
+    let answer: string;
+    try {
+      answer = await generate({ system, contents: [...history(messages), { role: 'user', parts: [{ text }] }], maxOutputTokens: 500, timeoutMs: CHAT_TIMEOUT_MS });
+    } catch (err) {
+      if (isAiOutage(err)) return fallback(err);
+      throw err;
+    }
     reply = { role: 'assistant', content: answer.slice(0, 1500), at: new Date().toISOString(), source: 'ai' };
   } else {
     // ── Essay Reviewer: international university applications (essay.ts) ──
@@ -275,14 +287,20 @@ export const handler = handle(async (req) => {
     const missing = missingInfo(ctx, ctx.essay_type);
     // Numbered paragraphs, so section-by-section comments point at real paragraphs.
     const paras = paragraphsOf(essay);
-    const raw = await generate({
-      system: reviewSystemPrompt(ctx, lc, missing, studentLine, paras.length),
-      contents: [{ role: 'user', parts: [{ text: numberedEssay(paras) }] }],
-      json: { schema: REVIEW_SCHEMA },
-      maxOutputTokens: 3000,
-      timeoutMs: 60_000,
-    });
-    const review = normalizeReview(parseJson(raw), essay, ctx, lc, missing);
+    let review: EssayReviewV2;
+    try {
+      const raw = await generate({
+        system: reviewSystemPrompt(ctx, lc, missing, studentLine, paras.length),
+        contents: [{ role: 'user', parts: [{ text: numberedEssay(paras) }] }],
+        json: { schema: REVIEW_SCHEMA },
+        maxOutputTokens: 3000,
+        timeoutMs: 60_000,
+      });
+      review = normalizeReview(parseJson(raw), essay, ctx, lc, missing);
+    } catch (err) {
+      if (isAiOutage(err)) return fallback(err);
+      throw err;
+    }
     // The limit check follows the detected type when the applicant chose "not sure".
     if (ctx.essay_type === 'auto') review.limit = limitCheck(essay, review.context.detected_type, ctx.limit);
     conversationId = null; // each review is its own record

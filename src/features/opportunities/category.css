@@ -47,9 +47,19 @@
     block-size: 100%;
     object-fit: cover;
   }
+  /* Dark fade at the bottom, so the image melts into the card body below it. */
+  .cat-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 42%, color-mix(in oklab, var(--bg) 55%, transparent) 72%, color-mix(in oklab, var(--bg) 92%, transparent));
+    pointer-events: none;
+  }
+  .cat-media > .cat-icon { position: relative; z-index: 1; }
   /* Small icon chip over a photo, so the category still shows. */
   .cat-media__badge {
     position: absolute;
+    z-index: 1;
     inset-inline-start: var(--space-3);
     inset-block-end: var(--space-3);
     -webkit-backdrop-filter: blur(10px);

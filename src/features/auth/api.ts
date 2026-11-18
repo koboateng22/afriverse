@@ -22,11 +22,12 @@ export async function signUpWithEmail(input: {
   referralCode?: string;
   mentorApplication?: MentorApplication;
 }) {
+  // No emailRedirectTo: the confirmation email carries a 6-digit code ({{ .Token }}),
+  // entered on the "Verify Code" screen, so nothing depends on a link or the browser.
   const { data, error } = await getSupabase().auth.signUp({
     email: input.email,
     password: input.password,
     options: {
-      emailRedirectTo: callbackUrl(),
       // `signup_as` is read by the handle_new_user trigger, which only accepts
       // 'student' or 'mentor' (mentors start as pending). Admin can't be requested.
       // referral_code: an ambassador's code; the trigger keeps it only if it's live (0018).
@@ -49,8 +50,8 @@ export async function signUpWithEmail(input: {
 
 /** Sends the 6-digit reset code. Always "succeeds" to the caller, so nobody can probe which emails have accounts. */
 export async function requestPasswordReset(email: string) {
-  // redirectTo only matters while an old link-style template is still live.
-  const { error } = await getSupabase().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/update-password` });
+  // No redirectTo: the Reset Password email carries the code, not a link.
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email);
   if (error && isRateLimited(error)) throw new Error('Too many reset requests. Wait a minute, then try again.');
 }
 
@@ -75,22 +76,27 @@ export async function verifyEmailCode(email: string, token: string, type: EmailC
 /** Sends a fresh code for the given purpose. */
 export async function resendEmailCode(email: string, type: EmailCodeKind) {
   if (type === 'recovery') return requestPasswordReset(email);
-  if (type === 'email') return sendEmailSignInCode(email);
+  if (type === 'email') return sendEmailSignInCode(email, { createStudent: true });
   const { error } = await getSupabase().auth.resend({ type: 'signup', email });
   if (error && isRateLimited(error)) throw new Error('A code was sent moments ago. Wait a minute before asking for another.');
   if (error) throw error;
 }
 
 /**
- * Password-free sign-in: emails a 6-digit code to an existing account. Never creates an
- * account (sign-up collects the name and role), and answers the same for unknown emails.
+ * Password-free sign-in with a 6-digit email code. For students it also signs up
+ * (shouldCreateUser: true): a new email gets a free student account, and onboarding asks
+ * for the name. Mentors must apply first, so for them it never creates an account and
+ * answers the same for unknown emails.
  */
-export async function sendEmailSignInCode(email: string) {
-  const { error } = await getSupabase().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+export async function sendEmailSignInCode(email: string, opts: { createStudent: boolean } = { createStudent: true }) {
+  const { error } = await getSupabase().auth.signInWithOtp({
+    email,
+    options: opts.createStudent ? { shouldCreateUser: true, data: { signup_as: 'student' } } : { shouldCreateUser: false },
+  });
   if (!error) return;
   if (isRateLimited(error)) throw new Error('A code was sent moments ago. Wait a minute before asking for another.');
-  // "Signups not allowed for otp" = no such account. Stay quiet about it.
-  if (/signups? not allowed|user not found/i.test(error.message)) return;
+  // "Signups not allowed for otp" = no such account (mentor sign-in). Stay quiet about it.
+  if (!opts.createStudent && /signups? not allowed|user not found/i.test(error.message)) return;
   throw error;
 }
 
@@ -124,30 +130,4 @@ export async function signInWithGoogle() {
     options: { redirectTo: callbackUrl() },
   });
   if (error) throw error;
-}
-
-/** Sends an SMS code. Creates the account on first use (student role, with the referral code if given). */
-export async function sendPhoneOtp(phone: string, fullName?: string, referralCode?: string) {
-  const { error } = await getSupabase().auth.signInWithOtp({
-    phone,
-    options: {
-      shouldCreateUser: true,
-      data: { signup_as: 'student', ...(fullName ? { full_name: fullName } : {}), ...(referralCode ? { referral_code: referralCode } : {}) },
-    },
-  });
-  if (error) throw error;
-}
-
-export async function verifyPhoneOtp(phone: string, token: string) {
-  const { error } = await getSupabase().auth.verifyOtp({ phone, token, type: 'sms' });
-  if (error) throw error;
-}
-
-/** Light E.164 normaliser: "0551234987" + Ghana → "+233551234987". */
-export function toE164(raw: string, defaultCountryCode = '233'): string {
-  const digits = raw.replace(/[^\d+]/g, '');
-  if (digits.startsWith('+')) return digits;
-  if (digits.startsWith('00')) return `+${digits.slice(2)}`;
-  if (digits.startsWith('0')) return `+${defaultCountryCode}${digits.slice(1)}`;
-  return `+${digits}`;
 }

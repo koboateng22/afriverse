@@ -47,7 +47,8 @@ function isModelUnavailable(status: number, payload: GroqResponse): boolean {
 const isReasoningModel = (model: string) => model.startsWith('openai/gpt-oss');
 
 /** Never abort a call sooner than this, whatever a caller passes. */
-const MIN_TIMEOUT_MS = 20_000;
+// Chat turns use 13 s so they finish (or fall back) inside the app's 15 s timeout.
+const MIN_TIMEOUT_MS = 8_000;
 const DEFAULT_TIMEOUT_MS = 25_000;
 /** Reasoning tokens count toward the completion budget; leave room so the answer isn't cut off. */
 const REASONING_HEADROOM_TOKENS = 1_536;

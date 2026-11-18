@@ -1,106 +1,47 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BadgeCheck, Building2, CalendarClock, ChevronLeft, ChevronRight, MapPin, UsersRound } from 'lucide-react';
+import { BadgeCheck, CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tag } from '../../components/Chip/Chip';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { CategoryMedia } from '../../features/opportunities/CategoryMedia';
 import { categoryOf, KIND_ICON, KIND_LABEL } from '../../features/opportunities/category';
 import { FUNDING_LABEL } from '../../features/opportunities/types';
-import { feeOf } from '../../features/universities/types';
 import type { TopItem } from '../../features/home/topMatches';
 import { countdownFor } from '../../lib/dates';
-import { formatMoney } from '../../lib/money';
 import { riseItem, staggerParent } from '../../lib/motion';
 import './TopMatches.css';
 
-/** One wide card. Each type keeps the dark glass surface; only its accent colour changes. */
+/** One wide card: full-bleed cover image (or the category wash) fading into the glass body. */
 function MatchCard({ item }: { item: TopItem }) {
-  if (item.type === 'opportunity') {
-    const o = item.opportunity;
-    const countdown = countdownFor(o);
-    return (
-      <Link to={`/opportunity/${o.slug}`} className="match-card" data-cat={categoryOf(o.kind)}>
-        <CategoryMedia className="match-card__media" image={o.cover_image_url} icon={KIND_ICON[o.kind]} />
-        <div className="match-card__body">
-          <p className="match-card__kicker">
-            <span className="cat-label">{KIND_LABEL[o.kind]}</span>
-            {item.reason && (
-              <>
-                <span aria-hidden="true"> · </span>
-                <span className="visually-hidden">, </span>
-                {item.reason}
-              </>
-            )}
-          </p>
-          <h3 className="match-card__title">{o.title}</h3>
-          <p className="match-card__sub">{o.provider}</p>
-          <div className="match-card__meta">
-            {o.is_verified && (
-              <Tag tone="emerald">
-                <BadgeCheck aria-hidden="true" />
-                Verified
-              </Tag>
-            )}
-            <Tag tone={countdown.tone}>
-              <CalendarClock aria-hidden="true" />
-              {countdown.label}
-            </Tag>
-            <Tag>{FUNDING_LABEL[o.funding]}</Tag>
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  if (item.type === 'mentor') {
-    const m = item.mentor;
-    return (
-      <Link to={`/mentors/${m.id}`} className="match-card" data-cat="mentorship">
-        <CategoryMedia className="match-card__media" icon={UsersRound} />
-        <div className="match-card__body">
-          <p className="match-card__kicker">
-            <span className="cat-label">Mentorship</span>
-            {m.expertise[0] && (
-              <>
-                <span aria-hidden="true"> · </span>
-                <span className="visually-hidden">, </span>
-                {m.expertise[0]}
-              </>
-            )}
-          </p>
-          <h3 className="match-card__title">{m.display_name}</h3>
-          <p className="match-card__sub">{m.headline ?? 'Book a one-to-one video session'}</p>
-          <div className="match-card__meta">
-            {m.rate_cents ? <Tag>{formatMoney(m.rate_cents, m.currency)} / hour</Tag> : null}
-            {m.country && (
-              <Tag>
-                <MapPin aria-hidden="true" />
-                {m.country}
-              </Tag>
-            )}
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
-  const u = item.university;
+  const o = item.opportunity;
+  const countdown = countdownFor(o);
   return (
-    <Link to={`/apply-university/${u.slug}`} className="match-card" data-cat="university">
-      <CategoryMedia className="match-card__media" image={u.cover_image_url} icon={Building2} />
+    <Link to={`/opportunity/${o.slug}`} className="match-card" data-cat={categoryOf(o.kind)}>
+      <CategoryMedia className="match-card__media" image={o.cover_image_url} icon={KIND_ICON[o.kind]} />
       <div className="match-card__body">
         <p className="match-card__kicker">
-          <span className="cat-label">University application</span>
+          <span className="cat-label">{KIND_LABEL[o.kind]}</span>
+          <span aria-hidden="true"> · </span>
+          <span className="visually-hidden">, </span>
+          <span className="match-card__reason" data-score={item.match ? true : undefined}>
+            {item.reason}
+          </span>
         </p>
-        <h3 className="match-card__title">{u.name}</h3>
-        <p className="match-card__sub">We buy the voucher and submit your forms.</p>
+        <h3 className="match-card__title">{o.title}</h3>
+        <p className="match-card__sub">{o.provider}</p>
         <div className="match-card__meta">
-          <Tag>
-            <MapPin aria-hidden="true" />
-            {u.city}, {u.country}
+          {o.is_verified && (
+            <Tag tone="emerald">
+              <BadgeCheck aria-hidden="true" />
+              Verified
+            </Tag>
+          )}
+          <Tag tone={countdown.tone}>
+            <CalendarClock aria-hidden="true" />
+            {countdown.label}
           </Tag>
-          {feeOf(u) > 0 && <Tag>Apply for {formatMoney(feeOf(u), u.currency)}</Tag>}
+          <Tag>{FUNDING_LABEL[o.funding]}</Tag>
         </div>
       </div>
     </Link>
@@ -108,7 +49,7 @@ function MatchCard({ item }: { item: TopItem }) {
 }
 
 /**
- * "Top matches": a horizontal shelf of wide cards under the greeting. Swipe on phones;
+ * "Top matches": the 3–5 opportunities that fit the student best, as a horizontal shelf. Swipe on phones;
  * on desktop, arrow buttons page through it (wheel and trackpad scrolling still work).
  */
 export function TopMatches({ items, loading }: { items: TopItem[]; loading: boolean }) {

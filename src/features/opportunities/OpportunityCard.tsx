@@ -92,6 +92,8 @@ export const OpportunityCard = memo(function OpportunityCard({ opportunity: o, s
       style={{ rotateX, rotateY, transformPerspective: 900 }}
     >
       <span className="opp-card__glow" aria-hidden="true" />
+      {/* The 2px category edge: its own layer above the cover image, under nothing interactive. */}
+      <span className="opp-card__edge" aria-hidden="true" />
       {/* Decorative layer: clipped to the card, under the text, never hit-testable. */}
       <span className="opp-card__fx" aria-hidden="true">
         {hero && <span className="opp-card__aurora" />}

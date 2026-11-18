@@ -11,9 +11,10 @@ export function CategoryIcon({ icon: Icon, size }: { icon: LucideIcon; size?: 's
 }
 
 /**
- * Top-of-card media: the cover image when there is one (and it loads), otherwise a soft
- * 10% wash of the category colour with the large icon in the centre. Decorative: the
- * card's text carries the meaning.
+ * Top-of-card media: the cover image (object-fit: cover) when there is one and it loads,
+ * otherwise a soft 10% wash of the category colour with the large icon in the centre.
+ * A dark gradient at the bottom blends either into the card. Decorative: the card's
+ * text carries the meaning.
  */
 export function CategoryMedia({ image, icon, className }: { image?: string | null; icon: LucideIcon; className?: string }) {
   const [broken, setBroken] = useState(false);

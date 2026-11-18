@@ -14,12 +14,33 @@ export class FunctionError extends Error {
   }
 }
 
+/** Thrown when `timeoutMs` passes before the function answers. */
+export const TIMEOUT_CODE = 'timeout';
+
 /**
  * Calls a Supabase Edge Function with the signed-in user's JWT.
  * Server secrets never reach the browser — only the function name and body do.
+ * With `timeoutMs`, the request is aborted and a FunctionError('timeout') thrown
+ * if no answer arrives in time.
  */
-export async function invokeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await getSupabase().functions.invoke(name, { body });
+export async function invokeFunction<T>(name: string, body: Record<string, unknown>, opts: { timeoutMs?: number } = {}): Promise<T> {
+  const controller = opts.timeoutMs ? new AbortController() : null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    if (!controller) return;
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new FunctionError(0, TIMEOUT_CODE, 'The request took too long.', {}));
+    }, opts.timeoutMs);
+  });
+  let result: Awaited<ReturnType<ReturnType<typeof getSupabase>['functions']['invoke']>>;
+  try {
+    const call = getSupabase().functions.invoke(name, { body, ...(controller ? { signal: controller.signal } : {}) });
+    result = controller ? await Promise.race([call, timeout]) : await call;
+  } finally {
+    clearTimeout(timer);
+  }
+  const { data, error } = result;
   if (!error) return data as T;
 
   // FunctionsHttpError carries the Response; surface the server's JSON message.

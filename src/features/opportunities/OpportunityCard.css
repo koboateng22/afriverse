@@ -13,6 +13,9 @@
    ────────────────────────────────────────────────────────────── */
 @layer components {
   .opp-card {
+    /* Padding as a variable, so the cover image can bleed exactly to the card's edges. */
+    --opp-pad: var(--space-5);
+    padding: var(--opp-pad);
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
@@ -25,7 +28,7 @@
     /* Spotlight / featured: a rim in the card's category colour, bigger title. */
     &[data-spotlight] {
       --card-rim: linear-gradient(140deg, var(--cat-ink), color-mix(in oklab, var(--cat) 70%, transparent) 50%, transparent 85%);
-      padding: var(--space-6);
+      --opp-pad: var(--space-6);
       & .opp-card__title { font-size: var(--step-2); }
       & .opp-card__summary { -webkit-line-clamp: 3; line-clamp: 3; }
     }
@@ -54,8 +57,17 @@
     border-radius: inherit;
     overflow: hidden;
     pointer-events: none;
-    /* The 2px category edge on the left. An inset shadow follows the rounded corners. */
+  }
+
+  /* The 2px category edge on the left. An inset shadow follows the rounded corners;
+     z-index 2 keeps it above a full-bleed cover image. */
+  .opp-card__edge {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
     box-shadow: inset 2px 0 0 var(--cat, transparent);
+    pointer-events: none;
   }
 
   /* The pointer spotlight (Card) picks up the category colour too. */
@@ -110,9 +122,15 @@
   /* Media panel on big tiles (featured, tall): cover image or category wash. */
   .opp-card__media-wrap {
     position: relative;
-    & .save-btn { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-2); }
+    /* Full bleed: out to the card's edges, flush with its rounded top. */
+    margin: calc(-1 * var(--opp-pad)) calc(-1 * var(--opp-pad)) 0;
+    & .save-btn { position: absolute; inset-block-start: var(--space-3); inset-inline-end: var(--space-3); }
   }
-  .opp-card__media { block-size: 128px; }
+  .opp-card__media {
+    block-size: 140px;
+    border: 0;
+    border-radius: calc(var(--card-radius) - 1px) calc(var(--card-radius) - 1px) 0 0;
+  }
   .opp-card[data-size='featured'] .opp-card__media { block-size: clamp(150px, 22cqi, 200px); }
 
   .opp-card__heading { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
@@ -219,7 +237,7 @@
 
   .opp-card[data-size='square'] {
     gap: var(--space-3);
-    padding: var(--space-4);
+    --opp-pad: var(--space-4);
     & .cat-icon { --cat-icon-size: 38px; }
     & .opp-card__heading { padding-block-start: var(--space-1); }
     & .opp-card__title {
@@ -237,7 +255,7 @@
   /* Narrow phones (feed < 420px ≈ 2 columns of ~140px): tighter padding on
      every non-hero tile so the icon + 44px heart share one row. */
   @container feed (max-width: 420px) {
-    .bento > .opp-card:not([data-size='featured']) { padding: var(--space-4); gap: var(--space-3); }
+    .bento > .opp-card:not([data-size='featured']) { --opp-pad: var(--space-4); gap: var(--space-3); }
   }
 
   /* Tile-level: when a card itself is very narrow, scale its type down rather

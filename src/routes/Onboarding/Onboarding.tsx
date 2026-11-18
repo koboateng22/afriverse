@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, type PanInfo, type Variants } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, MapPin, MessageCircle, UserRound } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { Button } from '../../components/Button/Button';
 import { Chip } from '../../components/Chip/Chip';
-import { SelectField } from '../../components/Field/Field';
+import { Field, SelectField } from '../../components/Field/Field';
 import { Logo } from '../../components/Logo/Logo';
 import { ProgressDots } from '../../components/ProgressDots/ProgressDots';
 import { useAuth } from '../../features/auth/useAuth';
 import { updateProfile } from '../../features/profiles/api';
+import { toE164 } from '../../lib/phone';
 import { AFRICAN_COUNTRIES, EDUCATION_LEVELS, FIELDS, GOALS } from '../../features/onboarding/options';
 import { errorMessage } from '../../lib/supabase';
 import { easeOut } from '../../lib/motion';
 import { FeedLoader } from './FeedLoader';
 import './Onboarding.css';
 
-type Answers = { country: string; level: string; field: string; goals: string[] };
+type Answers = { name: string; phone: string; country: string; level: string; field: string; goals: string[] };
 
 const STEPS = [
-  { key: 'country', eyebrow: 'Step 1 of 4', title: 'Where are you based?', lede: 'We use this to show opportunities open to your nationality.' },
+  { key: 'country', eyebrow: 'Step 1 of 4', title: 'Where are you based?', lede: 'We use your country to show opportunities open to you, and your WhatsApp number so a counsellor can reach you.' },
   { key: 'level', eyebrow: 'Step 2 of 4', title: 'Where are you in your studies?', lede: 'Pick the one that fits you today.' },
   { key: 'field', eyebrow: 'Step 3 of 4', title: 'What field excites you most?', lede: 'You can change this any time from your profile.' },
   { key: 'goals', eyebrow: 'Step 4 of 4', title: 'What do you want from Afriversity?', lede: 'Choose as many as you like.' },
@@ -36,7 +37,11 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
+  // Accounts made with an email code have no name yet; Google and password sign-ups do.
+  const [askName] = useState(() => !profile?.full_name?.trim());
   const [answers, setAnswers] = useState<Answers>({
+    name: profile?.full_name ?? '',
+    phone: profile?.phone ?? '',
     country: profile?.country ?? '',
     level: profile?.education_level ?? '',
     field: profile?.field_of_interest ?? '',
@@ -45,7 +50,11 @@ export default function Onboarding() {
   const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const valid = [Boolean(answers.country), Boolean(answers.level), Boolean(answers.field), answers.goals.length > 0][step];
+  // The WhatsApp number is optional, but if given it must be a real number.
+  const phoneE164 = answers.phone.trim() ? toE164(answers.phone) : '';
+  const phoneOk = !phoneE164 || /^\+\d{9,15}$/.test(phoneE164);
+  const nameOk = !askName || answers.name.trim().length >= 2;
+  const valid = [Boolean(answers.country) && phoneOk && nameOk, Boolean(answers.level), Boolean(answers.field), answers.goals.length > 0][step];
 
   const go = (delta: 1 | -1) => {
     const next = step + delta;
@@ -68,6 +77,8 @@ export default function Onboarding() {
     try {
       const [updated] = await Promise.all([
         updateProfile(profile.id, {
+          ...(askName ? { full_name: answers.name.trim() } : {}),
+          ...(phoneE164 ? { phone: phoneE164 } : {}),
           country: answers.country,
           education_level: answers.level,
           field_of_interest: answers.field,
@@ -114,7 +125,8 @@ export default function Onboarding() {
               initial="enter"
               animate="center"
               exit="exit"
-              drag="x"
+              // Step 1 has text fields: dragging there would fight text selection.
+              drag={s.key === 'country' ? false : 'x'}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.18}
               onDragEnd={onDragEnd}
@@ -128,14 +140,38 @@ export default function Onboarding() {
 
               <div className="onboarding__answers">
                 {s.key === 'country' && (
-                  <SelectField
-                    label="Country"
-                    icon={<MapPin />}
-                    options={AFRICAN_COUNTRIES}
-                    placeholder="Choose your country"
-                    value={answers.country}
-                    onChange={(e) => setAnswers((a) => ({ ...a, country: e.target.value }))}
-                  />
+                  <div className="onboarding__fields">
+                    {askName && (
+                      <Field
+                        label="Your name"
+                        autoComplete="name"
+                        icon={<UserRound />}
+                        value={answers.name}
+                        maxLength={120}
+                        onChange={(e) => setAnswers((a) => ({ ...a, name: e.target.value }))}
+                      />
+                    )}
+                    <SelectField
+                      label="Country"
+                      icon={<MapPin />}
+                      options={AFRICAN_COUNTRIES}
+                      placeholder="Choose your country"
+                      value={answers.country}
+                      onChange={(e) => setAnswers((a) => ({ ...a, country: e.target.value }))}
+                    />
+                    <Field
+                      label="WhatsApp number (optional)"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      icon={<MessageCircle />}
+                      placeholder="e.g. 055 123 4987"
+                      value={answers.phone}
+                      onChange={(e) => setAnswers((a) => ({ ...a, phone: e.target.value }))}
+                      hint="For your counsellor and session reminders. Ghana numbers can start with 0; other countries, include +code."
+                      error={phoneOk ? null : 'Check this number, e.g. 055 123 4987 or +233 55 123 4987.'}
+                    />
+                  </div>
                 )}
                 {s.key === 'level' && (
                   <div className="onboarding__chips" role="radiogroup" aria-labelledby={`step-${s.key}`}>

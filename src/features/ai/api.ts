@@ -4,13 +4,19 @@ import type { Destination, EssayType, LimitUnit } from './essay';
 import { getSupabase } from '../../lib/supabase';
 import type { AiConversation, ChatMessage, ChatUsage } from './types';
 
-export type ChatReply = { conversation_id: string; message: ChatMessage; usage: ChatUsage };
+export type ChatReply = { conversation_id: string; message: ChatMessage; usage: ChatUsage; is_fallback?: undefined };
+/** The AI was busy, failing or too slow: nothing was saved; send the message again later. */
+export type ChatFallback = { is_fallback: true; reply: string; conversation_id: string | null; usage?: ChatUsage };
 
-export function sendChat(input: { mode: 'career' | 'lesson'; message: string; conversation_id?: string | null; lesson_id?: string }): Promise<ChatReply> {
+export const FALLBACK_REPLY = 'I am currently experiencing high traffic. Please try again in a minute.';
+/** How long a chat message may take before the app gives up and offers Retry. */
+export const CHAT_TIMEOUT_MS = 15_000;
+
+export function sendChat(input: { mode: 'career' | 'lesson'; message: string; conversation_id?: string | null; lesson_id?: string }): Promise<ChatReply | ChatFallback> {
   const body: Record<string, unknown> = { mode: input.mode, message: input.message };
   if (input.conversation_id) body.conversation_id = input.conversation_id;
   if (input.lesson_id) body.lesson_id = input.lesson_id;
-  return invokeFunction<ChatReply>('gemini-chat', body);
+  return invokeFunction<ChatReply | ChatFallback>('gemini-chat', body, { timeoutMs: CHAT_TIMEOUT_MS });
 }
 
 /** Latest conversation of a kind (and lesson), so chats survive a refresh. */
@@ -46,13 +52,13 @@ export type EssayRequest = {
 };
 
 /** AI Essay Reviewer (international applications). Each review is stored as its own conversation. */
-export function reviewEssay(input: EssayRequest): Promise<ChatReply> {
+export function reviewEssay(input: EssayRequest): Promise<ChatReply | ChatFallback> {
   const body: Record<string, unknown> = { mode: 'essay' };
   for (const [k, v] of Object.entries(input)) {
     if (v === undefined || v === null || (typeof v === 'string' && !v.trim())) continue;
     body[k] = typeof v === 'string' ? v.trim() : v;
   }
-  return invokeFunction<ChatReply>('gemini-chat', body);
+  return invokeFunction<ChatReply | ChatFallback>('gemini-chat', body);
 }
 
 /** Past essay reviews, newest first. */

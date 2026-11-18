@@ -18,6 +18,7 @@ import Landing from './routes/Landing/Landing';
 // The tab destinations are also warmed on idle (below) so switching tabs never
 // drops to the Suspense fallback mid-crossfade.
 const loadHome = () => import('./routes/Home/Home');
+const loadDiscover = () => import('./routes/Discover/Discover');
 const loadCourses = () => import('./routes/Courses/Courses');
 const loadProfile = () => import('./routes/Profile/Profile');
 const loadCompass = () => import('./routes/CareerCompass/CareerCompass');
@@ -31,6 +32,7 @@ const MentorApply = lazy(() => import('./routes/mentor/MentorApply'));
 const AuthCallback = lazy(() => import('./features/auth/AuthCallback'));
 const Onboarding = lazy(() => import('./routes/Onboarding/Onboarding'));
 const Home = lazy(loadHome);
+const Discover = lazy(loadDiscover);
 const OpportunityDetail = lazy(() => import('./routes/OpportunityDetail/OpportunityDetail'));
 const CareerCompass = lazy(loadCompass);
 const Courses = lazy(loadCourses);
@@ -66,7 +68,7 @@ const mentor = (el: ReactNode) => (
 function usePrefetchTabs(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
-    const run = () => void Promise.all([loadHome(), loadCourses(), loadProfile(), loadCompass(), loadPaywall()]).catch(() => undefined);
+    const run = () => void Promise.all([loadHome(), loadDiscover(), loadCourses(), loadProfile(), loadCompass(), loadPaywall()]).catch(() => undefined);
     const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
     if (w.requestIdleCallback) {
       const id = w.requestIdleCallback(run);
@@ -125,6 +127,7 @@ function AnimatedRoutes() {
               }
             />
             <Route path="/home" element={student(<Home />)} />
+            <Route path="/discover" element={student(<Discover />)} />
             <Route path="/opportunity/:id" element={student(<OpportunityDetail />)} />
             <Route path="/career-compass" element={student(<CareerCompass />)} />
             <Route path="/courses" element={student(<Courses />)} />

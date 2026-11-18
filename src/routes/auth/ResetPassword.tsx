@@ -67,7 +67,6 @@ export default function ResetPassword() {
           <Button type="submit" size="lg" block loading={busy} disabled={!email.trim()}>
             Send reset code
           </Button>
-          <p className="auth-form__note">Signed up with your phone number? Sign in with an SMS code instead; there’s no password to reset.</p>
         </form>
       )}
     </AuthLayout>

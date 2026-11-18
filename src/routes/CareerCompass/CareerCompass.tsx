@@ -76,6 +76,7 @@ export default function CareerCompass() {
           limit={chat.limit}
           usage={chat.usage}
           onSend={chat.send}
+          onRetry={chat.retry}
           placeholder="Ask about careers or scholarships, or paste your essay or CV…"
           suggestions={suggestions}
           emptyTitle="Where would you like to start?"

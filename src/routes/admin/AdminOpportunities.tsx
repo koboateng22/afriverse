@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { BadgeCheck, Check, ExternalLink, Pencil, Plus, RefreshCw, Star, X } from 'lucide-react';
+import { BadgeCheck, Check, ExternalLink, ImageDown, Pencil, Plus, RefreshCw, Star, X } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Sheet } from '../../components/Sheet/Sheet';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
@@ -9,6 +9,7 @@ import { Notice } from '../../components/Notice/Notice';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { asArray, slugify, useAdminData } from '../../features/admin/useAdminData';
 import { invokeFunction } from '../../lib/functions';
+import { scrapeOpportunityImage } from '../../features/admin/api';
 import { errorMessage } from '../../lib/supabase';
 import { EDUCATION_LEVELS, FIELDS } from '../../features/onboarding/options';
 import type { Opportunity } from '../../features/opportunities/types';
@@ -74,6 +75,36 @@ export default function AdminOpportunities() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
+
+  // ── Cover image: read the official page's og:image ───────────────────
+  const [imageState, setImageState] = useState<{ status: 'idle' | 'loading' | 'found' | 'none'; text?: string }>({ status: 'idle' });
+  const triedFor = useRef<string | null>(null);
+  const grabImage = useCallback(async (url: string, force = false) => {
+    const link = url.trim();
+    if (!/^https:\/\/[^\s/]+\.[^\s]+/i.test(link)) return;
+    if (!force && triedFor.current === link) return;
+    triedFor.current = link;
+    setImageState({ status: 'loading' });
+    try {
+      const image = await scrapeOpportunityImage(link);
+      setForm((f) => (f ? { ...f, cover_image_url: image } : f));
+      setImageState({ status: 'found', text: 'Cover image taken from the page. Save to keep it.' });
+    } catch (e) {
+      setImageState({ status: 'none', text: errorMessage(e) });
+    }
+  }, []);
+  // A fresh form (new or another opportunity) starts with a clean slate.
+  const formKey = form ? form.id ?? 'new' : null;
+  useEffect(() => {
+    triedFor.current = null;
+    setImageState({ status: 'idle' });
+  }, [formKey]);
+  // Pasting the official link fills an empty cover automatically (never overwrites one).
+  useEffect(() => {
+    if (!form || form.cover_image_url.trim()) return;
+    const t = window.setTimeout(() => void grabImage(form.url), 700);
+    return () => window.clearTimeout(t);
+  }, [form?.url, form?.cover_image_url, grabImage]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggleIn = (k: 'fields' | 'levels', v: string) =>
     setForm((f) => (f ? { ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] } : f));
 
@@ -258,14 +289,43 @@ export default function AdminOpportunities() {
               <Field label="Opens on" type="date" value={form.opens_on} onChange={(e) => set('opens_on', e.target.value)} />
             </div>
             <Field label="Official URL" type="url" placeholder="https://" value={form.url} onChange={(e) => set('url', e.target.value)} required />
-            <Field
-              label="Cover image URL (optional)"
-              type="url"
-              placeholder="https://"
-              hint="A wide photo (about 16:9) shown at the top of the card. Without one, the card uses its category colour."
-              value={form.cover_image_url}
-              onChange={(e) => set('cover_image_url', e.target.value)}
-            />
+            <div className="admin-cover">
+              <Field
+                label="Cover image URL"
+                type="url"
+                placeholder="Filled automatically from the official link"
+                hint={
+                  imageState.status === 'loading'
+                    ? 'Looking for the page’s preview image…'
+                    : imageState.text ?? 'Taken from the official page’s og:image when you paste the link. Without one, the card uses its category colour.'
+                }
+                error={imageState.status === 'none' && !form.cover_image_url ? imageState.text : null}
+                value={form.cover_image_url}
+                onChange={(e) => set('cover_image_url', e.target.value)}
+              />
+              <div className="admin-cover__row">
+                {form.cover_image_url ? (
+                  <img className="admin-cover__preview" src={form.cover_image_url} alt="Cover preview" />
+                ) : (
+                  <span className="admin-cover__preview" data-empty aria-hidden="true" />
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<ImageDown aria-hidden="true" />}
+                  loading={imageState.status === 'loading'}
+                  disabled={!/^https:\/\//i.test(form.url.trim())}
+                  onClick={() => void grabImage(form.url, true)}
+                >
+                  {form.cover_image_url ? 'Fetch again from the link' : 'Fetch from the link'}
+                </Button>
+                {form.cover_image_url && (
+                  <Button variant="quiet" size="sm" onClick={() => set('cover_image_url', '')}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
             <TextAreaField label="Summary (card)" maxLength={300} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
             <TextAreaField label="Description" maxLength={3000} value={form.description} onChange={(e) => set('description', e.target.value)} />
             <TextAreaField label="Cycle note" hint="e.g. which round is open, when the next opens" value={form.cycle_note} onChange={(e) => set('cycle_note', e.target.value)} />

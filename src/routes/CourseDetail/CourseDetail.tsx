@@ -29,6 +29,7 @@ function LessonTutor({ lesson }: { lesson: CourseLesson }) {
       limit={chat.limit}
       usage={chat.usage}
       onSend={chat.send}
+      onRetry={chat.retry}
       placeholder={`Ask about “${lesson.title}”…`}
       emptyTitle="Ask anything about this lesson"
       suggestions={['Summarise the key ideas', 'Explain it like I’m new to this', 'Give me a quick practice question']}

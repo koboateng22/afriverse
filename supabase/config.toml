@@ -38,6 +38,11 @@ content_path = "./supabase/templates/magic_link.html"
 subject = "Your Afriversity password reset code"
 content_path = "./supabase/templates/recovery.html"
 
+# Phone (SMS) sign-in is switched off: email + password, email codes and Google only.
+# Hosted project: Dashboard → Authentication → Sign In / Providers → Phone → off.
+[auth.sms]
+enable_signup = false
+
 # Paystack signs its webhooks (HMAC-SHA512); it never sends a Supabase JWT.
 [functions.paystack-webhook]
 verify_jwt = false

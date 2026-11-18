@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Gift, KeyRound, Lock, Mail, Phone, UserRound } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Gift, KeyRound, Lock, Mail, UserRound } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
 import { normalizeCode, referralCodeValid, rememberReferral } from '../ambassador/api';
@@ -10,12 +10,9 @@ import {
   EmailTakenError,
   resendEmailCode,
   sendEmailSignInCode,
-  sendPhoneOtp,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
-  toE164,
-  verifyPhoneOtp,
   type SignupAs,
 } from './api';
 import { EmailCodeStep } from './EmailCodeStep';
@@ -26,7 +23,6 @@ export type AuthFormProps = {
   audience: SignupAs;
 };
 
-type Method = 'email' | 'phone';
 type CodeCheck = 'idle' | 'checking' | 'valid' | 'invalid';
 /** The "Verify Code" step: which email the code went to, and what it's for. */
 type Verify = { email: string; type: 'signup' | 'email'; intro?: ReactNode };
@@ -51,7 +47,6 @@ function GoogleGlyph() {
 }
 
 export function AuthForm({ mode, audience }: AuthFormProps) {
-  const [method, setMethod] = useState<Method>('email');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,9 +55,6 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const failures = useRef<number[]>([]);
   const [lockedUntil, setLockedUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState<'submit' | 'google' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verify, setVerify] = useState<Verify | null>(null);
@@ -72,7 +64,6 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
   const [codeCheck, setCodeCheck] = useState<CodeCheck>('idle');
 
   const isSignup = mode === 'signup';
-  const allowPhone = audience === 'student';
   const allowGoogle = audience === 'student';
   const askReferral = isSignup && audience === 'student';
   const signInPath = audience === 'mentor' ? '/mentor/login' : '/login';
@@ -174,15 +165,21 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
         }
       } else if (withCode) {
         if (!/^\S+@\S+\.\S+$/.test(email.trim())) throw new Error('Enter the email address you signed up with.');
-        await sendEmailSignInCode(email.trim());
+        // Students: a new email gets a free account (shouldCreateUser). Mentors must apply first.
+        await sendEmailSignInCode(email.trim(), { createStudent: audience === 'student' });
         setVerify({
           email: email.trim(),
           type: 'email',
-          intro: (
-            <>
-              If <strong>{email.trim()}</strong> has an Afriversity account, a 6-digit sign-in code is on its way.
-            </>
-          ),
+          intro:
+            audience === 'student' ? (
+              <>
+                We sent a 6-digit code to <strong>{email.trim()}</strong>. New to Afriversity? The code also creates your free account.
+              </>
+            ) : (
+              <>
+                If <strong>{email.trim()}</strong> has a mentor account, a 6-digit sign-in code is on its way.
+              </>
+            ),
         });
       } else {
         if (lockedUntil > Date.now()) throw new Error(`Too many attempts. Try again in ${lockLeft} seconds.`);
@@ -211,182 +208,102 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
     });
   };
 
-  const onPhoneSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    run('submit', async () => {
-      if (!otpSentTo) {
-        const e164 = toE164(phone);
-        if (!/^\+\d{9,15}$/.test(e164)) throw new Error('Enter a valid phone number, e.g. 055 123 4987 or +233 55 123 4987.');
-        const referralCode = isSignup ? await checkedReferral() : '';
-        await sendPhoneOtp(e164, isSignup ? fullName.trim() : undefined, referralCode);
-        setOtpSentTo(e164);
-      } else {
-        if (!/^\d{6}$/.test(otp.trim())) throw new Error('Enter the 6-digit code from the SMS.');
-        await verifyPhoneOtp(otpSentTo, otp.trim());
-      }
-    });
-  };
-
   if (verify) {
-    return <EmailCodeStep email={verify.email} type={verify.type} intro={verify.intro} onBack={() => setVerify(null)} />;
+    return (
+      <EmailCodeStep
+        email={verify.email}
+        type={verify.type}
+        intro={verify.intro}
+        onBack={() => setVerify(null)}
+        // A mentor's "send a new code" must never create a student account.
+        resend={verify.type === 'email' && audience !== 'student' ? () => sendEmailSignInCode(verify.email, { createStudent: false }) : undefined}
+      />
+    );
   }
 
   return (
     <div className="auth-form">
-      {allowPhone && (
-        <div className="auth-form__tabs" role="tablist" aria-label="Sign-in method">
-          {(['email', 'phone'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={method === m}
-              className="auth-form__tab"
-              onClick={() => {
-                setMethod(m);
-                setError(null);
-              }}
-            >
-              {method === m && <span className="auth-form__tab-pill" />}
-              <span className="auth-form__tab-label">{m === 'email' ? 'Email' : 'Phone'}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <AnimatePresence mode="wait" initial={false}>
-        {method === 'email' ? (
-          <motion.form
-            key="email"
-            className="auth-form__form"
-            onSubmit={onEmailSubmit}
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={{ duration: 0.18 }}
-            noValidate
-          >
-            {isSignup && (
-              <Field label="Full name" autoComplete="name" icon={<UserRound />} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            )}
-            <Field label="Email" type="email" inputMode="email" autoComplete="email" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} required />
-            {!withCode && (
-              <Field
-                label="Password"
-                type="password"
-                autoComplete={isSignup ? 'new-password' : 'current-password'}
-                icon={<Lock />}
-                hint={isSignup ? 'At least 8 characters.' : undefined}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            )}
-            {isSignup ? (
-              <Field
-                label="Confirm password"
-                type="password"
-                autoComplete="new-password"
-                icon={<KeyRound />}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                error={mismatch ? 'The passwords don’t match.' : null}
-                hint={confirm && !mismatch ? 'Passwords match.' : undefined}
-                required
-              />
-            ) : withCode ? (
-              <p className="auth-form__note">We’ll email you a 6-digit code. No password needed.</p>
-            ) : (
-              <Link to="/reset-password" state={{ email: email.trim() }} className="auth-form__forgot">
-                Forgot password?
-              </Link>
-            )}
-            {referralField}
-            {emailTaken && (
-              <p className="auth-form__error" role="alert">
-                This email is already registered. Please <Link to={signInPath}>sign in instead</Link>.
-              </p>
-            )}
-            {error && <p className="auth-form__error" role="alert">{error}</p>}
-            <Button
-              type="submit"
-              size="lg"
-              block
-              loading={busy === 'submit'}
-              disabled={!email || (!withCode && !password) || (isSignup && (!fullName.trim() || !confirm || mismatch)) || (!withCode && lockLeft > 0)}
-            >
-              {isSignup
-                ? audience === 'mentor'
-                  ? 'Apply as a mentor'
-                  : 'Create account'
-                : withCode
-                  ? 'Email me a code'
-                  : lockLeft > 0
-                    ? `Try again in ${lockLeft}s`
-                    : 'Sign in'}
-            </Button>
-            {!isSignup && (
-              <button
-                type="button"
-                className="auth-form__switch"
-                onClick={() => {
-                  setWithCode((v) => !v);
-                  setError(null);
-                }}
-              >
-                {withCode ? 'Sign in with your password instead' : 'Sign in with an email code instead'}
-              </button>
-            )}
-          </motion.form>
-        ) : (
-          <motion.form
-            key="phone"
-            className="auth-form__form"
-            onSubmit={onPhoneSubmit}
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -12 }}
-            transition={{ duration: 0.18 }}
-            noValidate
-          >
-            {isSignup && !otpSentTo && (
-              <Field label="Full name" autoComplete="name" icon={<UserRound />} value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            )}
-            {!otpSentTo ? (
-              <Field
-                label="Phone number"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                icon={<Phone />}
-                hint="Ghana numbers can start with 0. Other countries: include +code."
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            ) : (
-              <Field
-                label={`6-digit code sent to ${otpSentTo}`}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                autoFocus
-              />
-            )}
-            {!otpSentTo && referralField}
-            {error && <p className="auth-form__error" role="alert">{error}</p>}
-            <Button type="submit" size="lg" block loading={busy === 'submit'} disabled={!otpSentTo ? !phone : otp.length !== 6}>
-              {otpSentTo ? 'Verify code' : 'Send code'}
-            </Button>
-            {otpSentTo && (
-              <Button variant="quiet" onClick={() => { setOtpSentTo(null); setOtp(''); }}>
-                Use a different number
-              </Button>
-            )}
-          </motion.form>
+      {/* Email + password (or an emailed code), and Google. Phone sign-in was removed. */}
+      <motion.form
+        className="auth-form__form"
+        onSubmit={onEmailSubmit}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.18 }}
+        noValidate
+      >
+        {isSignup && (
+          <Field label="Full name" autoComplete="name" icon={<UserRound />} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
         )}
-      </AnimatePresence>
+        <Field label="Email" type="email" inputMode="email" autoComplete="email" icon={<Mail />} value={email} onChange={(e) => setEmail(e.target.value)} required />
+        {!withCode && (
+          <Field
+            label="Password"
+            type="password"
+            autoComplete={isSignup ? 'new-password' : 'current-password'}
+            icon={<Lock />}
+            hint={isSignup ? 'At least 8 characters.' : undefined}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        )}
+        {isSignup ? (
+          <Field
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            icon={<KeyRound />}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            error={mismatch ? 'The passwords don’t match.' : null}
+            hint={confirm && !mismatch ? 'Passwords match.' : undefined}
+            required
+          />
+        ) : withCode ? (
+          <p className="auth-form__note">We’ll email you a 6-digit code. No password needed.</p>
+        ) : (
+          <Link to="/reset-password" state={{ email: email.trim() }} className="auth-form__forgot">
+            Forgot password?
+          </Link>
+        )}
+        {referralField}
+        {emailTaken && (
+          <p className="auth-form__error" role="alert">
+            This email is already registered. Please <Link to={signInPath}>sign in instead</Link>.
+          </p>
+        )}
+        {error && <p className="auth-form__error" role="alert">{error}</p>}
+        <Button
+          type="submit"
+          size="lg"
+          block
+          loading={busy === 'submit'}
+          disabled={!email || (!withCode && !password) || (isSignup && (!fullName.trim() || !confirm || mismatch)) || (!withCode && lockLeft > 0)}
+        >
+          {isSignup
+            ? audience === 'mentor'
+              ? 'Apply as a mentor'
+              : 'Create account'
+            : withCode
+              ? 'Email me a code'
+              : lockLeft > 0
+                ? `Try again in ${lockLeft}s`
+                : 'Sign in'}
+        </Button>
+        {!isSignup && (
+          <button
+            type="button"
+            className="auth-form__switch"
+            onClick={() => {
+              setWithCode((v) => !v);
+              setError(null);
+            }}
+          >
+            {withCode ? 'Sign in with your password instead' : 'Sign in with an email code instead'}
+          </button>
+        )}
+      </motion.form>
 
       {allowGoogle && (
         <>

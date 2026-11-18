@@ -20,13 +20,15 @@ export type EmailCodeStepProps = {
   /** "Use a different email": go back to the form. */
   onBack: () => void;
   backLabel?: string;
+  /** How "Send a new code" sends it; defaults to resendEmailCode(email, type). */
+  resend?: () => Promise<void>;
 };
 
 /**
  * "Verify Code" step: the 6-digit code from the email. Works on any device, unlike the
  * old links, which only worked in the browser that asked for them.
  */
-export function EmailCodeStep({ email, type, intro, onVerified, onBack, backLabel = 'Use a different email' }: EmailCodeStepProps) {
+export function EmailCodeStep({ email, type, intro, onVerified, onBack, backLabel = 'Use a different email', resend: sendAgain }: EmailCodeStepProps) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState<'verify' | 'resend' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function EmailCodeStep({ email, type, intro, onVerified, onBack, backLabe
     setError(null);
     setNotice(null);
     try {
-      await resendEmailCode(email, type);
+      await (sendAgain ? sendAgain() : resendEmailCode(email, type));
       setNotice('A new code is on its way. Use the newest email; older codes stop working.');
       setCooldown(RESEND_COOLDOWN_S);
       setCode('');

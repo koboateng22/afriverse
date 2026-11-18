@@ -25,6 +25,7 @@
   .onboarding__lede { margin-block-end: var(--space-5); }
   .onboarding__chips { display: flex; flex-wrap: wrap; gap: var(--space-3); }
   .onboarding__answers { cursor: auto; }
+  .onboarding__fields { display: grid; gap: var(--space-4); }
 
   .onboarding__error {
     padding: var(--space-3) var(--space-4);

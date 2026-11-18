@@ -16,6 +16,13 @@ export function scrapeUniversity(url: string): Promise<ScrapedImages> {
   return invokeFunction<ScrapedImages>('scrape-university', { url });
 }
 
+/** Reads an opportunity page's og:image and copies it into our storage; returns its public URL. */
+export async function scrapeOpportunityImage(url: string): Promise<string> {
+  const res = await invokeFunction<ScrapedImages>('scrape-university', { url, for: 'opportunity' });
+  if (!res.cover_image_url) throw new Error('No preview image found on that page.');
+  return res.cover_image_url;
+}
+
 export type RevenueRow = {
   currency: string;
   subscriptions_revenue: number;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FunctionError } from '../../lib/functions';
+import { FunctionError, TIMEOUT_CODE } from '../../lib/functions';
 import { errorMessage, getSupabase } from '../../lib/supabase';
 import { fetchFreeAiLimit } from '../billing/api';
-import { latestConversation, sendChat } from './api';
+import { FALLBACK_REPLY, latestConversation, sendChat } from './api';
 import type { ChatMessage, ChatUsage } from './types';
 
 export type ChatLimit = { limit: number; plan: string | null };
@@ -62,12 +62,24 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
       const optimistic: ChatMessage = { role: 'user', content: trimmed, at: new Date().toISOString() };
       setMessages((m) => [...m, optimistic]);
       setSending(true);
+      // Busy, slow or unreachable AI: keep the question on screen and answer with the
+      // fallback message plus a Retry button (nothing was saved on the server).
+      const showFallback = (reply = FALLBACK_REPLY) =>
+        setMessages((m) => [...m, { role: 'assistant', content: reply, at: new Date().toISOString(), source: 'fallback', retry: trimmed }]);
       try {
         const res = await sendChat({ mode, message: trimmed, conversation_id: conversationId, lesson_id: lessonId });
+        if (res.is_fallback) {
+          showFallback(res.reply);
+          return;
+        }
         setConversationId(res.conversation_id);
         setMessages((m) => [...m, res.message]);
         setUsage(res.usage);
       } catch (e) {
+        if (e instanceof FunctionError && (e.code === TIMEOUT_CODE || e.code === 'network' || e.status >= 500)) {
+          showFallback();
+          return;
+        }
         setMessages((m) => m.filter((x) => x !== optimistic));
         if (e instanceof FunctionError && e.code === 'daily_limit') {
           const l = Number(e.body.limit ?? 50);
@@ -84,10 +96,19 @@ export function useChat(mode: 'career' | 'lesson', lessonId?: string) {
     [mode, lessonId, conversationId, sending],
   );
 
+  /** Sends the question behind the latest fallback answer again. */
+  const retry = useCallback(async () => {
+    const last = messages[messages.length - 1];
+    if (!last || last.source !== 'fallback' || !last.retry || sending) return;
+    // Drop the fallback and the unanswered question; send() puts the question back.
+    setMessages((m) => m.slice(0, -2));
+    await send(last.retry).catch(() => undefined);
+  }, [messages, sending, send]);
+
   const reset = useCallback(() => {
     setConversationId(null);
     setMessages([]);
   }, []);
 
-  return { messages, loading, sending, error, limit, usage, send, reset, conversationId };
+  return { messages, loading, sending, error, limit, usage, send, retry, reset, conversationId };
 }

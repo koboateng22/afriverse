@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Globe2, PenLine, Sparkles } from 'lucide-react';
+import { Globe2, PenLine, RotateCcw, Sparkles } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Button } from '../../components/Button/Button';
@@ -8,6 +8,7 @@ import { Chip } from '../../components/Chip/Chip';
 import { Field, SelectField, TextAreaField } from '../../components/Field/Field';
 import { Notice } from '../../components/Notice/Notice';
 import { essayHistory, reviewEssay } from '../../features/ai/api';
+import { FunctionError } from '../../lib/functions';
 import {
   AUTO_TYPE, countWords, DEFAULT_LIMIT, DESTINATIONS, isV2, MISSING_LABEL, missingInfo, TYPE_LABEL, typesFor,
   type Destination, type EssayType, type LimitUnit, type MissingInfo,
@@ -52,6 +53,7 @@ export default function EssayReview() {
   const [essay, setEssay] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryable, setRetryable] = useState(false);
   const [askMissing, setAskMissing] = useState<MissingInfo[] | null>(null);
   const [shown, setShown] = useState<Shown | null>(null);
   const [history, setHistory] = useState<AiConversation[]>([]);
@@ -90,6 +92,7 @@ export default function EssayReview() {
     if (!destination) return;
     setBusy(true);
     setError(null);
+    setRetryable(false);
     setAskMissing(null);
     try {
       const res = await reviewEssay({
@@ -103,11 +106,18 @@ export default function EssayReview() {
         limit,
         scholarship_slug: type === 'scholarship' ? scholarship || undefined : undefined,
       });
+      // The AI was busy or failing: nothing was saved, so the same request can simply be sent again.
+      if (res.is_fallback) {
+        setError(res.reply);
+        setRetryable(true);
+        return;
+      }
       if (res.message.review) setShown({ review: res.message.review, conversationId: res.conversation_id });
       setHistory(await essayHistory());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(errorMessage(err));
+      setRetryable(err instanceof FunctionError && (err.status >= 500 || err.code === 'network'));
     } finally {
       setBusy(false);
     }
@@ -226,7 +236,20 @@ export default function EssayReview() {
               For an accurate review, add {askMissing.map((m) => MISSING_LABEL[m]).join(', ')}. Without {askMissing.length === 1 ? 'it' : 'them'} we can’t fully check {askMissing.includes('prompt') ? 'whether you answer the question' : 'fit and length'}.
             </Notice>
           )}
-          {error && <Notice tone="error">{error}</Notice>}
+          {error && (
+            <Notice
+              tone="error"
+              action={
+                retryable ? (
+                  <Button variant="secondary" size="sm" icon={<RotateCcw aria-hidden="true" />} loading={busy} onClick={() => void send()}>
+                    Retry
+                  </Button>
+                ) : undefined
+              }
+            >
+              {error}
+            </Notice>
+          )}
           <Button type="submit" size="lg" block loading={busy && !askMissing} disabled={!destination || essay.trim().length < MIN_CHARS} icon={<Sparkles aria-hidden="true" />}>
             Review my essay
           </Button>

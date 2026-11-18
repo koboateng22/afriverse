@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUp, BookOpen, Building2, GraduationCap, Sparkles } from 'lucide-react';
+import { ArrowUp, BookOpen, Building2, GraduationCap, RotateCcw, Sparkles } from 'lucide-react';
+import { Button } from '../../components/Button/Button';
 import { Notice } from '../../components/Notice/Notice';
 import { ChatSkeleton } from '../../components/Skeleton/Skeleton';
 import { press, spring } from '../../lib/motion';
@@ -17,6 +18,8 @@ export type ChatThreadProps = {
   limit: ChatLimit | null;
   usage?: ChatUsage | null;
   onSend: (text: string) => Promise<void>;
+  /** Resends the question behind a fallback ("high traffic") answer. */
+  onRetry?: () => Promise<void>;
   placeholder: string;
   suggestions?: string[];
   /** Extra content under an assistant message (e.g. career cards). */
@@ -40,7 +43,7 @@ function AiAvatar() {
   );
 }
 
-export function ChatThread({ messages, loading, sending, error, limit, usage, onSend, placeholder, suggestions = [], renderExtra, emptyTitle }: ChatThreadProps) {
+export function ChatThread({ messages, loading, sending, error, limit, usage, onSend, onRetry, placeholder, suggestions = [], renderExtra, emptyTitle }: ChatThreadProps) {
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
   const lastAssistant = messages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1);
@@ -92,10 +95,17 @@ export function ChatThread({ messages, loading, sending, error, limit, usage, on
                 transition={spring}
               >
                 {m.role === 'assistant' && <AiAvatar />}
-                <div className="chat__bubble">
+                <div className="chat__bubble" data-fallback={m.source === 'fallback' || undefined}>
                   {m.source === 'library' && <span className="chat__source">From the Afriversity careers library</span>}
                   <p>{m.content}</p>
                 </div>
+                {m.source === 'fallback' && i === messages.length - 1 && onRetry && (
+                  <div className="chat__retry">
+                    <Button variant="secondary" size="sm" icon={<RotateCcw aria-hidden="true" />} loading={sending} onClick={() => void onRetry()}>
+                      Retry
+                    </Button>
+                  </div>
+                )}
                 {m.role === 'assistant' && m.related && m.related.length > 0 && (
                   <div className="chat__related" aria-label="From Afriversity">
                     {m.related.map((r) => {

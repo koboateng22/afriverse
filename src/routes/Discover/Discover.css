@@ -1,0 +1,77 @@
+@layer components {
+  .discover { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+
+  /* Invisible marker right above the filters: once it scrolls away, they are pinned.
+     (It takes no height; grid rows can't go negative, so no margin tricks.) */
+  .discover__sentinel { block-size: 1px; margin-block-end: -1px; }
+
+  /* Sticky filter bar — bleeds to the screen edges, turns to glass when pinned. */
+  .discover__filters {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--z-sticky);
+    margin-inline: calc(-1 * var(--gutter));
+    padding: var(--space-3) var(--gutter);
+    border-block-end: 1px solid transparent;
+    transition: background-color var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out),
+      border-color var(--dur-mid) var(--ease-out);
+
+    /* Pinned: frosted, so the feed blurs softly underneath instead of a solid band. */
+    &[data-stuck] {
+      background: color-mix(in oklab, var(--bg) 70%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      backdrop-filter: blur(20px) saturate(1.4);
+      border-block-end-color: var(--glass-edge);
+    }
+  }
+
+  /* The pills themselves are frosted glass too (the selected pill keeps its own fill). */
+  .discover__filters .chip:not([data-selected]) {
+    background: color-mix(in oklab, var(--surface-1) 55%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+  }
+
+  .discover__filters-scroll {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    padding-block: 2px;
+    &::-webkit-scrollbar { display: none; }
+    & > * { scroll-snap-align: start; }
+  }
+
+  /* ── Bento grid ───────────────────────────────────────────────────
+     Column count is set by container queries here and read back by
+     useGridColumns(), so the JS packer always matches the CSS.
+     Rows are `minmax(floor, auto)`: tiles share a rhythm but any tile
+     whose text needs more room grows its row instead of clipping. */
+  .discover__feed {
+    container-type: inline-size;
+    container-name: feed;
+  }
+
+  .bento {
+    --bento-row: 172px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(var(--bento-row), auto);
+    /* 20px between cards at every width. */
+    gap: var(--space-5);
+
+    & > [data-size='featured'] { grid-column: span 2; grid-row: span 2; }
+    & > [data-size='wide'] { grid-column: span 2; }
+    & > [data-size='tall'] { grid-row: span 2; }
+    /* Empty / error states take the full row. */
+    & > :not(.opp-card, .skeleton-tile) { grid-column: 1 / -1; }
+  }
+
+  @container feed (min-width: 600px) {
+    .bento { --bento-row: 196px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @container feed (min-width: 880px) {
+    .bento { --bento-row: 212px; }
+  }
+}

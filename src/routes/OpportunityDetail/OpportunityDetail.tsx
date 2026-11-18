@@ -62,7 +62,7 @@ export default function OpportunityDetail() {
     return (
       <PageTransition label="Not found">
         <div className="container">
-          <PageHeader back={{ to: '/home', label: 'Discover' }} title="Opportunity not found" />
+          <PageHeader back={{ to: '/discover', label: 'Discover' }} title="Opportunity not found" />
           <EmptyState icon={SearchX} title="This opportunity isn't listed any more">
             <p>It may have been removed or unpublished.</p>
           </EmptyState>
@@ -79,7 +79,7 @@ export default function OpportunityDetail() {
     <PageTransition label={o?.title ?? 'Opportunity'}>
       <div className="container opp">
         <PageHeader
-          back={{ to: '/home', label: 'Discover' }}
+          back={{ to: '/discover', label: 'Discover' }}
           eyebrow={o?.provider ?? ' '}
           title={o?.title ?? 'Loading…'}
           aside={o ? <SaveButton saved={saved.has(o.id)} onToggle={() => void toggle(o.id)} label={o.title} /> : undefined}
