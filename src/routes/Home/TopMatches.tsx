@@ -8,6 +8,7 @@ import { CategoryMedia } from '../../features/opportunities/CategoryMedia';
 import { categoryOf, KIND_ICON, KIND_LABEL } from '../../features/opportunities/category';
 import { FUNDING_LABEL } from '../../features/opportunities/types';
 import type { TopItem } from '../../features/home/topMatches';
+import { MATCH_STRONG } from '../../features/opportunities/matcher';
 import { countdownFor } from '../../lib/dates';
 import { riseItem, staggerParent } from '../../lib/motion';
 import './TopMatches.css';
@@ -24,7 +25,7 @@ function MatchCard({ item }: { item: TopItem }) {
           <span className="cat-label">{KIND_LABEL[o.kind]}</span>
           <span aria-hidden="true"> · </span>
           <span className="visually-hidden">, </span>
-          <span className="match-card__reason" data-score={item.match ? true : undefined}>
+          <span className="match-card__reason" data-strong={item.match.score >= MATCH_STRONG || undefined}>
             {item.reason}
           </span>
         </p>

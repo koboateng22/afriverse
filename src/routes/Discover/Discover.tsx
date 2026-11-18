@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lock, RotateCcw, SearchX, Sparkles, UserRoundPen } from 'lucide-react';
+import { LayoutGrid, Lock, RotateCcw, SearchX, Sparkles, UserRoundPen } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Chip } from '../../components/Chip/Chip';
@@ -11,9 +11,8 @@ import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Notice } from '../../components/Notice/Notice';
 import { OpportunityCard } from '../../features/opportunities/OpportunityCard';
 import { fetchOpportunities } from '../../features/opportunities/api';
-import { useMatches, type Match } from '../../features/opportunities/matcher';
-import { isProfileMatch, type MatchProfile } from '../../features/opportunities/profileMatch';
-import { scoreOpportunity } from '../../features/home/topMatches';
+import type { Match } from '../../features/opportunities/matcher';
+import { canMatch, isProfileMatch, matchScore, PERSONAL_MATCH, type MatchProfile } from '../../features/opportunities/profileMatch';
 import { useSaved } from '../../features/opportunities/saved';
 import { packBento, useGridColumns } from '../../features/opportunities/bento';
 import type { Opportunity } from '../../features/opportunities/types';
@@ -38,12 +37,12 @@ const FILTERS: Array<{ id: FilterId; label: string }> = [
 
 type Row = Opportunity & { match?: Match };
 
-function applyFilter(list: Row[], f: FilterId, saved: Set<string>, who: MatchProfile): Row[] {
+function applyFilter(list: Row[], f: FilterId, saved: Set<string>, who: MatchProfile | null | undefined): Row[] {
   switch (f) {
     case 'matched':
-      // Strictly the student's own field (and level): never the same list as "All".
-      // Best fit first: the Pro matcher's score when there is one.
-      return list.filter((o) => isProfileMatch(o, who)).sort((a, b) => scoreOpportunity(b, b.match) - scoreOpportunity(a, a.match));
+      // Real fits only (60%+: their field, named in the text, or their goal), best first.
+      // Untagged 50% defaults stay in "All", so this is never the same list.
+      return list.filter((o) => isProfileMatch(o, who)).sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
     case 'open':
       return list.filter((o) => o.status === 'open' || o.status === 'rolling');
     case 'saved':
@@ -73,7 +72,6 @@ export default function Discover() {
   const { profile } = useAuth();
   const { isPro, loading: planLoading } = usePlan();
   const { openPaywall } = usePaywall();
-  const { matches, error: matchError } = useMatches();
   const [items, setItems] = useState<Opportunity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterId>('all');
@@ -108,7 +106,7 @@ export default function Discover() {
     return () => io.disconnect();
   }, []);
 
-  const rows = useMemo<Row[]>(() => (items ?? []).map((o) => ({ ...o, match: matches?.get(o.id) })), [items, matches]);
+  const rows = useMemo<Row[]>(() => (items ?? []).map((o) => ({ ...o, match: matchScore(o, profile) ?? undefined })), [items, profile]);
   const visible = useMemo(() => applyFilter(rows, filter, saved, profile), [rows, filter, saved, profile]);
   const spotlightId = visible.find((o) => o.status === 'open')?.id ?? null;
   // The featured tile is the spotlight (first open round); it moves to the top-left of the bento.
@@ -118,8 +116,7 @@ export default function Discover() {
     return hero ? [hero, ...visible.filter((o) => o.id !== spotlightId)] : visible;
   }, [visible, spotlightId]);
   const sizes = useMemo(() => packBento(ordered.length, cols, ordered.length ? 0 : null), [ordered.length, cols]);
-  // Pro: wait for the matcher's scores so the order doesn't jump; if it fails, show the strict list anyway.
-  const waitingForScores = filter === 'matched' && isPro && !matches && !matchError;
+  const profileReady = canMatch(profile);
 
   const choose = (f: FilterId) => {
     if (f === 'matched' && !isPro) {
@@ -154,7 +151,6 @@ export default function Discover() {
         </div>
 
         {saveError && <Notice tone="error">Couldn't update your saved list: {saveError}</Notice>}
-        {matchError && filter === 'matched' && <Notice tone="error">The matcher's scores couldn't load, so these are in date order: {matchError}</Notice>}
 
         {error && (
           <Notice tone="error" action={<Button variant="secondary" size="sm" icon={<RotateCcw aria-hidden="true" />} onClick={load}>Retry</Button>}>
@@ -162,13 +158,13 @@ export default function Discover() {
           </Notice>
         )}
 
-        {!error && (!items || waitingForScores) && (
+        {!error && !items && (
           <div className="discover__feed">
             <BentoSkeleton label="Loading opportunities" />
           </div>
         )}
 
-        {items && !waitingForScores && (
+        {items && (
           <div className="discover__feed">
             <AnimatePresence mode="wait">
               <motion.div
@@ -184,7 +180,8 @@ export default function Discover() {
                   <OpportunityCard
                     key={o.id}
                     opportunity={o}
-                    match={o.match}
+                    // Chips only for real fits; a wall of "50% match" defaults would be noise.
+                    match={o.match && o.match.score >= PERSONAL_MATCH ? o.match : undefined}
                     size={sizes[i]}
                     showReasons={filter === 'matched'}
                     spotlight={o.id === spotlightId}
@@ -194,17 +191,32 @@ export default function Discover() {
                 ))}
                 {ordered.length === 0 &&
                   (filter === 'matched' ? (
-                    <EmptyState
-                      icon={Sparkles}
-                      title="We are finding more opportunities for you"
-                      action={
-                        <Link className="btn" data-variant="primary" to="/profile">
-                          <UserRoundPen aria-hidden="true" /> Update your profile
-                        </Link>
-                      }
-                    >
-                      <p>Update your profile to get better matches!</p>
-                    </EmptyState>
+                    profileReady ? (
+                      // A complete profile is not the problem: point at everything instead.
+                      <EmptyState
+                        icon={Sparkles}
+                        title="No perfect matches today"
+                        action={
+                          <Button variant="primary" icon={<LayoutGrid aria-hidden="true" />} onClick={() => choose('all')}>
+                            Explore all opportunities
+                          </Button>
+                        }
+                      >
+                        <p>Nothing is tagged for your field right now. Explore all opportunities; new ones arrive every week.</p>
+                      </EmptyState>
+                    ) : (
+                      <EmptyState
+                        icon={Sparkles}
+                        title="We are finding more opportunities for you"
+                        action={
+                          <Link className="btn" data-variant="primary" to="/profile">
+                            <UserRoundPen aria-hidden="true" /> Update your profile
+                          </Link>
+                        }
+                      >
+                        <p>Add your field of interest to your profile to get personal matches!</p>
+                      </EmptyState>
+                    )
                   ) : (
                     <EmptyState icon={SearchX} title="Nothing here yet">
                       <p>{EMPTY_COPY[filter]}</p>

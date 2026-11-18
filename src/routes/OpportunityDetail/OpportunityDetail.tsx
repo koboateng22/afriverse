@@ -11,7 +11,7 @@ import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Notice } from '../../components/Notice/Notice';
 import { SaveButton } from '../../features/opportunities/SaveButton';
 import { fetchOpportunity, fetchProInsights } from '../../features/opportunities/api';
-import { useMatches } from '../../features/opportunities/matcher';
+import { matchScore } from '../../features/opportunities/profileMatch';
 import { usePaywall } from '../../features/billing/PaywallModal';
 import { useSaved } from '../../features/opportunities/saved';
 import { FUNDING_LABEL, type Opportunity } from '../../features/opportunities/types';
@@ -37,7 +37,6 @@ export default function OpportunityDetail() {
   const { id = '' } = useParams();
   const { profile } = useAuth();
   const { plan, loading: planLoading } = usePlan();
-  const { matches } = useMatches();
   const { openPaywall } = usePaywall();
   const { saved, toggle } = useSaved(profile?.id);
   const [o, setO] = useState<Opportunity | null | undefined>(undefined);
@@ -73,7 +72,7 @@ export default function OpportunityDetail() {
 
   const countdown = o ? countdownFor(o) : null;
   const canApply = o && (o.status === 'open' || o.status === 'rolling');
-  const match = o ? matches?.get(o.id) : undefined;
+  const match = o ? matchScore(o, profile) : null;
 
   return (
     <PageTransition label={o?.title ?? 'Opportunity'}>

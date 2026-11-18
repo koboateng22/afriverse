@@ -18,7 +18,7 @@ export type OpportunityCardProps = {
   opportunity: Opportunity;
   saved: boolean;
   onToggleSave: (opportunityId: string) => void;
-  /** Pro only: score + reasons from scholarship_matches(). */
+  /** Score + reasons from matchScore() (profileMatch.ts). */
   match?: Match;
   /** Show the 'why it fits' reasons (Matched tab). Squares never show them. */
   showReasons?: boolean;

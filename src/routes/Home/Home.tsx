@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, RotateCcw, Sparkles, UserRoundPen } from 'lucide-react';
+import { ArrowRight, Compass, RotateCcw, Sparkles, UserRoundPen } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { Button } from '../../components/Button/Button';
 import { Notice } from '../../components/Notice/Notice';
 import { HeaderArt, useHeaderParallax } from '../../components/PageHeader/HeaderArt';
 import { fetchOpportunities } from '../../features/opportunities/api';
-import { useMatches } from '../../features/opportunities/matcher';
+import { canMatch } from '../../features/opportunities/profileMatch';
 import type { Opportunity } from '../../features/opportunities/types';
 import { buildTopMatches } from '../../features/home/topMatches';
 import { RenewalBanner } from '../../features/billing/RenewalBanner';
@@ -23,7 +23,6 @@ import './Home.css';
  */
 export default function Home() {
   const { profile } = useAuth();
-  const { matches } = useMatches();
   const [items, setItems] = useState<Opportunity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const parallax = useHeaderParallax();
@@ -38,7 +37,9 @@ export default function Home() {
   useEffect(load, [load]);
 
   const firstName = profile?.full_name?.trim().split(/\s+/)[0];
-  const top = useMemo(() => (items ? buildTopMatches({ opportunities: items, matches, profile }) : []), [items, matches, profile]);
+  const top = useMemo(() => (items ? buildTopMatches({ opportunities: items, profile }) : []), [items, profile]);
+  // Only point at the profile when it is actually missing what matching needs.
+  const profileReady = canMatch(profile);
 
   return (
     <PageTransition label="Home">
@@ -67,13 +68,27 @@ export default function Home() {
             <span className="home__empty-icon" aria-hidden="true">
               <Sparkles />
             </span>
-            <h2 id="home-empty-h" className="home__empty-title">
-              We are finding more opportunities for you
-            </h2>
-            <p className="home__empty-text">Update your profile to get better matches!</p>
-            <Link className="btn" data-variant="secondary" to="/profile">
-              <UserRoundPen aria-hidden="true" /> Update your profile
-            </Link>
+            {profileReady ? (
+              <>
+                <h2 id="home-empty-h" className="home__empty-title">
+                  No perfect matches today
+                </h2>
+                <p className="home__empty-text">Check the Discover tab to explore all opportunities!</p>
+                <Link className="btn" data-variant="secondary" to="/discover">
+                  <Compass aria-hidden="true" /> Go to Discover
+                </Link>
+              </>
+            ) : (
+              <>
+                <h2 id="home-empty-h" className="home__empty-title">
+                  We are finding more opportunities for you
+                </h2>
+                <p className="home__empty-text">Add your field of interest to your profile to get personal matches!</p>
+                <Link className="btn" data-variant="secondary" to="/profile">
+                  <UserRoundPen aria-hidden="true" /> Update your profile
+                </Link>
+              </>
+            )}
           </motion.section>
         ) : (
           <TopMatches items={top} loading={!items} />
