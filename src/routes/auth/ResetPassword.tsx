@@ -10,7 +10,7 @@ import { useToast } from '../../components/Toast/Toast';
 import '../../features/auth/AuthForm.css';
 
 /**
- * /reset-password: emails a 6-digit reset code, then asks for it here. A correct code signs the
+ * /reset-password: emails an 8-digit reset code, then asks for it here. A correct code signs the
  * user in for the reset and /update-password sets the new password. The answer is the same
  * whether or not the email has an account.
  */
@@ -42,7 +42,7 @@ export default function ResetPassword() {
     <AuthLayout
       eyebrow="Account help"
       title="Reset your password"
-      lede={sentTo ? 'Enter the code from the email, then choose a new password.' : 'Enter your email and we’ll send you a 6-digit code to choose a new password.'}
+      lede={sentTo ? 'Enter the code from the email, then choose a new password.' : 'Enter your email and we’ll send you an 8-digit code to choose a new password.'}
       footer={
         <p>
           Remembered it? <Link to="/login">Sign in</Link>
@@ -55,7 +55,7 @@ export default function ResetPassword() {
           type="recovery"
           intro={
             <>
-              If <strong>{sentTo}</strong> has an Afriversity account, a 6-digit reset code is on its way.
+              If <strong>{sentTo}</strong> has an Afriversity account, an 8-digit reset code is on its way.
             </>
           }
           onVerified={() => navigate('/update-password', { replace: true })}

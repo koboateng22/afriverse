@@ -16,10 +16,10 @@ sign_in_sign_ups = 25
 
 [auth.email]
 enable_confirmations = true
-# Emails carry a 6-digit code ({{ .Token }}) instead of a link, so they work on any
+# Emails carry an 8-digit code ({{ .Token }}) instead of a link, so they work on any
 # device or browser. Keep these in step with the hosted project:
 # Dashboard → Authentication → Sign In / Providers → Email (OTP length, OTP expiry).
-otp_length = 6
+otp_length = 8
 otp_expiry = 3600
 # One email per address per minute (the app's "Send a new code" cooldown matches).
 max_frequency = "60s"

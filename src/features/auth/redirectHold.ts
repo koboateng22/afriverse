@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 // While held, <RedirectIfSignedIn> keeps showing the auth page even though a session exists.
-// Sign-up needs this: the 6-digit code signs the user in, and the password they chose is saved
+// Sign-up needs this: the 8-digit code signs the user in, and the password they chose is saved
 // right after. Without the hold the page would redirect (and unmount) before that finished.
 let holds = 0;
 const listeners = new Set<() => void>();

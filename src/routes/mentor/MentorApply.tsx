@@ -40,7 +40,7 @@ export default function MentorApply() {
     if (!LINKEDIN.test(linkedin)) return toast.error('Enter your LinkedIn profile link, e.g. https://www.linkedin.com/in/your-name');
     setBusy(true);
     try {
-      // Email → 6-digit code → verifyOtp → password saved (see sendSignupCode).
+      // Email → 8-digit code → verifyOtp → password saved (see sendSignupCode).
       const input: SignupInput = {
         email: f.email.trim(),
         fullName: f.name.trim(),
@@ -74,7 +74,7 @@ export default function MentorApply() {
             type="email"
             intro={
               <>
-                We sent a 6-digit code to <strong>{sent.email}</strong>. Enter it to confirm your email; then the team reviews your application, rate and LinkedIn.
+                We sent an 8-digit code to <strong>{sent.email}</strong>. Enter it to confirm your email; then the team reviews your application, rate and LinkedIn.
               </>
             }
             resend={() => sendSignupCode(sent)}

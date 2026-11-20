@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Uploads the 6-digit-code email templates in supabase/templates/ to the hosted project
+ * Uploads the 8-digit-code email templates in supabase/templates/ to the hosted project
  * (the same thing as pasting them into Dashboard → Authentication → Emails), and sets the
- * code length to 6 and the expiry to 1 hour.
+ * code length to 8 and the expiry to 1 hour.
  *
  *   SUPABASE_ACCESS_TOKEN=sbp_xxx PROJECT_REF=abcdefghijklmnop node scripts/push-email-templates.mjs
  *
@@ -18,7 +18,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => readFileSync(join(root, 'supabase', 'templates', name), 'utf8');
 
 const body = {
-  mailer_otp_length: 6,
+  mailer_otp_length: 8, // must match EMAIL_CODE_LENGTH in src/features/auth/api.ts
   mailer_otp_exp: 3600,
   mailer_subjects_confirmation: 'Your Afriversity confirmation code',
   mailer_templates_confirmation_content: read('confirmation.html'),
@@ -53,4 +53,4 @@ if (!res.ok) {
   console.error(`Supabase answered ${res.status}: ${await res.text()}`);
   process.exit(1);
 }
-console.log('Email templates updated: confirm signup, magic link and reset password now send a 6-digit code.');
+console.log('Email templates updated: confirm signup, magic link and reset password now send an 8-digit code.');

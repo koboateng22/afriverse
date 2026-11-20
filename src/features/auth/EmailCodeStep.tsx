@@ -5,12 +5,13 @@ import { Lock, MailCheck } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
 import { spring } from '../../lib/motion';
-import { authErrorMessage, resendEmailCode, updatePassword, verifyEmailCode, type EmailCodeKind } from './api';
+import { authErrorMessage, EMAIL_CODE_LENGTH, resendEmailCode, updatePassword, verifyEmailCode, type EmailCodeKind } from './api';
 import { holdSignedInRedirect } from './redirectHold';
 
 // Supabase allows one email per address about every 60 seconds.
 const RESEND_COOLDOWN_S = 60;
-const CODE_LENGTH = 6;
+const CODE_LENGTH = EMAIL_CODE_LENGTH; // 8
+const INSTRUCTION = `Enter the ${CODE_LENGTH}-digit verification code sent to your email.`;
 
 export type EmailCodeStepProps = {
   email: string;
@@ -36,7 +37,7 @@ export type EmailCodeStepProps = {
 const MIN_PASSWORD = 8;
 
 /**
- * "Verify Code" step: the 6-digit code from the email. Works on any device, unlike the
+ * "Verify Code" step: the 8-digit code from the email. Works on any device, unlike the
  * old links, which only worked in the browser that asked for them.
  */
 export function EmailCodeStep({
@@ -76,7 +77,7 @@ export function EmailCodeStep({
   const verify = async (token: string) => {
     if (inFlight.current) return;
     if (!new RegExp(`^\\d{${CODE_LENGTH}}$`).test(token)) {
-      setError(`Enter the ${CODE_LENGTH}-digit code from the email.`);
+      setError(INSTRUCTION);
       return;
     }
     inFlight.current = true;
@@ -203,7 +204,7 @@ export function EmailCodeStep({
         <p>
           {intro ?? (
             <>
-              We sent a {CODE_LENGTH}-digit code to <strong>{email}</strong>.
+              We sent an {CODE_LENGTH}-digit code to <strong>{email}</strong>.
             </>
           )}{' '}
           You can open the email on any device. Not there after a minute? Check your spam or promotions folder.
@@ -217,7 +218,8 @@ export function EmailCodeStep({
           autoComplete="one-time-code"
           pattern="\d*"
           maxLength={CODE_LENGTH}
-          placeholder="000000"
+          placeholder={"0".repeat(CODE_LENGTH)}
+          hint={INSTRUCTION}
           value={code}
           onChange={(e) => {
             const next = e.target.value.replace(/\D/g, '').slice(0, CODE_LENGTH);

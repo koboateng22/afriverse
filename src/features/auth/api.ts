@@ -16,7 +16,7 @@ export type SignupInput = {
 };
 
 /**
- * Sign-up, step 1: email a 6-digit code. This is signInWithOtp (shouldCreateUser), not
+ * Sign-up, step 1: email an 8-digit code. This is signInWithOtp (shouldCreateUser), not
  * signUp(): the account is created now, but with no usable password and no link. The
  * code is checked with verifyOtp({ type: 'email' }), and the password the student chose is
  * saved after that (setPassword), once the code has proved they own the inbox.
@@ -53,14 +53,20 @@ export async function sendSignupCode(input: SignupInput) {
  */
 export const isMentorApplicant = (user: User | null) => user?.user_metadata?.signup_as === 'mentor';
 
-/** Sends the 6-digit reset code. Always "succeeds" to the caller, so nobody can probe which emails have accounts. */
+/** Sends the 8-digit reset code. Always "succeeds" to the caller, so nobody can probe which emails have accounts. */
 export async function requestPasswordReset(email: string) {
   // No redirectTo: the Reset Password email carries the code, not a link.
   const { error } = await getSupabase().auth.resetPasswordForEmail(email);
   if (error && isRateLimited(error)) throw new Error('Too many reset requests. Wait a minute, then try again.');
 }
 
-// ── Email codes (6-digit OTP) ────────────────────────────────────────────
+// ── Email codes (8-digit OTP) ────────────────────────────────────────────
+
+/**
+ * Digits in every emailed code. Must equal the project's Email OTP Length (Dashboard →
+ * Authentication → Providers → Email), which is 8; scripts/push-email-templates.mjs sets it.
+ */
+export const EMAIL_CODE_LENGTH = 8;
 // The emails carry {{ .Token }} instead of a link, so they work on any device
 // or browser (a link only works in the browser that asked for it).
 
@@ -92,7 +98,7 @@ export async function resendEmailCode(email: string, type: EmailCodeKind) {
 }
 
 /**
- * Password-free sign-in with a 6-digit email code. For students it also signs up
+ * Password-free sign-in with an 8-digit email code. For students it also signs up
  * (shouldCreateUser: true): a new email gets a free student account, and onboarding asks
  * for the name. Mentors must apply first, so for them it never creates an account and
  * answers the same for unknown emails.

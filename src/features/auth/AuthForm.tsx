@@ -150,7 +150,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
         if (password.length < 8) throw new Error('Use at least 8 characters for your password.');
         if (password !== confirm) throw new Error('The passwords don’t match. Type the same password twice.');
         const referralCode = await checkedReferral();
-        // Email → "Send code" → 6-digit code → verifyOtp({ type: 'email' }) → the password is saved.
+        // Email → "Send code" → 8-digit code → verifyOtp({ type: 'email' }) → the password is saved.
         const input = { email: email.trim(), fullName: fullName.trim(), as: audience, referralCode };
         await sendSignupCode(input);
         setVerify({
@@ -160,7 +160,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
           resend: () => sendSignupCode(input),
           intro: (
             <>
-              We sent a 6-digit code to <strong>{input.email}</strong>. Enter it to confirm your email
+              We sent an 8-digit code to <strong>{input.email}</strong>. Enter it to confirm your email
               {audience === 'mentor' ? '; then the team reviews your mentor application.' : ' and continue to onboarding.'}
             </>
           ),
@@ -175,11 +175,11 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
           intro:
             audience === 'student' ? (
               <>
-                We sent a 6-digit code to <strong>{email.trim()}</strong>. New to Afriversity? The code also creates your free account.
+                We sent an 8-digit code to <strong>{email.trim()}</strong>. New to Afriversity? The code also creates your free account.
               </>
             ) : (
               <>
-                If <strong>{email.trim()}</strong> has a mentor account, a 6-digit sign-in code is on its way.
+                If <strong>{email.trim()}</strong> has a mentor account, an 8-digit sign-in code is on its way.
               </>
             ),
         });
@@ -197,7 +197,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
               type: 'signup',
               intro: (
                 <>
-                  Your email isn’t confirmed yet. We sent a 6-digit code to <strong>{email.trim()}</strong>.
+                  Your email isn’t confirmed yet. We sent an 8-digit code to <strong>{email.trim()}</strong>.
                 </>
               ),
             });
@@ -276,7 +276,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
             required
           />
         ) : withCode ? (
-          <p className="auth-form__note">We’ll email you a 6-digit code. No password needed.</p>
+          <p className="auth-form__note">We’ll email you an 8-digit code. No password needed.</p>
         ) : (
           <Link to="/reset-password" state={{ email: email.trim() }} className="auth-form__forgot">
             Forgot password?
