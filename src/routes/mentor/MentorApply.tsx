@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Briefcase, Coins, KeyRound, Link2, Lock, Mail, UserRound } from 'lucide-react';
 import { AuthLayout } from '../../features/auth/AuthLayout';
 import { RedirectIfSignedIn } from '../../features/auth/RedirectIfSignedIn';
-import { authErrorMessage, EmailTakenError, signUpWithEmail } from '../../features/auth/api';
+import { authErrorMessage, isMentorApplicant, sendSignupCode, signOut, type SignupInput } from '../../features/auth/api';
 import { EmailCodeStep } from '../../features/auth/EmailCodeStep';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
@@ -22,7 +22,7 @@ export default function MentorApply() {
   const [f, setF] = useState({ name: '', email: '', password: '', confirm: '', expertise: '', rate: '', linkedin: '' });
   const [busy, setBusy] = useState(false);
   const [taken, setTaken] = useState(false);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sent, setSent] = useState<SignupInput | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
 
   const rateCents = toCents(f.rate);
@@ -40,18 +40,17 @@ export default function MentorApply() {
     if (!LINKEDIN.test(linkedin)) return toast.error('Enter your LinkedIn profile link, e.g. https://www.linkedin.com/in/your-name');
     setBusy(true);
     try {
-      const { needsConfirmation } = await signUpWithEmail({
+      // Email → 6-digit code → verifyOtp → password saved (see sendSignupCode).
+      const input: SignupInput = {
         email: f.email.trim(),
-        password: f.password,
         fullName: f.name.trim(),
         as: 'mentor',
         mentorApplication: { expertise: f.expertise.trim().slice(0, 300), rate_cents: rateCents, linkedin_url: linkedin },
-      });
-      toast.success('Application sent. We’ll review it and email you.');
-      if (needsConfirmation) setSentTo(f.email.trim());
+      };
+      await sendSignupCode(input);
+      setSent(input);
     } catch (err) {
-      if (err instanceof EmailTakenError) setTaken(true);
-      else toast.error(authErrorMessage(err));
+      toast.error(authErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -69,16 +68,28 @@ export default function MentorApply() {
           </p>
         }
       >
-        {sentTo ? (
+        {sent ? (
           <EmailCodeStep
-            email={sentTo}
-            type="signup"
+            email={sent.email}
+            type="email"
             intro={
               <>
-                We sent a 6-digit code to <strong>{sentTo}</strong>. Enter it to confirm your email; then the team reviews your application, rate and LinkedIn.
+                We sent a 6-digit code to <strong>{sent.email}</strong>. Enter it to confirm your email; then the team reviews your application, rate and LinkedIn.
               </>
             }
-            onBack={() => setSentTo(null)}
+            resend={() => sendSignupCode(sent)}
+            newPassword={f.password}
+            // The email already had a student account: Supabase kept that account as it was, so no
+            // application exists. Sign back out and point them to sign-in.
+            checkUser={async (user) => {
+              if (isMentorApplicant(user)) return true;
+              await signOut();
+              setSent(null);
+              setTaken(true);
+              return false;
+            }}
+            onVerified={() => toast.success('Application sent. We’ll review it and email you.')}
+            onBack={() => setSent(null)}
           />
         ) : (
           <form className="auth-form auth-form__form" onSubmit={submit} noValidate>

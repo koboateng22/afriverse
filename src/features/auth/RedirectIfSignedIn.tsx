@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { homeFor, useAuth } from './useAuth';
+import { useSignedInRedirectHeld } from './redirectHold';
 import { isStudent } from '../profiles/types';
 import { FullscreenLoader } from '../../components/FullscreenLoader/FullscreenLoader';
 import { ConfigErrorScreen } from '../../components/ConfigErrorScreen/ConfigErrorScreen';
@@ -10,8 +11,11 @@ export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
   const { loading, session, profile, configError } = useAuth();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
+  // Sign-up is still saving the new password: stay on the page (no loader, no redirect).
+  const held = useSignedInRedirectHeld();
 
   if (configError) return <ConfigErrorScreen error={configError} />;
+  if (held) return <>{children}</>;
   if (loading) return <FullscreenLoader label="Checking your session" />;
   if (session && profile) {
     const home = homeFor(profile);

@@ -1,37 +1,39 @@
+import type { User } from '@supabase/supabase-js';
 import { getSupabase } from '../../lib/supabase';
 
 const callbackUrl = () => `${window.location.origin}/auth/callback`;
 
 export type SignupAs = 'student' | 'mentor';
 
-/** Thrown when the email already has an account; the form offers a sign-in link instead. */
-export class EmailTakenError extends Error {
-  constructor() {
-    super('This email is already registered. Please sign in instead.');
-    this.name = 'EmailTakenError';
-  }
-}
-
 export type MentorApplication = { expertise: string; rate_cents: number; linkedin_url: string };
 
-export async function signUpWithEmail(input: {
+export type SignupInput = {
   email: string;
-  password: string;
   fullName: string;
   as: SignupAs;
   referralCode?: string;
   mentorApplication?: MentorApplication;
-}) {
-  // No emailRedirectTo: the confirmation email carries a 6-digit code ({{ .Token }}),
-  // entered on the "Verify Code" screen, so nothing depends on a link or the browser.
-  const { data, error } = await getSupabase().auth.signUp({
+};
+
+/**
+ * Sign-up, step 1: email a 6-digit code. This is signInWithOtp (shouldCreateUser), not
+ * signUp(): the account is created now, but with no usable password and no link. The
+ * code is checked with verifyOtp({ type: 'email' }), and the password the student chose is
+ * saved after that (setPassword), once the code has proved they own the inbox.
+ *
+ * Which email Supabase sends: a new (or never-confirmed) address gets the "Confirm signup"
+ * template; an address that already has an account gets the "Magic Link" template. Both
+ * must use {{ .Token }} — the template, not this call, decides whether it's a code or a link.
+ */
+export async function sendSignupCode(input: SignupInput) {
+  const { error } = await getSupabase().auth.signInWithOtp({
     email: input.email,
-    password: input.password,
     options: {
-      // `signup_as` is read by the handle_new_user trigger, which only accepts
-      // 'student' or 'mentor' (mentors start as pending). Admin can't be requested.
-      // referral_code: an ambassador's code; the trigger keeps it only if it's live (0018).
-      // mentor_application: saved to mentor_applications by the same trigger (0021).
+      shouldCreateUser: true,
+      // Saved on the new user only (Supabase ignores it for an existing account). Read by the
+      // handle_new_user trigger: `signup_as` is 'student' or 'mentor' (mentors start pending;
+      // admin can't be requested); referral_code is kept only if live (0018);
+      // mentor_application goes to mentor_applications (0021).
       data: {
         full_name: input.fullName,
         signup_as: input.as,
@@ -40,13 +42,16 @@ export async function signUpWithEmail(input: {
       },
     },
   });
-  // With email confirmation off, Supabase says so directly.
-  if (error && /already (been )?registered|already exists/i.test(error.message)) throw new EmailTakenError();
-  if (error) throw error;
-  // With confirmation on, it hides that the email exists: a user with no identities comes back.
-  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new EmailTakenError();
-  return { needsConfirmation: !data.session };
+  if (!error) return;
+  if (isRateLimited(error)) throw new Error('A code was sent moments ago. Wait a minute before asking for another.');
+  throw error;
 }
+
+/**
+ * Mentor sign-up: true when the verified account really is a mentor applicant. False means
+ * the email already had a student (or Google) account, so no application was saved.
+ */
+export const isMentorApplicant = (user: User | null) => user?.user_metadata?.signup_as === 'mentor';
 
 /** Sends the 6-digit reset code. Always "succeeds" to the caller, so nobody can probe which emails have accounts. */
 export async function requestPasswordReset(email: string) {
@@ -67,10 +72,14 @@ const isRateLimited = (e: unknown) => {
   return (e as { status?: number } | null)?.status === 429 || /rate limit|too many|security purposes|only request this after/i.test(msg);
 };
 
-/** Checks the code and signs the user in (for 'recovery', signed in just enough to set a new password). */
-export async function verifyEmailCode(email: string, token: string, type: EmailCodeKind) {
-  const { error } = await getSupabase().auth.verifyOtp({ email, token, type });
+/**
+ * Checks the code and signs the user in (for 'recovery', signed in just enough to set a new
+ * password). 'email' accepts both a sign-up code and a sign-in code.
+ */
+export async function verifyEmailCode(email: string, token: string, type: EmailCodeKind): Promise<User | null> {
+  const { data, error } = await getSupabase().auth.verifyOtp({ email, token, type });
   if (error) throw error;
+  return data.user;
 }
 
 /** Sends a fresh code for the given purpose. */
@@ -100,7 +109,10 @@ export async function sendEmailSignInCode(email: string, opts: { createStudent: 
   throw error;
 }
 
-/** Sets a new password for the user signed in through the reset link. */
+/**
+ * Sets the signed-in user's password: after a reset code, or right after a sign-up code.
+ * Supabase stores only a bcrypt hash; the app never keeps the password anywhere but memory.
+ */
 export async function updatePassword(password: string) {
   const { error } = await getSupabase().auth.updateUser({ password });
   if (error) throw error;
@@ -129,5 +141,10 @@ export async function signInWithGoogle() {
     provider: 'google',
     options: { redirectTo: callbackUrl() },
   });
+  if (error) throw error;
+}
+
+export async function signOut() {
+  const { error } = await getSupabase().auth.signOut();
   if (error) throw error;
 }

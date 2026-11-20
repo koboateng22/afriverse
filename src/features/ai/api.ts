@@ -9,8 +9,11 @@ export type ChatReply = { conversation_id: string; message: ChatMessage; usage: 
 export type ChatFallback = { is_fallback: true; reply: string; conversation_id: string | null; usage?: ChatUsage };
 
 export const FALLBACK_REPLY = 'I am currently experiencing high traffic. Please try again in a minute.';
-/** How long a chat message may take before the app gives up and offers Retry. */
-export const CHAT_TIMEOUT_MS = 15_000;
+/**
+ * How long a chat message may take before the app gives up and offers Retry. Longer than the
+ * function's own 25 s AI limit, so a slow answer arrives instead of being cut off here.
+ */
+export const CHAT_TIMEOUT_MS = 30_000;
 
 export function sendChat(input: { mode: 'career' | 'lesson'; message: string; conversation_id?: string | null; lesson_id?: string }): Promise<ChatReply | ChatFallback> {
   const body: Record<string, unknown> = { mode: input.mode, message: input.message };

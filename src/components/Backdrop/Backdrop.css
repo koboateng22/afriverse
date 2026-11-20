@@ -1,11 +1,12 @@
 @layer components {
-  /* One flat surface: the same colour <html> paints, so nothing (sidebar, scrollbar
-     gutter, page edges) can show a change in shade. */
+  /* One continuous surface: the page colour with the adinkra texture (8%) on top. The
+     tile repeats from the viewport's top-left, exactly as on the sidebar, so the two
+     line up and no edge between them can show. */
   .backdrop {
     position: fixed;
     inset: 0;
     z-index: var(--z-backdrop);
     pointer-events: none;
-    background: var(--bg);
+    background: var(--pattern-adinkra) 0 0 / var(--pattern-size) repeat, var(--bg);
   }
 }

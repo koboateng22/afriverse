@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { BadgeCheck, CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tag } from '../../components/Chip/Chip';
 import { Skeleton } from '../../components/Skeleton/Skeleton';
-import { CategoryMedia } from '../../features/opportunities/CategoryMedia';
+import { CategoryIcon } from '../../features/opportunities/CategoryMedia';
 import { categoryOf, KIND_ICON, KIND_LABEL } from '../../features/opportunities/category';
 import { FUNDING_LABEL } from '../../features/opportunities/types';
 import type { TopItem } from '../../features/home/topMatches';
@@ -13,37 +13,53 @@ import { countdownFor } from '../../lib/dates';
 import { riseItem, staggerParent } from '../../lib/motion';
 import './TopMatches.css';
 
-/** One wide card: full-bleed cover image (or the category wash) fading into the glass body. */
+/** The top-left tile: the cover image as a thumbnail when there is one, else the large category icon. */
+function MatchThumb({ image, icon }: { image?: string | null; icon: TopItem['opportunity']['kind'] }) {
+  const [broken, setBroken] = useState(false);
+  if (image && !broken) {
+    return (
+      <span className="match-card__thumb" aria-hidden="true">
+        <img src={image} alt="" loading="lazy" decoding="async" onError={() => setBroken(true)} />
+      </span>
+    );
+  }
+  return (
+    <span className="match-card__thumb" data-icon aria-hidden="true">
+      <CategoryIcon icon={KIND_ICON[icon]} />
+    </span>
+  );
+}
+
+/** One compact card: big icon (or thumbnail) top-left, then title, provider and key facts, in an emerald→gold glowing frame. */
 function MatchCard({ item }: { item: TopItem }) {
   const o = item.opportunity;
   const countdown = countdownFor(o);
   return (
     <Link to={`/opportunity/${o.slug}`} className="match-card" data-cat={categoryOf(o.kind)}>
-      <CategoryMedia className="match-card__media" image={o.cover_image_url} icon={KIND_ICON[o.kind]} />
-      <div className="match-card__body">
+      <div className="match-card__top">
+        <MatchThumb image={o.cover_image_url} icon={o.kind} />
         <p className="match-card__kicker">
           <span className="cat-label">{KIND_LABEL[o.kind]}</span>
-          <span aria-hidden="true"> · </span>
           <span className="visually-hidden">, </span>
           <span className="match-card__reason" data-strong={item.match.score >= MATCH_STRONG || undefined}>
             {item.reason}
           </span>
         </p>
-        <h3 className="match-card__title">{o.title}</h3>
-        <p className="match-card__sub">{o.provider}</p>
-        <div className="match-card__meta">
-          {o.is_verified && (
-            <Tag tone="emerald">
-              <BadgeCheck aria-hidden="true" />
-              Verified
-            </Tag>
-          )}
-          <Tag tone={countdown.tone}>
-            <CalendarClock aria-hidden="true" />
-            {countdown.label}
+      </div>
+      <h3 className="match-card__title">{o.title}</h3>
+      <p className="match-card__sub">{o.provider}</p>
+      <div className="match-card__meta">
+        {o.is_verified && (
+          <Tag tone="emerald">
+            <BadgeCheck aria-hidden="true" />
+            Verified
           </Tag>
-          <Tag>{FUNDING_LABEL[o.funding]}</Tag>
-        </div>
+        )}
+        <Tag tone={countdown.tone}>
+          <CalendarClock aria-hidden="true" />
+          {countdown.label}
+        </Tag>
+        <Tag>{FUNDING_LABEL[o.funding]}</Tag>
       </div>
     </Link>
   );
@@ -103,10 +119,10 @@ export function TopMatches({ items, loading }: { items: TopItem[]; loading: bool
       {loading ? (
         <div className="top-matches__track">
           <div className="top-matches__item">
-            <Skeleton shape="block" height="320px" label="Loading your top matches" />
+            <Skeleton shape="block" height="220px" label="Loading your top matches" />
           </div>
           <div className="top-matches__item">
-            <Skeleton shape="block" height="320px" />
+            <Skeleton shape="block" height="220px" />
           </div>
         </div>
       ) : (

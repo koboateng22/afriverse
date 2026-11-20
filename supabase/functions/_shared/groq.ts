@@ -26,8 +26,9 @@ type GroqResponse = {
 
 const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 /**
- * Groq's deprecations page lists DEFAULT_MODEL with a 16 Aug 2026 shutdown and
- * names this as its replacement. Used only when Groq rejects the chosen model.
+ * Groq's deprecations page shut DEFAULT_MODEL down on 16 Aug 2026 for free and developer
+ * keys (Enterprise contracts keep it) and names this as the replacement. Used whenever Groq
+ * refuses the chosen model, so the counsellor keeps answering either way.
  */
 const FALLBACK_MODEL = 'openai/gpt-oss-120b';
 
@@ -36,18 +37,28 @@ export function aiModel(): string {
   return optionalEnv('GROQ_MODEL') ?? DEFAULT_MODEL;
 }
 
-/** True when Groq refused the request because the model itself is retired or unknown. */
-function isModelUnavailable(status: number, payload: GroqResponse): boolean {
-  if (status !== 400 && status !== 404) return false;
+/**
+ * True when Groq refused the request because of the model itself: retired, unknown, or not
+ * open to this key's plan. Never true for rate limits (429) or Groq outages (5xx).
+ */
+export function isModelUnavailable(status: number, payload: GroqResponse): boolean {
+  if (status !== 400 && status !== 403 && status !== 404) return false;
   const detail = `${payload.error?.code ?? ''} ${payload.error?.message ?? ''}`;
-  return /model_(decommissioned|not_found)|model\b.*(decommissioned|does not exist|not found)/i.test(detail);
+  return /model_(decommissioned|not_found|permission|terms)|model\b.*(decommissioned|deprecated|does not exist|not found|not available|no longer|do(es)? not have access|enterprise)/i.test(detail);
 }
+
+/**
+ * Models Groq has refused in this warm function instance. After one refusal the next
+ * requests go straight to FALLBACK_MODEL instead of paying for a doomed call every time.
+ */
+const refusedModels = new Set<string>();
+export const _resetRefusedModels = () => refusedModels.clear(); // tests
 
 /** gpt-oss models reason before answering; they take reasoning controls the others reject. */
 const isReasoningModel = (model: string) => model.startsWith('openai/gpt-oss');
 
 /** Never abort a call sooner than this, whatever a caller passes. */
-// Chat turns use 13 s so they finish (or fall back) inside the app's 15 s timeout.
+// Chat turns use 25 s: a slow answer is waited for; only a call that is truly stuck falls back.
 const MIN_TIMEOUT_MS = 8_000;
 const DEFAULT_TIMEOUT_MS = 25_000;
 /** Reasoning tokens count toward the completion budget; leave room so the answer isn't cut off. */
@@ -107,9 +118,11 @@ export async function generate(opts: GenerateOptions): Promise<string> {
   };
 
   try {
-    let { res, payload } = await request(model);
-    if (!res.ok && model !== FALLBACK_MODEL && isModelUnavailable(res.status, payload)) {
-      console.warn(`groq: model ${model} unavailable, using ${FALLBACK_MODEL}: ${payload.error?.message ?? res.statusText}`);
+    const first = refusedModels.has(model) ? FALLBACK_MODEL : model;
+    let { res, payload } = await request(first);
+    if (!res.ok && first !== FALLBACK_MODEL && isModelUnavailable(res.status, payload)) {
+      console.warn(`groq: model ${first} unavailable, using ${FALLBACK_MODEL}: ${payload.error?.message ?? res.statusText}`);
+      refusedModels.add(first);
       ({ res, payload } = await request(FALLBACK_MODEL));
     }
     if (!res.ok) {

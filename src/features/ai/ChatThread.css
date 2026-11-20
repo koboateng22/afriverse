@@ -1,8 +1,7 @@
 /* ──────────────────────────────────────────────────────────────
    Chat — "futuristic but legible".
-   AI bubble   frosted glass + 1px emerald→gold rim (mask-drawn, so the
-               fill stays translucent) + a soft emerald/gold under-glow.
-               The latest AI reply's rim slowly travels.
+   AI bubble   deep emerald glass (emerald at 10%) + a 1px emerald border
+               and a soft emerald under-glow; the latest reply glows brighter.
    User bubble deep-green glass, cream text (≥ 7:1).
    Typing      three gradient dots that swell and glow in sequence.
    Decoration is always z-index -1 inside an isolated bubble.
@@ -70,39 +69,23 @@
     max-inline-size: min(88%, 520px);
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 6px;
-    background:
-      radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--emerald) 10%, transparent), transparent 60%),
-      var(--glass-fill-strong);
-    border: 1px solid transparent;
+    /* Deep emerald glass, not black: the dark page shows through, tinted green. */
+    background: var(--ai-bubble-fill);
+    border: 1px solid var(--ai-bubble-edge);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
     box-shadow:
       var(--glass-inset),
-      0 12px 32px -16px color-mix(in oklab, var(--emerald) 55%, transparent),
-      0 0 28px -14px color-mix(in oklab, var(--brand-bright) 45%, transparent);
+      0 12px 32px -18px color-mix(in oklab, var(--emerald) 60%, transparent);
     & p { color: var(--text); white-space: pre-wrap; }
-
-    /* Emerald → gold rim, drawn only in the 1px border ring. */
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      z-index: var(--z-card-fx);
-      border-radius: inherit;
-      padding: 1px;
-      background: linear-gradient(120deg, var(--emerald), var(--brand-bright) 35%, color-mix(in oklab, var(--emerald) 60%, transparent) 65%, var(--brand-bright));
-      -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask:
-        linear-gradient(#000 0 0) content-box exclude,
-        linear-gradient(#000 0 0);
-      pointer-events: none;
-    }
   }
-  /* The newest AI reply's rim drifts slowly — the thread feels alive, not busy. */
-  .chat__row[data-latest] .chat__bubble::before,
-  .chat__row[data-typing] .chat__bubble::before { animation: rim-travel 6s ease-in-out infinite; }
-  .chat__row[data-typing] .chat__bubble::before { animation-duration: 2.4s; }
+  /* The newest AI reply (and the typing bubble) glows a little brighter. */
+  .chat__row:is([data-latest], [data-typing]) .chat__bubble {
+    box-shadow:
+      var(--glass-inset),
+      0 12px 32px -16px color-mix(in oklab, var(--emerald) 70%, transparent),
+      0 0 24px -12px color-mix(in oklab, var(--brand-bright) 50%, transparent);
+  }
 
   .chat__row[data-role='user'] .chat__bubble {
     border-radius: var(--radius-md) var(--radius-md) 6px var(--radius-md);
@@ -110,7 +93,6 @@
       linear-gradient(160deg, color-mix(in oklab, var(--emerald) 55%, var(--deep-green)), var(--deep-green) 70%);
     border-color: color-mix(in oklab, var(--emerald) 45%, transparent);
     box-shadow: var(--glass-inset), 0 10px 26px -14px color-mix(in oklab, var(--emerald) 70%, transparent);
-    &::before { display: none; }
   }
 
   .chat__source {
@@ -201,11 +183,10 @@
 
   .chat__related { display: flex; flex-wrap: wrap; gap: var(--space-2); max-inline-size: min(88%, 520px); }
 
-  /* "High traffic" answer: a quieter bubble (no travelling rim) with Retry under it. */
+  /* "High traffic" answer: a quieter bubble (dashed border) with Retry under it. */
   .chat__bubble[data-fallback] {
     color: var(--text-2);
     border-style: dashed;
-    &::before { display: none; }
   }
   .chat__retry { display: flex; }
   .chat__related-chip {

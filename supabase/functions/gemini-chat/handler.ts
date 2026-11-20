@@ -52,9 +52,10 @@ const DEFAULT_DAILY_LIMIT = 50;
 const MAX_MESSAGE_CHARS = 6000;
 export const NOT_IN_DATA = "I don't have that in Afriversity's data yet.";
 export const FALLBACK_REPLY = 'I am currently experiencing high traffic. Please try again in a minute.';
-// Chat answers must beat the app's 15-second timeout, so the fallback (not a
-// half-finished save) is what a slow turn produces. Essay reviews are longer jobs.
-const CHAT_TIMEOUT_MS = 13_000;
+// A slow answer is still an answer: chat waits up to 25 s, inside the app's 30 s limit.
+// The fallback is for real failures only (Groq 429/5xx, an empty or broken reply, a call
+// stuck for 25 s). Essay reviews are longer jobs.
+export const CHAT_TIMEOUT_MS = 25_000;
 
 /**
  * True when the AI itself failed: Groq's 429 (ai_busy), 5xx (ai_error), a timeout,

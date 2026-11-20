@@ -95,9 +95,9 @@
       flex-direction: column;
       gap: var(--space-5);
       padding: var(--space-5) var(--space-3);
-      /* Exactly the page colour, no border or blur: the sidebar sits on the same
-         continuous surface as the content instead of reading as a separate panel. */
-      background: var(--bg);
+      /* Exactly the page surface (colour + texture, tiled from the same origin as the
+         backdrop), no border or blur: it reads as the same surface, not a separate panel. */
+      background: var(--pattern-adinkra) 0 0 / var(--pattern-size) repeat, var(--bg);
       pointer-events: auto;
       overflow-y: auto;
       scrollbar-width: none;

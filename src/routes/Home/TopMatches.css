@@ -27,8 +27,9 @@
   .top-matches__track {
     display: flex;
     gap: var(--space-4);
-    margin-inline: calc(-1 * var(--gutter));
-    padding: var(--space-1) var(--gutter) var(--space-3);
+    /* Extra room above and below so the cards' glow isn't clipped by the scroller. */
+    margin: calc(-1 * var(--space-3)) calc(-1 * var(--gutter)) calc(-1 * var(--space-2));
+    padding: var(--space-4) var(--gutter) var(--space-5);
     list-style: none;
     overflow-x: auto;
     overscroll-behavior-x: contain;
@@ -45,57 +46,94 @@
     @media (min-width: 1440px) { flex-basis: 440px; }
   }
 
-  /* Wider and taller than feed tiles: media on top, generous padding. */
+  /* Compact card: icon tile top-left, then text. A glowing emerald→gold frame marks it as a top match. */
   .match-card {
     position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
+    gap: var(--space-2);
     inline-size: 100%;
-    overflow: hidden;
+    padding: var(--space-4) var(--space-5) var(--space-5);
     border-radius: var(--radius-lg);
-    background: var(--glass-fill);
-    border: 1px solid var(--glass-edge);
-    box-shadow: var(--glass-inset), var(--shadow-float);
+    background:
+      radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--cat) 12%, transparent), transparent 60%),
+      var(--glass-fill);
+    border: 1px solid transparent;
+    box-shadow:
+      var(--glass-inset),
+      var(--shadow-float),
+      0 0 26px -12px color-mix(in oklab, var(--emerald) 75%, transparent),
+      0 0 34px -18px color-mix(in oklab, var(--gold) 60%, transparent);
     color: var(--text);
-    transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
+    transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
 
-    /* The 2px category edge, above the image so it runs the full height. */
-    &::after {
+    /* The gradient frame, drawn only in the 1px border ring so the glass fill stays clear. */
+    &::before {
       content: '';
       position: absolute;
-      inset: 0;
-      z-index: 2;
+      inset: -1px;
+      z-index: -1;
       border-radius: inherit;
-      box-shadow: inset 2px 0 0 var(--cat);
+      padding: 1px;
+      background: linear-gradient(135deg, var(--brand-bright), var(--emerald) 40%, color-mix(in oklab, var(--gold) 70%, var(--emerald)) 75%, var(--gold));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+      opacity: 0.85;
       pointer-events: none;
+      transition: opacity var(--dur-mid) var(--ease-out);
     }
 
     @media (hover: hover) {
       &:hover {
         transform: translateY(-3px);
-        border-color: color-mix(in oklab, var(--cat) 35%, var(--glass-edge));
-        box-shadow: var(--glass-inset), var(--shadow-float), 0 18px 40px -24px color-mix(in oklab, var(--cat) 70%, transparent);
+        box-shadow:
+          var(--glass-inset),
+          var(--shadow-float),
+          0 0 32px -10px color-mix(in oklab, var(--emerald) 85%, transparent),
+          0 0 44px -16px color-mix(in oklab, var(--gold) 70%, transparent);
+        &::before { opacity: 1; }
       }
     }
     &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   }
-  /* Full-bleed image across the top of the card. */
-  .match-card__media { aspect-ratio: 16 / 9; border: 0; border-radius: 0; }
-  .match-card__body { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-5) var(--space-5); flex: 1; align-content: start; }
+
+  .match-card__top { display: flex; align-items: center; gap: var(--space-3); min-inline-size: 0; margin-block-end: var(--space-1); }
+  /* 64px: the large category icon, or the cover image as a thumbnail. */
+  .match-card__thumb {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 64px;
+    block-size: 64px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--cat) 40%, transparent);
+    box-shadow: 0 0 22px -8px color-mix(in oklab, var(--cat) 70%, transparent);
+    & img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+    &[data-icon] { border: 0; border-radius: 50%; overflow: visible; box-shadow: none; }
+    & .cat-icon { --cat-icon-size: 64px; }
+  }
   .match-card__reason[data-strong] { color: var(--brand-bright); }
   .match-card__kicker {
+    display: grid;
+    gap: 2px;
+    min-inline-size: 0;
     font-size: var(--step--2);
     font-weight: 700;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--text-3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    & > span:not(.visually-hidden) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   }
   .match-card__title {
     font-family: var(--font-display);
-    font-size: var(--step-2);
+    font-size: var(--step-1);
     line-height: var(--leading-snug);
     letter-spacing: -0.01em;
     display: -webkit-box;
@@ -111,9 +149,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .match-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-2); }
+  .match-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block-start: auto; padding-block-start: var(--space-2); }
 
   @media (prefers-reduced-motion: reduce) {
-    .match-card { transition: none; &:hover { transform: none; } }
+    .match-card { transition: none; &:hover { transform: none; } &::before { transition: none; } }
   }
 }

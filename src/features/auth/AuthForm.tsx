@@ -7,12 +7,13 @@ import { Field } from '../../components/Field/Field';
 import { normalizeCode, referralCodeValid, rememberReferral } from '../ambassador/api';
 import {
   authErrorMessage,
-  EmailTakenError,
+  isMentorApplicant,
   resendEmailCode,
   sendEmailSignInCode,
+  sendSignupCode,
   signInWithEmail,
   signInWithGoogle,
-  signUpWithEmail,
+  signOut,
   type SignupAs,
 } from './api';
 import { EmailCodeStep } from './EmailCodeStep';
@@ -25,7 +26,7 @@ export type AuthFormProps = {
 
 type CodeCheck = 'idle' | 'checking' | 'valid' | 'invalid';
 /** The "Verify Code" step: which email the code went to, and what it's for. */
-type Verify = { email: string; type: 'signup' | 'email'; intro?: ReactNode };
+type Verify = { email: string; type: 'signup' | 'email'; intro?: ReactNode; resend?: () => Promise<void>; signup?: boolean };
 
 // Client-side brake on repeated failed sign-ins (Supabase's own rate limit is the real guard).
 const MAX_FAILED_SIGNINS = 5;
@@ -134,8 +135,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
     try {
       await fn();
     } catch (e) {
-      if (e instanceof EmailTakenError) setEmailTaken(true);
-      else setError(authErrorMessage(e));
+      setError(authErrorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -150,19 +150,21 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
         if (password.length < 8) throw new Error('Use at least 8 characters for your password.');
         if (password !== confirm) throw new Error('The passwords don’t match. Type the same password twice.');
         const referralCode = await checkedReferral();
-        const { needsConfirmation } = await signUpWithEmail({ email: email.trim(), password, fullName: fullName.trim(), as: audience, referralCode });
-        if (needsConfirmation) {
-          setVerify({
-            email: email.trim(),
-            type: 'signup',
-            intro: (
-              <>
-                We sent a 6-digit code to <strong>{email.trim()}</strong>. Enter it to confirm your email
-                {audience === 'mentor' ? '; then the team reviews your mentor application.' : ' and continue to onboarding.'}
-              </>
-            ),
-          });
-        }
+        // Email → "Send code" → 6-digit code → verifyOtp({ type: 'email' }) → the password is saved.
+        const input = { email: email.trim(), fullName: fullName.trim(), as: audience, referralCode };
+        await sendSignupCode(input);
+        setVerify({
+          email: input.email,
+          type: 'email',
+          signup: true,
+          resend: () => sendSignupCode(input),
+          intro: (
+            <>
+              We sent a 6-digit code to <strong>{input.email}</strong>. Enter it to confirm your email
+              {audience === 'mentor' ? '; then the team reviews your mentor application.' : ' and continue to onboarding.'}
+            </>
+          ),
+        });
       } else if (withCode) {
         if (!/^\S+@\S+\.\S+$/.test(email.trim())) throw new Error('Enter the email address you signed up with.');
         // Students: a new email gets a free account (shouldCreateUser). Mentors must apply first.
@@ -216,7 +218,20 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
         intro={verify.intro}
         onBack={() => setVerify(null)}
         // A mentor's "send a new code" must never create a student account.
-        resend={verify.type === 'email' && audience !== 'student' ? () => sendEmailSignInCode(verify.email, { createStudent: false }) : undefined}
+        resend={verify.resend ?? (verify.type === 'email' && audience !== 'student' ? () => sendEmailSignInCode(verify.email, { createStudent: false }) : undefined)}
+        newPassword={verify.signup ? password : undefined}
+        // Mentor sign-up on an email that already has a student account: nothing was applied for.
+        checkUser={
+          verify.signup && audience === 'mentor'
+            ? async (user) => {
+                if (isMentorApplicant(user)) return true;
+                await signOut();
+                setVerify(null);
+                setEmailTaken(true);
+                return false;
+              }
+            : undefined
+        }
       />
     );
   }
@@ -284,7 +299,7 @@ export function AuthForm({ mode, audience }: AuthFormProps) {
           {isSignup
             ? audience === 'mentor'
               ? 'Apply as a mentor'
-              : 'Create account'
+              : 'Send code'
             : withCode
               ? 'Email me a code'
               : lockLeft > 0
