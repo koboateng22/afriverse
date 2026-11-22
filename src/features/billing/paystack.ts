@@ -2,29 +2,58 @@
 // it says WHAT is being bought; paystack-init prices it from the database
 // (always GHS) and returns Paystack's hosted checkout URL.
 import { invokeFunction } from '../../lib/functions';
+import { formatMoney } from '../../lib/money';
 
 export type CheckoutRequest =
   /** card = monthly auto-renew (Paystack plan); momo = one month, renew manually. */
   | { type: 'subscription'; method: 'card' | 'momo'; promo_code?: string }
   | { type: 'application'; university_id: string }
-  | { type: 'mentor'; mentor_id: string; scheduled_at: string; topic?: string };
+  | { type: 'mentor'; mentor_id: string; scheduled_at: string; topic?: string }
+  /** Pay-as-you-go: unlock one CV's PDF (GH₵ 10) or one VIP human essay review (GH₵ 15). */
+  | { type: 'purchase'; product: 'cv_download'; cv_id: string }
+  | { type: 'purchase'; product: 'essay_review' };
 
-type InitResponse = { authorization_url: string; reference: string };
+/** amount_cents: what paystack-init is about to charge, in pesewas (newer servers send it). */
+type InitResponse = { authorization_url: string; reference: string; amount_cents?: number; currency?: string };
+
+export type CheckoutGuard = {
+  /**
+   * The price on screen, in whole pesewas (GH₵ 3.50 = 350). The server refuses the checkout
+   * if its own price differs, and we refuse to redirect if its answer differs.
+   */
+  expectedCents?: number;
+  /** Also refuse when the server doesn't say what it will charge (e.g. a promo price). */
+  requireServerAmount?: boolean;
+};
 
 /** Full-page redirect (not a popup): MoMo approval prompts fail inside iframes. */
 export function redirectToCheckout({ authorizationUrl }: { authorizationUrl: string }): void {
   window.location.href = authorizationUrl;
 }
 
-export async function startCheckout(req: CheckoutRequest): Promise<void> {
-  const { authorization_url } = await invokeFunction<InitResponse>('paystack-init', req);
-  if (!/^https?:\/\//.test(authorization_url ?? '')) throw new Error('Paystack did not return a checkout link.');
-  redirectToCheckout({ authorizationUrl: authorization_url });
+export async function startCheckout(req: CheckoutRequest, guard: CheckoutGuard = {}): Promise<void> {
+  const { expectedCents, requireServerAmount } = guard;
+  if (expectedCents !== undefined && (!Number.isSafeInteger(expectedCents) || expectedCents <= 0)) {
+    throw new Error('Price error: amounts must be whole pesewas. Nothing was charged.');
+  }
+  const body = expectedCents === undefined ? req : { ...req, expected_amount_cents: expectedCents };
+  const res = await invokeFunction<InitResponse>('paystack-init', body);
+  if (expectedCents !== undefined) {
+    // Never send a student to pay a different amount from the one on screen.
+    if (typeof res.amount_cents === 'number' && res.amount_cents !== expectedCents) {
+      throw new Error(`The checkout would charge ${formatMoney(res.amount_cents, 'GHS')}, not the ${formatMoney(expectedCents, 'GHS')} shown, so we stopped. Nothing was charged.`);
+    }
+    if (typeof res.amount_cents !== 'number' && requireServerAmount) {
+      throw new Error('We can’t confirm the discounted price with the payment server right now, so we stopped before charging you. Please try again shortly.');
+    }
+  }
+  if (!/^https?:\/\//.test(res.authorization_url ?? '')) throw new Error('Paystack did not return a checkout link.');
+  redirectToCheckout({ authorizationUrl: res.authorization_url });
 }
 
 export type VerifyResponse = {
   status: 'pending' | 'success' | 'failed';
-  kind: 'subscription' | 'application' | 'mentor';
+  kind: 'subscription' | 'application' | 'mentor' | 'purchase';
   related_id: string | null;
   failure_reason: string | null;
   amount_cents: number;

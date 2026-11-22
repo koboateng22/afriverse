@@ -49,6 +49,8 @@ const AmbassadorHub = lazy(() => import('./routes/AmbassadorHub/AmbassadorHub'))
 const Profile = lazy(loadProfile);
 const Paywall = lazy(loadPaywall);
 const Checkout = lazy(() => import('./routes/Checkout/Checkout'));
+const CvBuilder = lazy(() => import('./routes/CvBuilder/CvBuilder'));
+const Counsellor = lazy(() => import('./routes/Counsellor/Counsellor'));
 const Scratch = lazy(() => import('./routes/Scratch/Scratch'));
 const NotFound = lazy(() => import('./routes/NotFound/NotFound'));
 const MentorLogin = lazy(() => import('./routes/mentor/MentorLogin'));
@@ -145,6 +147,8 @@ function AnimatedRoutes() {
             <Route path="/profile" element={student(<Profile />)} />
             <Route path="/paywall" element={student(<Paywall />)} />
             <Route path="/checkout" element={student(<Checkout />)} />
+            <Route path="/cv-builder" element={student(<CvBuilder />)} />
+            <Route path="/counsellor" element={student(<Counsellor />)} />
 
             {/* ── Mentor (entry: quiet link on /login only) ──────── */}
             <Route path="/mentor/login" element={<MentorLogin />} />

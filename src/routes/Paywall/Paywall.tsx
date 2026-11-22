@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, Building2, ChevronRight, FileText, MessageCircleHeart } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Button } from '../../components/Button/Button';
 import { Notice } from '../../components/Notice/Notice';
 import { ProOffer } from '../../features/billing/ProOffer';
+import { SocialProof, ValueStack } from '../../features/billing/PaywallModal';
+import { formatMoney } from '../../lib/money';
 import { usePlan } from '../../features/billing/PlanProvider';
-import { cancelAutoRenew, cardManageLink } from '../../features/billing/api';
+import { cancelAutoRenew, cardManageLink, fetchOneTimeProducts, PRODUCT_FALLBACK } from '../../features/billing/api';
 import { formatDay } from '../../lib/dates';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem } from '../../lib/motion';
@@ -18,6 +21,10 @@ export default function Paywall() {
   const [busy, setBusy] = useState<'cancel' | 'card' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const autoRenew = billing?.status === 'active';
+  const [prices, setPrices] = useState(PRODUCT_FALLBACK);
+  useEffect(() => {
+    void fetchOneTimeProducts().then(setPrices).catch(() => undefined);
+  }, []);
   const until = current?.expires_at ? formatDay(current.expires_at.slice(0, 10)) : null;
 
   const cancel = async () => {
@@ -54,8 +61,10 @@ export default function Paywall() {
           artTone="gold"
           eyebrow="Afriversity Pro"
           title={isPro ? 'You’re on Pro' : 'A real counsellor in your corner'}
-          lede={isPro ? undefined : 'The AI tools are free for everyone. Pro adds people: a counsellor on WhatsApp, CV and essay strategy sessions, and priority support.'}
+          lede={isPro ? undefined : 'The AI tools are free for everyone. Pro adds people and power tools: the AI CV Builder for Scholarships & Jobs, a counsellor on WhatsApp, and priority support.'}
         />
+        {!isPro && <SocialProof />}
+        {!isPro && <ValueStack />}
 
         {isPro && (
           <motion.section className="paywall__status" variants={riseItem} initial="hidden" animate="show" aria-label="Your plan">
@@ -86,6 +95,48 @@ export default function Paywall() {
           </div>
         ) : (
           <ProOffer />
+        )}
+
+        {!isPro && (
+          <motion.section className="payg" variants={riseItem} initial="hidden" animate="show" aria-labelledby="payg-h">
+            <h2 id="payg-h" className="payg__title">Not ready for monthly? Pay as you go</h2>
+            <p className="payg__lede">One-time payments by Mobile Money or card. No subscription.</p>
+            <ul className="payg__list" role="list">
+              <li>
+                <Link to="/cv-builder" className="payg__item">
+                  <FileText aria-hidden="true" className="payg__icon" />
+                  <span className="payg__text">
+                    <span className="payg__name">Download your AI-written CV</span>
+                    <span className="payg__detail">Generate free, then unlock the PDF once</span>
+                  </span>
+                  <span className="payg__price">{formatMoney(prices.cv_download.amount_cents, 'GHS')}</span>
+                  <ChevronRight aria-hidden="true" className="payg__go" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/counsellor" className="payg__item">
+                  <MessageCircleHeart aria-hidden="true" className="payg__icon" />
+                  <span className="payg__text">
+                    <span className="payg__name">VIP Essay Review by a human</span>
+                    <span className="payg__detail">Your first review is free</span>
+                  </span>
+                  <span className="payg__price">{formatMoney(prices.essay_review.amount_cents, 'GHS')}</span>
+                  <ChevronRight aria-hidden="true" className="payg__go" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/apply-university" className="payg__item">
+                  <Building2 aria-hidden="true" className="payg__icon" />
+                  <span className="payg__text">
+                    <span className="payg__name">University Concierge</span>
+                    <span className="payg__detail">We apply for you, plus the university’s form fee</span>
+                  </span>
+                  <span className="payg__price">from {formatMoney(2000, 'GHS')}</span>
+                  <ChevronRight aria-hidden="true" className="payg__go" />
+                </Link>
+              </li>
+            </ul>
+          </motion.section>
         )}
       </div>
     </PageTransition>

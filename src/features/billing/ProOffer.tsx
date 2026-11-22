@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Check, CreditCard, FileText, Headset, MessageCircle, Smartphone, Tag } from 'lucide-react';
+import { Check, CreditCard, FileText, Headset, MessageCircle, Smartphone, Tag, WandSparkles } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { Field } from '../../components/Field/Field';
 import { Magnetic } from '../../components/Magnetic/Magnetic';
@@ -29,6 +29,7 @@ const INVALID_CODE = 'Invalid or expired code.';
 type Promo = { code: string; percentage: number };
 type PromoMsg = { tone: 'success' | 'error'; text: string };
 const DEFAULT_FEATURES = [
+  'AI CV Builder for Scholarships & Jobs',
   'Direct WhatsApp access to a Human Counselor',
   'CV & Essay Strategy Sessions',
   'Priority Support',
@@ -39,7 +40,7 @@ const DEFAULT_FEATURES = [
 // Pro is human support: the first three features lead, larger and with their own icon.
 const HIGHLIGHTED = 3;
 const iconFor = (feature: string) =>
-  /whatsapp|counsel/i.test(feature) ? MessageCircle : /\bcv\b|essay/i.test(feature) ? FileText : /support/i.test(feature) ? Headset : Check;
+  /cv builder/i.test(feature) ? WandSparkles : /whatsapp|counsel/i.test(feature) ? MessageCircle : /\bcv\b|essay/i.test(feature) ? FileText : /support/i.test(feature) ? Headset : Check;
 
 /**
  * Pro plan (human support) + payment method + one gold CTA. Used by /paywall and
@@ -110,13 +111,20 @@ export function ProOffer({ compact }: { compact?: boolean }) {
     setError(null);
     try {
       // The code goes to the server, which re-checks it and prices the charge.
-      await startCheckout({ type: 'subscription', method, ...(promo ? { promo_code: promo.code } : {}) }); // redirects to Paystack
+      // expectedCents: the exact pesewas on screen. The server refuses a different price, and
+      // with a promo applied we also refuse to redirect unless the server confirms it.
+      await startCheckout(
+        { type: 'subscription', method, ...(promo ? { promo_code: promo.code } : {}) },
+        { expectedCents: payCents, requireServerAmount: Boolean(promo) },
+      ); // redirects to Paystack
     } catch (e) {
       if (e instanceof FunctionError && e.code === 'invalid_promo') {
         // Switched off since it was applied: back to the full price, nothing charged.
         setPromo(null);
         setPromoMsg({ tone: 'error', text: INVALID_CODE });
         setError(`That code no longer works, so nothing was charged. Pro is ${listPrice} a month without it.`);
+      } else if (e instanceof FunctionError && e.code === 'price_changed') {
+        setError(`${e.message}`);
       } else {
         setError(errorMessage(e));
       }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { BookOpen, Compass, PenLine, PlayCircle, Users } from 'lucide-react';
+import { BookOpen, Compass, Headset, PenLine, PlayCircle, Users, WandSparkles } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { Chip } from '../../components/Chip/Chip';
@@ -60,6 +60,8 @@ export default function Courses() {
           <ListRow to="/career-compass" icon={Compass} label="Career Compass" detail="Quick answers about scholarships and universities" />
           <ListRow to="/mentors" icon={Users} label="Mentors" detail="Book a 1:1 with someone who has done it" />
           <ListRow to="/essay-review" icon={PenLine} label="AI Essay Reviewer" detail="Score and fix your personal statement" badge="Free" />
+          <ListRow to="/cv-builder" icon={WandSparkles} label="AI CV Builder" detail="An ATS-friendly CV for scholarships and jobs" badge="New" />
+          <ListRow to="/counsellor" icon={Headset} label="WhatsApp Counsellor" detail="A real person reviews your essay. First review free" />
         </motion.div>
 
         <section className="learn__courses" aria-labelledby="courses-h">

@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Building2, Landmark, MapPin, Search, ShieldQuestion } from 'lucide-react';
+import { ArrowRight, Building2, Landmark, MapPin, Search, ShieldCheck, ShieldQuestion, Sparkles } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { PageHeader } from '../../components/PageHeader/PageHeader';
 import { ListSkeleton } from '../../components/Skeleton/Skeleton';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Notice } from '../../components/Notice/Notice';
 import { Field, SelectField } from '../../components/Field/Field';
+import { Button } from '../../components/Button/Button';
+import { startCheckout } from '../../features/billing/paystack';
+import { FunctionError } from '../../lib/functions';
 import { fetchUniversities } from '../../features/universities/api';
 import { OwnershipBadge } from '../../features/universities/OwnershipBadge';
 import { UniLogo } from '../../features/universities/UniLogo';
@@ -33,38 +36,92 @@ const SECTION: Record<OwnershipGroup, { title: string; blurb: string; icon: type
   unverified: { title: 'Still being classified', blurb: 'We’re confirming from official sources whether these are public or private. You can still apply.', icon: ShieldQuestion },
 };
 
+/**
+ * "Pay the service fee" straight from the card: one MoMo/card payment of the university's
+ * form fee + our service fee (the label shows both, so the total is never a surprise).
+ */
+function ConciergePay({ u }: { u: University }) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const total = feeOf(u);
+  if (total <= 0) return null;
+  const pay = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await startCheckout({ type: 'application', university_id: u.id }, { expectedCents: total });
+    } catch (e) {
+      if (e instanceof FunctionError && e.code === 'form_pending' && typeof e.body.application_id === 'string') {
+        navigate(`/applications/${e.body.application_id}/complete`);
+        return;
+      }
+      setError(errorMessage(e));
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="uni-pay">
+      <Button block loading={busy} onClick={pay} aria-label={`Pay ${formatMoney(u.service_fee_cents, 'GHS')} service fee for ${u.name}, ${formatMoney(total, 'GHS')} in total`}>
+        <span className="uni-pay__label">
+          <span>Pay {formatMoney(u.service_fee_cents, 'GHS')} Service Fee</span>
+          {u.app_fee_cents > 0 && (
+            <span className="uni-pay__sub">
+              + {formatMoney(u.app_fee_cents, 'GHS')} university form · {formatMoney(total, 'GHS')} total
+            </span>
+          )}
+        </span>
+      </Button>
+      {error && <p className="uni-pay__error" role="alert">{error}</p>}
+    </div>
+  );
+}
+
 function UniCard({ u }: { u: University }) {
   const group = groupOf(u);
   const programmes = u.programmes ?? [];
   return (
-    <MotionLink to={`/apply-university/${u.slug}`} className="uni-card" variants={riseItem} whileHover={lift} whileTap={press} data-ownership={group}>
-      <UniLogo u={u} />
-      <span className="uni-card__text">
-        <span className="uni-card__name">{u.name}</span>
-        <span className="uni-card__where">
-          <MapPin aria-hidden="true" /> {u.city}, {u.country}
+    <motion.div className="uni-item" variants={riseItem}>
+      <MotionLink to={`/apply-university/${u.slug}`} className="uni-card" whileHover={lift} whileTap={press} data-ownership={group}>
+        <UniLogo u={u} />
+        <span className="uni-card__text">
+          <span className="uni-card__name">{u.name}</span>
+          <span className="uni-card__where">
+            <MapPin aria-hidden="true" /> {u.city}, {u.country}
+          </span>
+          <span className="uni-card__tags">
+            <OwnershipBadge u={u} />
+            {programmes.length > 0 && (
+              <span className="uni-card__progs">
+                {programmes.slice(0, 2).join(', ')}
+                {programmes.length > 2 ? ` +${programmes.length - 2} more` : ''}
+              </span>
+            )}
+          </span>
         </span>
-        <span className="uni-card__tags">
-          <OwnershipBadge u={u} />
-          {programmes.length > 0 && (
-            <span className="uni-card__progs">
-              {programmes.slice(0, 2).join(', ')}
-              {programmes.length > 2 ? ` +${programmes.length - 2} more` : ''}
-            </span>
-          )}
+        <span className="uni-card__foot">
+          <span className="uni-card__all-in">
+            {u.service_fee_cents > 0 ? `University fee + ${formatMoney(u.service_fee_cents, 'GHS')} service` : 'University fee, no service fee'}
+          </span>
+          <span className="uni-card__price">
+            <span className="uni-card__total">{formatMoney(feeOf(u), 'GHS')}</span>
+            <ArrowRight className="uni-card__go" aria-hidden="true" />
+          </span>
         </span>
-      </span>
-      <span className="uni-card__foot">
-        <span className="uni-card__all-in">
-          {u.service_fee_cents > 0 ? `University fee + ${formatMoney(u.service_fee_cents, 'GHS')} service` : 'University fee, no service fee'}
-        </span>
-        <span className="uni-card__price">
-          <span className="uni-card__total">{formatMoney(feeOf(u), 'GHS')}</span>
-          <ArrowRight className="uni-card__go" aria-hidden="true" />
-        </span>
-      </span>
-    </MotionLink>
+      </MotionLink>
+      <ConciergePay u={u} />
+    </motion.div>
   );
+}
+
+/** The service fee most universities charge (GH₵ 20 after migration 0024), for the banner. */
+function typicalServiceFee(unis: University[] | null): number {
+  const counts = new Map<number, number>();
+  for (const u of unis ?? []) if (u.service_fee_cents > 0) counts.set(u.service_fee_cents, (counts.get(u.service_fee_cents) ?? 0) + 1);
+  let best = 2000;
+  let n = 0;
+  for (const [fee, c] of counts) if (c > n) [best, n] = [fee, c];
+  return best;
 }
 
 export default function ApplyUniversity() {
@@ -108,6 +165,19 @@ export default function ApplyUniversity() {
           title="We'll handle your application"
           lede="Skip the bank queues. We buy the voucher and submit the forms for you."
         />
+        <motion.aside className="concierge-banner" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} aria-label="University Concierge">
+          <span className="concierge-banner__icon" aria-hidden="true">
+            <Sparkles />
+          </span>
+          <div>
+            <p className="concierge-banner__title">
+              Applying to university is stressful. For <span className="concierge-banner__fee">{formatMoney(typicalServiceFee(unis), 'GHS')}</span>, we will do it for you. No bank queues.
+            </p>
+            <p className="concierge-banner__sub">
+              <ShieldCheck aria-hidden="true" /> Pay the service fee and the university’s own form fee together, by MoMo or card. We buy the voucher and submit.
+            </p>
+          </div>
+        </motion.aside>
         <ol className="apply-steps" aria-label="How it works">
           <li><b>1</b> Pick a university and pay online: its fee + our service fee.</li>
           <li><b>2</b> Fill in one short form from your phone.</li>

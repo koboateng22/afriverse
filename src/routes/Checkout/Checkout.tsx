@@ -19,7 +19,22 @@ const NEXT: Record<VerifyResponse['kind'], { to: string; label: string; title: s
   subscription: { to: '/home', label: 'Back to your feed', title: 'Welcome to Pro', body: 'Your human counsellor on WhatsApp, CV and essay strategy sessions and priority support are unlocked, along with the Scholarship Matcher and full tracker.' },
   application: { to: '/applications', label: 'Complete your application', title: 'Payment received', body: 'Next, fill in the details the university needs.' },
   mentor: { to: '/mentors', label: 'Back to mentors', title: 'Session booked', body: 'Your session is confirmed. You will find it at the top of the Mentors page.' },
+  purchase: { to: '/profile', label: 'Back to your profile', title: 'Payment received', body: 'Thank you. Your purchase is ready.' },
 };
+
+/** One-time purchases go back to what was bought. */
+function nextFor(r: VerifyResponse) {
+  if (r.kind !== 'purchase') return NEXT[r.kind];
+  const product = r.metadata?.product;
+  if (product === 'cv_download') {
+    const cv = typeof r.metadata?.cv_id === 'string' ? `?cv=${encodeURIComponent(r.metadata.cv_id)}` : '';
+    return { to: `/cv-builder${cv}`, label: 'Download your CV', title: 'Your CV is unlocked', body: 'Download it as a PDF now, and again after any edits.' };
+  }
+  if (product === 'essay_review') {
+    return { to: '/counsellor', label: 'Send your essay', title: 'VIP Essay Review paid', body: 'Send your essay to the counsellor on WhatsApp. Mention your payment reference so they can find it.' };
+  }
+  return NEXT.purchase;
+}
 
 /** Paystack returns here (?ref= / ?reference=). We poll paystack-verify until the charge settles. */
 export default function Checkout() {
@@ -84,7 +99,7 @@ export default function Checkout() {
   }
 
   if (result?.status === 'success') {
-    const next = NEXT[result.kind];
+    const next = nextFor(result);
     return (
       <PageTransition bare label="Payment successful">
         <div className="container checkout" role="status">

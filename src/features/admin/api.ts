@@ -30,6 +30,8 @@ export type RevenueRow = {
   mentor_commission: number;
   mentor_payouts: number;
   net_revenue: number;
+  /** CV downloads and VIP essay reviews (migration 0024; absent before it). */
+  one_time_purchases?: number;
 };
 
 export type Overview = {

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
-import { Building2, CalendarDays, Compass, FileText, GraduationCap, House, LayoutDashboard, MessageCircle, PenLine, Sparkles, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, Compass, FileText, GraduationCap, Headset, House, LayoutDashboard, MessageCircle, PenLine, Sparkles, UserRound, Users, Wallet, WandSparkles, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../../features/auth/useAuth';
 import { usePlan } from '../../features/billing/PlanProvider';
 import { Logo } from '../Logo/Logo';
@@ -18,7 +18,7 @@ type NavItem = {
 export const STUDENT_NAV: NavItem[] = [
   // Home is the student's top matches; the full list (/discover) opens from it.
   { to: '/home', label: 'Home', icon: House, match: ['/home', '/discover', '/opportunity'] },
-  { to: '/courses', label: 'Learn', icon: GraduationCap, match: ['/courses', '/career-compass', '/mentors', '/essay-review'] },
+  { to: '/courses', label: 'Learn', icon: GraduationCap, match: ['/courses', '/career-compass', '/mentors', '/essay-review', '/cv-builder', '/counsellor'] },
   { to: '/profile', label: 'You', icon: UserRound, match: ['/profile', '/applications', '/apply-university', '/paywall', '/results', '/ambassador'] },
 ];
 
@@ -43,6 +43,8 @@ export const STUDENT_SECTIONS: NavSection[] = [
       { to: '/courses', label: 'Courses', icon: GraduationCap, match: ['/courses'] },
       { to: '/career-compass', label: 'AI Counsellor', icon: MessageCircle, match: ['/career-compass'] },
       { to: '/essay-review', label: 'Essay Reviewer', icon: PenLine, match: ['/essay-review'] },
+      { to: '/cv-builder', label: 'AI CV Builder', icon: WandSparkles, match: ['/cv-builder'] },
+      { to: '/counsellor', label: 'WhatsApp Counsellor', icon: Headset, match: ['/counsellor'] },
       { to: '/mentors', label: 'Mentors', icon: Users, match: ['/mentors'] },
     ],
   },

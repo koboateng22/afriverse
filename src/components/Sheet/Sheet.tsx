@@ -16,6 +16,11 @@ export type SheetProps = {
   variant?: 'bottom' | 'side';
   /** Small line under the title. */
   description?: string;
+  /**
+   * 'full' = full screen on phones (a large centred dialog on wide screens). No drag-to-
+   * dismiss, so scrolling a long sheet never fights a drag; close with ✕ or Escape.
+   */
+  size?: 'default' | 'full';
 };
 
 // Closing is a plain, fast fade: opacity only, so it stays on the compositor.
@@ -32,8 +37,9 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * (see Sheet.css): blur and decorative animations stop and taps reach the
  * page underneath, so closing never makes the page wait.
  */
-export function Sheet({ open, onClose, title, hideTitle, children, footer, variant = 'bottom', description }: SheetProps) {
+export function Sheet({ open, onClose, title, hideTitle, children, footer, variant = 'bottom', description, size = 'default' }: SheetProps) {
   const side = variant === 'side';
+  const full = !side && size === 'full';
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -108,6 +114,7 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
             tabIndex={-1}
             className="sheet"
             data-variant={variant}
+            data-size={full ? 'full' : undefined}
             {...(side
               ? {
                   initial: { x: '100%' },
@@ -120,13 +127,17 @@ export function Sheet({ open, onClose, title, hideTitle, children, footer, varia
                   animate: { opacity: 1, scale: 1, y: 0 },
                   exit: { opacity: 0, transition: { duration: EXIT_S, ease: 'linear' } },
                   transition: { type: 'spring', stiffness: 380, damping: 30 },
-                  drag: 'y' as const,
-                  dragConstraints: { top: 0, bottom: 0 },
-                  dragElastic: { top: 0, bottom: 0.6 },
-                  onDragEnd,
+                  ...(full
+                    ? {}
+                    : {
+                        drag: 'y' as const,
+                        dragConstraints: { top: 0, bottom: 0 },
+                        dragElastic: { top: 0, bottom: 0.6 },
+                        onDragEnd,
+                      }),
                 })}
           >
-            {!side && <div className="sheet__grabber" aria-hidden="true" />}
+            {!side && !full && <div className="sheet__grabber" aria-hidden="true" />}
             <header className="sheet__header">
               <div className="sheet__heading">
                 <h2 id={titleId} className={hideTitle ? 'visually-hidden' : 'sheet__title'}>

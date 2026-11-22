@@ -9,7 +9,7 @@ import { paystackRequest, paystackSecret } from '../_shared/paystack.ts';
 import { oneOf, optStr, str, uuid } from '../_shared/validate.ts';
 
 type Priced = {
-  kind: 'subscription' | 'application' | 'mentor';
+  kind: 'subscription' | 'application' | 'mentor' | 'purchase';
   amount: number;
   relatedId: string;
   channels: Array<'card' | 'mobile_money'>;
@@ -40,13 +40,56 @@ async function must<T>(p: PromiseLike<{ data: T; error: unknown }>): Promise<T> 
   return data;
 }
 
+/**
+ * Every Paystack amount is a whole number of pesewas: GH₵ 3.50 is 350, never 3.5.
+ * Refuses anything else before a payment row or a Paystack call is made.
+ */
+export function assertPesewas(amount: unknown): asserts amount is number {
+  if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount <= 0) {
+    throw new HttpError(500, 'bad_amount', `Refusing to charge a non-integer amount (${String(amount)} pesewas)`);
+  }
+}
+
+/**
+ * The price the student was shown, in pesewas, when the app sends it. It never sets the
+ * price (the server prices everything from the database); it only stops a checkout whose
+ * charge would differ from what was on screen, before anything is written or charged.
+ */
+export function checkExpected(body: Record<string, unknown>, amount: number): void {
+  const raw = body.expected_amount_cents;
+  if (raw === undefined || raw === null) return;
+  if (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw <= 0) {
+    throw new HttpError(400, 'bad_amount', 'expected_amount_cents must be a whole number of pesewas (GH₵ 3.50 = 350)');
+  }
+  if (raw !== amount) {
+    throw new HttpError(409, 'price_changed', `The price is GH₵ ${(amount / 100).toFixed(2)}, not the GH₵ ${(raw / 100).toFixed(2)} shown. Nothing was charged; refresh and try again.`, {
+      amount_cents: amount,
+    });
+  }
+}
+
+/** What Paystack will actually charge for a plan (it ignores `amount` when a plan is given). */
+async function paystackPlanAmount(code: string): Promise<number | null> {
+  try {
+    const plan = await paystackRequest<{ amount: number; currency: string }>(`/plan/${encodeURIComponent(code)}`, { method: 'GET' });
+    return plan.currency === 'GHS' ? plan.amount : null;
+  } catch {
+    return null; // unknown or deleted plan: treat as unusable
+  }
+}
+
 function assertGhs(currency: string) {
   if (currency !== 'GHS') throw new HttpError(409, 'currency_not_supported', 'All Afriversity payments are in GHS. Ask an admin to update this price.');
 }
 
 /** The Paystack plan for card auto-renew; created on first use and whenever the price changes. */
 async function ensurePaystackPlan(svc: SupabaseClient, plan: { amount_cents: number; paystack_plan_code: string | null }): Promise<string> {
-  if (plan.paystack_plan_code) return plan.paystack_plan_code;
+  if (plan.paystack_plan_code) {
+    // Paystack charges the plan's own amount, so it must be exactly the price on screen.
+    if ((await paystackPlanAmount(plan.paystack_plan_code)) === plan.amount_cents) return plan.paystack_plan_code;
+    console.warn(`paystack-init: plan ${plan.paystack_plan_code} is not ${plan.amount_cents} pesewas at Paystack; creating a new one`);
+    await must(svc.from('plans').update({ paystack_plan_code: null }).eq('code', 'pro').eq('paystack_plan_code', plan.paystack_plan_code));
+  }
   const created = await paystackRequest<{ plan_code: string }>('/plan', {
     method: 'POST',
     body: { name: `Afriversity Pro — GHS ${plan.amount_cents / 100}/month`, interval: 'monthly', amount: plan.amount_cents, currency: 'GHS' },
@@ -126,11 +169,17 @@ async function activePromo(svc: SupabaseClient, raw: unknown): Promise<Promo | n
  * at the discounted price.
  */
 async function ensurePromoPlan(svc: SupabaseClient, promo: Promo, amount: number): Promise<string> {
-  if (promo.paystack_plan_code && promo.paystack_plan_amount === amount) return promo.paystack_plan_code;
+  if (promo.paystack_plan_code && promo.paystack_plan_amount === amount && (await paystackPlanAmount(promo.paystack_plan_code)) === amount) {
+    return promo.paystack_plan_code;
+  }
   const created = await paystackRequest<{ plan_code: string }>('/plan', {
     method: 'POST',
-    body: { name: `Afriversity Pro — GHS ${amount / 100}/month (${promo.code})`, interval: 'monthly', amount, currency: 'GHS' },
+    body: { name: `Afriversity Pro — GHS ${(amount / 100).toFixed(2)}/month (${promo.code})`, interval: 'monthly', amount, currency: 'GHS' },
   });
+  // Belt and braces: the plan Paystack made must charge exactly `amount`.
+  if ((await paystackPlanAmount(created.plan_code)) !== amount) {
+    throw new HttpError(502, 'plan_amount_mismatch', 'Paystack did not set up the discounted price correctly. Nothing was charged; try Mobile Money or try again later.');
+  }
   await must(svc.from('promo_codes').update({ paystack_plan_code: created.plan_code, paystack_plan_amount: amount }).eq('id', promo.id));
   return created.plan_code;
 }
@@ -151,6 +200,8 @@ async function priceSubscription(svc: SupabaseClient, userId: string, body: Reco
   // Price = the plan row, minus the promo code's percentage when a valid code is sent.
   const promo = await activePromo(svc, body.promo_code);
   const amount = promo ? discounted(plan.amount_cents, promo.discount_percentage) : plan.amount_cents;
+  assertPesewas(amount);
+  checkExpected(body, amount); // before anything is written
 
   const planCode = method === 'card' ? (promo ? await ensurePromoPlan(svc, promo, amount) : await ensurePaystackPlan(svc, plan)) : undefined;
   const sub = await must(
@@ -177,6 +228,7 @@ async function priceSubscription(svc: SupabaseClient, userId: string, body: Reco
     platformFee: amount,
     payeeShare: 0,
     extraMeta: {
+      product: 'pro_subscription',
       plan: 'pro',
       billing: method,
       ...(promo ? { promo_code: promo.code, discount_percentage: promo.discount_percentage, list_price_cents: plan.amount_cents } : {}),
@@ -209,6 +261,7 @@ async function priceApplication(svc: SupabaseClient, userId: string, body: Recor
   const fee = uni.app_fee_cents + uni.service_fee_cents;
   if (fee <= 0) throw new HttpError(409, 'fee_not_set', 'This university has no application fee set yet');
 
+  checkExpected(body, fee);
   // Fee + form snapshot taken now — later admin edits never change this row.
   const app = await must(
     svc
@@ -232,7 +285,7 @@ async function priceApplication(svc: SupabaseClient, userId: string, body: Recor
     channels: ['mobile_money', 'card'],
     platformFee: fee,
     payeeShare: 0,
-    extraMeta: { university_id: uni.id, university: uni.name },
+    extraMeta: { product: 'concierge_application', university_id: uni.id, university: uni.name },
   };
 }
 
@@ -268,6 +321,7 @@ async function priceMentor(svc: SupabaseClient, userId: string, body: Record<str
     .in('status', ['confirmed', 'completed']);
   if ((count ?? 0) > 0) throw new HttpError(409, 'slot_taken', 'That time is already booked — pick another');
 
+  checkExpected(body, mentor.rate_cents);
   const session = await must(
     svc
       .from('mentor_sessions')
@@ -293,7 +347,51 @@ async function priceMentor(svc: SupabaseClient, userId: string, body: Record<str
     subaccount: mentor.subaccount_code,
     platformFee,
     payeeShare: mentor.rate_cents - platformFee,
-    extraMeta: { mentor_id: mentorId, mentor: mentor.display_name, scheduled_at: scheduled.toISOString() },
+    extraMeta: { product: 'mentor_session', mentor_id: mentorId, mentor: mentor.display_name, scheduled_at: scheduled.toISOString() },
+  };
+}
+
+type Product = 'cv_download' | 'essay_review';
+
+/**
+ * Pay-as-you-go: one CV download (GH₵ 10) or one VIP human essay review (GH₵ 15), priced
+ * from one_time_products. Pro already includes both, so Pro students are never charged.
+ */
+async function pricePurchase(svc: SupabaseClient, userId: string, body: Record<string, unknown>): Promise<Priced> {
+  const product = oneOf(body.product, 'product', ['cv_download', 'essay_review'] as const) as Product;
+  const { data: item, error } = await svc.from('one_time_products').select('code, name, amount_cents, currency, active').eq('code', product).maybeSingle();
+  if (error) throw error;
+  if (!item || !item.active) throw new HttpError(404, 'product_unavailable', 'This is not on sale right now');
+  assertGhs(item.currency);
+
+  const { data: plan } = await svc.rpc('active_plan', { p_user: userId });
+  const isPro = plan === 'pro';
+  let cvId: string | null = null;
+  if (product === 'cv_download') {
+    cvId = uuid(body.cv_id, 'cv_id');
+    const { data: cv } = await svc.from('cvs').select('id').eq('id', cvId).eq('user_id', userId).maybeSingle();
+    if (!cv) throw new HttpError(404, 'cv_not_found', 'That CV was not found. Generate it again, then download.');
+    if (isPro) throw new HttpError(409, 'included_in_pro', 'Pro already includes CV downloads. Nothing was charged.');
+    const { count } = await svc.from('purchases').select('id', { count: 'exact', head: true }).eq('cv_id', cvId).eq('product', 'cv_download').eq('status', 'paid');
+    if ((count ?? 0) > 0) throw new HttpError(409, 'already_unlocked', 'This CV is already unlocked. Nothing was charged.');
+  } else if (isPro) {
+    throw new HttpError(409, 'included_in_pro', 'Pro already includes unlimited human reviews. Nothing was charged.');
+  }
+
+  const amount = item.amount_cents as number;
+  assertPesewas(amount);
+  checkExpected(body, amount);
+  const row = await must(
+    svc.from('purchases').insert({ user_id: userId, product, status: 'pending', currency: 'GHS', amount_cents: amount, cv_id: cvId }).select('id').single(),
+  );
+  return {
+    kind: 'purchase',
+    amount,
+    relatedId: (row as { id: string }).id,
+    channels: ['mobile_money', 'card'],
+    platformFee: amount,
+    payeeShare: 0,
+    extraMeta: { product, ...(cvId ? { cv_id: cvId } : {}) },
   };
 }
 
@@ -304,7 +402,7 @@ export const handler = handle(async (req) => {
   if (!isStudent(caller.role)) throw new HttpError(403, 'students_only', 'Only student accounts can make purchases');
 
   const body = await readJson(req);
-  const type = oneOf(body.type, 'type', ['subscription', 'application', 'mentor'] as const);
+  const type = oneOf(body.type, 'type', ['subscription', 'application', 'mentor', 'purchase'] as const);
   const base = callbackBase(req);
 
   const priced =
@@ -312,8 +410,11 @@ export const handler = handle(async (req) => {
       ? await priceSubscription(svc, caller.user.id, body)
       : type === 'application'
         ? await priceApplication(svc, caller.user.id, body)
-        : await priceMentor(svc, caller.user.id, body);
+        : type === 'purchase'
+          ? await pricePurchase(svc, caller.user.id, body)
+          : await priceMentor(svc, caller.user.id, body);
 
+  assertPesewas(priced.amount);
   const reference = `afv_${type.slice(0, 3)}_${crypto.randomUUID().replace(/-/g, '')}`;
   const payment = await must(
     svc
@@ -334,7 +435,7 @@ export const handler = handle(async (req) => {
       .single(),
   );
   const paymentId = (payment as { id: string }).id;
-  const table = priced.kind === 'application' ? 'applications' : priced.kind === 'mentor' ? 'mentor_sessions' : 'subscriptions';
+  const table = priced.kind === 'application' ? 'applications' : priced.kind === 'mentor' ? 'mentor_sessions' : priced.kind === 'purchase' ? 'purchases' : 'subscriptions';
   await must(svc.from(table).update({ payment_ref: reference }).eq('id', priced.relatedId));
 
   // Phone-only accounts have no email; Paystack requires one for the receipt.
@@ -364,7 +465,8 @@ export const handler = handle(async (req) => {
         },
       },
     });
-    return json({ authorization_url: data.authorization_url, reference: data.reference });
+    // amount_cents lets the app confirm the charge matches the price it showed before redirecting.
+    return json({ authorization_url: data.authorization_url, reference: data.reference, amount_cents: priced.amount, currency: 'GHS' });
   } catch (err) {
     // Leave nothing dangling: the payment and the row it would pay for are marked failed.
     const reason = err instanceof Error ? err.message : 'initialize_failed';
@@ -372,6 +474,7 @@ export const handler = handle(async (req) => {
     if (priced.kind === 'subscription') await svc.from('subscriptions').update({ status: 'failed' }).eq('id', priced.relatedId);
     if (priced.kind === 'application') await svc.from('applications').update({ status: 'Failed', status_note: reason }).eq('id', priced.relatedId);
     if (priced.kind === 'mentor') await svc.from('mentor_sessions').update({ status: 'failed' }).eq('id', priced.relatedId);
+    if (priced.kind === 'purchase') await svc.from('purchases').update({ status: 'failed' }).eq('id', priced.relatedId);
     throw err;
   }
 });

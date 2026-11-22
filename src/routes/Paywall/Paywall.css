@@ -24,4 +24,33 @@
   @media (min-width: 768px) {
     .paywall { align-content: center; min-block-size: calc(100svh - var(--space-6) - var(--space-8)); }
   }
+
+  /* Pay-as-you-go: the one-time options under the Pro offer. */
+  .payg { display: grid; gap: var(--space-3); margin-block-start: var(--space-4); }
+  .payg__title { font-size: var(--step-1); }
+  .payg__lede { color: var(--text-2); font-size: var(--step--1); margin-block-start: calc(-1 * var(--space-2)); }
+  .payg__list { display: grid; gap: var(--space-2); }
+  .payg__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 64px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    color: var(--text);
+    transition: border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+    &:hover { border-color: var(--brand-line); background: var(--glass-fill-strong); }
+    &:hover .payg__go { transform: translateX(2px); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+  .payg__icon { inline-size: 22px; block-size: 22px; color: var(--brand-bright); }
+  .payg__text { display: grid; gap: 2px; min-inline-size: 0; }
+  .payg__name { font-weight: 700; }
+  .payg__detail { font-size: var(--step--2); color: var(--text-3); }
+  .payg__price { font-family: var(--font-display); font-weight: 800; color: var(--text); white-space: nowrap; }
+  .payg__go { inline-size: 18px; block-size: 18px; color: var(--text-3); transition: transform var(--dur-fast) var(--ease-out); }
 }

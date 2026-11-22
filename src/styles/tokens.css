@@ -38,6 +38,11 @@
        a cross in a circle, linked rings) in cream at 8% opacity, tiled behind everything. */
     --pattern-adinkra: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23F7F3EA' stroke-opacity='0.08' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='40' cy='40' r='15'/%3E%3Ccircle cx='40' cy='40' r='9.5'/%3E%3Ccircle cx='40' cy='40' r='4'/%3E%3Cpath d='M120 24 136 40 120 56 104 40Z'/%3E%3Cpath d='M120 32 128 40 120 48 112 40Z'/%3E%3Ccircle cx='40' cy='120' r='14'/%3E%3Cpath d='M40 106v28M26 120h28'/%3E%3Ccircle cx='113' cy='113' r='6'/%3E%3Ccircle cx='127' cy='113' r='6'/%3E%3Ccircle cx='113' cy='127' r='6'/%3E%3Ccircle cx='127' cy='127' r='6'/%3E%3Cpath d='M72 40h16M72 120h16M40 72v16M120 72v16'/%3E%3C/g%3E%3Cg fill='%23F7F3EA' fill-opacity='0.08'%3E%3Ccircle cx='120' cy='40' r='1.6'/%3E%3Ccircle cx='80' cy='80' r='2'/%3E%3C/g%3E%3C/svg%3E");
     --pattern-size: 160px;
+    /* Printed CV (PDF): black on white paper, whatever the screen theme. */
+    --print-paper: #FFFFFF;
+    --print-ink: #111312;
+    --print-muted: #4A4F4D;
+    --print-rule: #C9CDCB;
     /* AI chat bubble: deep emerald glass, rgba(14, 124, 90, 0.1), with a 1px emerald rim. */
     --ai-bubble-fill: color-mix(in srgb, var(--emerald) 10%, transparent);
     --ai-bubble-edge: var(--emerald);

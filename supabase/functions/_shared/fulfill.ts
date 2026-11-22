@@ -10,7 +10,7 @@ const CARD_GRACE_MS = 3 * 86_400_000;
 type PaymentRow = {
   id: string;
   user_id: string;
-  kind: 'subscription' | 'application' | 'mentor';
+  kind: 'subscription' | 'application' | 'mentor' | 'purchase';
   reference: string;
   status: 'pending' | 'success' | 'failed';
   currency: string;
@@ -78,6 +78,8 @@ export async function failCharge(svc: SupabaseClient, reference: string, reason:
       await must(svc.from('subscriptions').update({ status: 'failed' }).eq('id', payment.related_id).eq('status', 'pending'));
     } else if (payment.kind === 'application') {
       await must(svc.from('applications').update({ status: 'Failed', status_note: reason }).eq('id', payment.related_id).eq('status', 'Pending Payment'));
+    } else if (payment.kind === 'purchase') {
+      await must(svc.from('purchases').update({ status: 'failed' }).eq('id', payment.related_id).eq('status', 'pending'));
     } else {
       await must(svc.from('mentor_sessions').update({ status: 'failed' }).eq('id', payment.related_id).eq('status', 'pending'));
     }
@@ -162,6 +164,9 @@ export async function fulfillCharge(svc: SupabaseClient, tx: PaystackTransaction
   } else if (payment.kind === 'application' && payment.related_id) {
     // Paid → the student now completes the university's form.
     await must(svc.from('applications').update({ status: 'Paid', payment_ref: tx.reference }).eq('id', payment.related_id));
+  } else if (payment.kind === 'purchase' && payment.related_id) {
+    // One-time product (CV download, VIP essay review): paid = usable.
+    await must(svc.from('purchases').update({ status: 'paid', paid_at: paidAt, payment_ref: tx.reference }).eq('id', payment.related_id).eq('status', 'pending'));
   } else if (payment.kind === 'mentor' && payment.related_id) {
     const { error } = await svc.from('mentor_sessions').update({ status: 'confirmed', payment_ref: tx.reference }).eq('id', payment.related_id);
     if (error) {

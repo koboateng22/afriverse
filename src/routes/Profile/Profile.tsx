@@ -1,9 +1,8 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Award, Building2, Calculator, Check, Compass, FileText, Flag, Gift, Headset, LogOut, Sparkles, Target, type LucideIcon } from 'lucide-react';
-import { usePaywall } from '../../features/billing/PaywallModal';
-import { fetchCounselorContact, whatsappLink } from '../../features/billing/api';
-import { Notice } from '../../components/Notice/Notice';
+import { Award, Building2, Calculator, Check, Compass, FileText, Flag, Gift, Headset, LogOut, Receipt, Sparkles, Target, WandSparkles, type LucideIcon } from 'lucide-react';
+import { fetchCounselorStatus, fetchMyPurchases, type Purchase } from '../../features/billing/api';
+import { formatMoney } from '../../lib/money';
 import { ListRow } from '../../components/ListRow/ListRow';
 import { usePlan } from '../../features/billing/PlanProvider';
 import { formatDay } from '../../lib/dates';
@@ -48,24 +47,14 @@ const toDraft = (p: ProfileRow): Draft => ({
 export default function Profile() {
   const { profile, setProfile, signOut, session } = useAuth();
   const { plan, isPro, current } = usePlan();
-  const { openPaywall } = usePaywall();
-  const [counselError, setCounselError] = useState<string | null>(null);
-
-  // Human counsellor (Pro): the number comes from a Pro-gated RPC, never the bundle.
-  const talkToCounselor = async () => {
-    setCounselError(null);
-    if (!isPro) {
-      openPaywall('Pro includes a real Afriversity counsellor on WhatsApp for application questions.');
-      return;
-    }
-    try {
-      const c = await fetchCounselorContact();
-      if (!c.whatsapp) throw new Error('Counsellor chat is being set up — please try again later.');
-      window.open(whatsappLink(c.whatsapp, `Hi, I'm ${p.full_name ?? 'an Afriversity Pro student'} and I'd like to speak to a counsellor.`), '_blank', 'noopener');
-    } catch (e) {
-      setCounselError(errorMessage(e));
-    }
-  };
+  // One-time purchases (CV unlocks, VIP reviews), listed under "Your purchases".
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  // null = unknown (e.g. still loading): the row then shows the neutral wording.
+  const [freeReviewUsed, setFreeReviewUsed] = useState<boolean | null>(null);
+  useEffect(() => {
+    void fetchMyPurchases().then(setPurchases).catch(() => undefined);
+    void fetchCounselorStatus().then((s) => setFreeReviewUsed(Boolean(s.free_review_claimed_at))).catch(() => undefined);
+  }, []);
   // ProtectedRoute guarantees a profile here.
   const p = profile as ProfileRow;
   const { results } = useMyResults(p.id);
@@ -134,7 +123,22 @@ export default function Profile() {
               label={`${planLabel(plan)} plan`}
               detail={plan && current?.expires_at ? `Active until ${formatDay(current.expires_at.slice(0, 10))}` : 'GH₵ 35 a month — human support'}
             />
-            <ListRow onClick={() => void talkToCounselor()} icon={Headset} label="Talk to a counsellor" detail={isPro ? 'Chat with a real person on WhatsApp' : 'Human counsellor access with Pro'} badge={isPro ? undefined : 'Pro'} />
+            <ListRow to="/cv-builder" icon={WandSparkles} label="AI CV Builder" detail="An ATS-friendly CV for scholarships and jobs, in seconds" badge="New" />
+            <ListRow
+              to="/counsellor"
+              icon={Headset}
+              label="WhatsApp Counsellor"
+              detail={
+                isPro
+                  ? 'Unlimited human reviews on WhatsApp'
+                  : freeReviewUsed === false
+                    ? 'Claim your 1 free human essay review'
+                    : freeReviewUsed
+                      ? 'VIP Essay Review, or unlimited with Pro'
+                      : 'Real people review your essay on WhatsApp'
+              }
+              badge={!isPro && freeReviewUsed === false ? 'Free' : undefined}
+            />
             <ListRow
               to="/results"
               icon={Calculator}
@@ -147,8 +151,24 @@ export default function Profile() {
               <ListRow to="/ambassador-apply" icon={Gift} label="Become a Campus Ambassador" detail="Earn GH₵ 5 for every friend who goes Pro" />
             )}
           </div>
-          {counselError && <Notice tone="error">{counselError}</Notice>}
         </motion.section>
+
+        {purchases.length > 0 && (
+          <motion.section className="profile__section" variants={riseItem} aria-labelledby="buys-h">
+            <h2 id="buys-h" className="profile__h2">Your purchases</h2>
+            <div className="profile__links">
+              {purchases.map((b) => (
+                <ListRow
+                  key={b.id}
+                  to={b.product === 'cv_download' ? (b.cv_id ? `/cv-builder?cv=${b.cv_id}` : '/cv-builder') : '/counsellor'}
+                  icon={Receipt}
+                  label={b.product === 'cv_download' ? 'CV download unlocked' : 'VIP Essay Review'}
+                  detail={`${formatMoney(b.amount_cents, b.currency)} · ${formatDay((b.paid_at ?? b.created_at).slice(0, 10))}${b.payment_ref ? ` · ${b.payment_ref}` : ''}`}
+                />
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         <motion.section className="profile__section" variants={riseItem} aria-labelledby="badges-h">
           <h2 id="badges-h" className="profile__h2">Badges</h2>

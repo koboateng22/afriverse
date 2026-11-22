@@ -1,0 +1,57 @@
+@layer components {
+  .counsellor { display: grid; gap: var(--space-5); }
+  .counsellor__stack { display: grid; gap: var(--space-4); }
+
+  .counsel-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-5) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+    --tone: var(--emerald);
+    &[data-tone='gift'] {
+      --tone: var(--brand-bright);
+      background:
+        radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--emerald) 22%, transparent), transparent 60%),
+        var(--glass-fill);
+      border-color: var(--brand-line);
+      box-shadow: var(--glass-inset), 0 22px 48px -28px color-mix(in oklab, var(--emerald) 85%, transparent);
+    }
+    &[data-tone='pro'], &[data-tone='used'] {
+      --tone: var(--premium);
+      background:
+        radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 60%),
+        var(--glass-fill);
+      border-color: color-mix(in oklab, var(--gold) 35%, transparent);
+    }
+  }
+  .counsel-card__icon {
+    display: grid;
+    place-items: center;
+    inline-size: 52px;
+    block-size: 52px;
+    border-radius: 50%;
+    color: var(--tone);
+    background: color-mix(in oklab, var(--tone) 16%, transparent);
+    border: 1px solid color-mix(in oklab, var(--tone) 40%, transparent);
+    box-shadow: 0 0 28px -8px color-mix(in oklab, var(--tone) 70%, transparent);
+    & svg { inline-size: 24px; block-size: 24px; }
+  }
+  .counsel-card__eyebrow {
+    font-size: var(--step--2);
+    font-weight: 800;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--tone);
+  }
+  .counsel-card__title { font-size: var(--step-2); line-height: var(--leading-snug); text-wrap: balance; }
+  .counsel-card__text { color: var(--text-2); }
+  .counsel-card__fine { color: var(--text-3); font-size: var(--step--2); text-align: center; }
+  .counsel-card__refs { display: flex; flex-wrap: wrap; gap: var(--space-2); & code { font-size: var(--step--2); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--glass-wash); color: var(--text-2); } }
+  /* The "used" button carries a full sentence: let it wrap. */
+  .counsel-card[data-tone='used'] .btn { white-space: normal; text-align: center; block-size: auto; min-block-size: 52px; padding-block: var(--space-3); line-height: 1.35; }
+
+  .counsellor__hours { display: flex; align-items: center; gap: var(--space-2); color: var(--text-3); font-size: var(--step--1); & svg { inline-size: 16px; block-size: 16px; } }
+}

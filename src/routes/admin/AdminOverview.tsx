@@ -83,6 +83,7 @@ export default function AdminOverview() {
                       <th scope="col">Pro subscriptions</th>
                       <th scope="col">Application fees</th>
                       <th scope="col">Mentor commission (25%)</th>
+                      <th scope="col">Pay-as-you-go</th>
                       <th scope="col">Afriversity net</th>
                       <th scope="col">Mentor payouts (75%)</th>
                     </tr>
@@ -94,6 +95,7 @@ export default function AdminOverview() {
                         <td>{formatMoney(r.subscriptions_revenue, r.currency)}</td>
                         <td>{formatMoney(r.application_fees_collected, r.currency)}</td>
                         <td>{formatMoney(r.mentor_commission, r.currency)}</td>
+                        <td>{formatMoney(r.one_time_purchases ?? 0, r.currency)}</td>
                         <td className="revenue-table__net">
                           <CountUp value={r.net_revenue} format={(n) => formatMoney(Math.round(n), r.currency)} />
                         </td>

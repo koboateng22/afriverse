@@ -1,0 +1,172 @@
+/* AI CV Builder: form cards, the on-screen CV (dark premium type), and the print sheet. */
+@layer components {
+  .cvb { display: grid; gap: var(--space-5); }
+  .cvb__loading { display: grid; }
+
+  .cvb__form { display: grid; gap: var(--space-4); }
+  @media (min-width: 1024px) {
+    .cvb__form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .cvb__card--target, .cvb__submit { grid-column: 1 / -1; }
+  }
+  .cvb__card {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-inset);
+  }
+  .cvb__card--target {
+    background:
+      radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--emerald) 16%, transparent), transparent 60%),
+      var(--glass-fill);
+    border-color: var(--brand-line);
+  }
+  .cvb__h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--step-1);
+    & svg { inline-size: 20px; block-size: 20px; color: var(--brand-bright); }
+  }
+  .cvb__hint { color: var(--text-2); font-size: var(--step--1); margin-block-start: calc(-1 * var(--space-2)); }
+  .cvb__grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+
+  .cvb__ideas { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .cvb__idea {
+    min-block-size: 36px;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--text-2);
+    background: var(--glass-wash);
+    border: 1px solid var(--glass-edge);
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+    &:hover { color: var(--text); background: var(--glass-wash-hover); }
+    &[data-on] { color: var(--text); background: var(--brand-soft); border-color: var(--brand-line); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  }
+
+  /* One school / one job: a soft inset block with a remove button in its corner. */
+  .cvb__row {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    padding-inline-end: var(--space-8);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--cream) 3%, transparent);
+    border: 1px solid var(--line);
+  }
+  .cvb__remove {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    display: grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    border-radius: 50%;
+    color: var(--text-3);
+    &:hover { color: var(--text); background: var(--glass-wash-hover); }
+    &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    & svg { inline-size: 18px; block-size: 18px; }
+  }
+
+  .cvb__submit { display: grid; gap: var(--space-2); }
+  .cvb__fine { color: var(--text-3); font-size: var(--step--2); text-align: center; }
+
+  .cvb__result { display: grid; gap: var(--space-4); }
+  .cvb__toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  @media (max-width: 599px) { .cvb__toolbar > :first-child { flex: 1 1 100%; } }
+  .cvb__locked-note {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    color: var(--text-2);
+    font-size: var(--step--1);
+    & svg { flex: none; inline-size: 16px; block-size: 16px; color: var(--premium); }
+  }
+  .cvb__result .field__input { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--step--1); line-height: 1.55; }
+
+  /* The CV on screen: a dark "page" with display headings and emerald section rules. */
+  .cv-doc {
+    padding: clamp(var(--space-5), 4vw, var(--space-8));
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(120% 60% at 0% 0%, color-mix(in oklab, var(--emerald) 10%, transparent), transparent 55%),
+      var(--glass-fill-strong);
+    border: 1px solid var(--glass-edge-strong);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    color: var(--text-2);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    max-inline-size: 860px;
+    & h1 { font-family: var(--font-display); font-size: var(--step-3); color: var(--text); line-height: 1.15; letter-spacing: -0.01em; }
+    & h1 + p { color: var(--text-2); margin-block-start: var(--space-2); font-size: var(--step--1); }
+    & h2 {
+      margin-block: var(--space-6) var(--space-3);
+      padding-block-end: var(--space-2);
+      font-size: var(--step--1);
+      font-weight: 800;
+      letter-spacing: var(--tracking-caps);
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      border-block-end: 1px solid var(--brand-line);
+    }
+    & h3 { margin-block-start: var(--space-4); font-size: var(--step-0); color: var(--text); }
+    & p { margin-block-start: var(--space-1); }
+    & em { color: var(--text-3); font-style: italic; }
+    & strong { color: var(--text); }
+    & ul, & ol { margin-block-start: var(--space-2); padding-inline-start: 1.2em; display: grid; gap: var(--space-1); }
+    & ul { list-style: disc; }
+    & ol { list-style: decimal; }
+    & li::marker { color: var(--brand-bright); }
+    & hr { border: 0; border-block-start: 1px solid var(--line); margin-block: var(--space-4); }
+  }
+  .cv-doc__role {
+    display: inline-flex;
+    margin-block-end: var(--space-4) !important;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--brand-soft);
+    color: var(--brand-bright) !important;
+    font-size: var(--step--2);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+  .cv-doc--live { margin-block-start: var(--space-4); }
+
+  /* The print copy is invisible on screen. */
+  .cv-print-root { display: none; }
+}
+
+/* window.print(): only the CV, black on white A4 — a clean PDF via "Save as PDF". */
+@media print {
+  @page { size: A4; margin: 16mm 18mm; }
+  html, body { background: var(--print-paper) !important; }
+  body > *:not(.cv-print-root) { display: none !important; }
+  .cv-print-root { display: block !important; color: var(--print-ink); font-family: Georgia, 'Times New Roman', serif; font-size: 10.5pt; line-height: 1.45; }
+  .cv-print h1 { font-family: Arial, Helvetica, sans-serif; font-size: 20pt; margin: 0 0 2pt; color: var(--print-ink); }
+  .cv-print h1 + p { color: var(--print-muted); margin: 0 0 8pt; }
+  .cv-print h2 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 12pt 0 4pt;
+    padding-bottom: 2pt;
+    border-bottom: 1px solid var(--print-rule);
+    break-after: avoid;
+  }
+  .cv-print h3 { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; margin: 8pt 0 0; break-after: avoid; }
+  .cv-print p { margin: 2pt 0; }
+  .cv-print em { color: var(--print-muted); }
+  .cv-print ul, .cv-print ol { margin: 3pt 0 0; padding-left: 14pt; }
+  .cv-print li { margin: 1pt 0; break-inside: avoid; }
+  .cv-print hr { border: 0; border-top: 1px solid var(--print-rule); }
+  .cv-print-locked { font-family: Arial, Helvetica, sans-serif; font-size: 14pt; color: var(--print-ink); }
+}

@@ -11,4 +11,81 @@
     font-size: var(--step--1);
     & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--brand-bright); margin-block-start: 2px; }
   }
+
+  /* "Join 200+ students…": a quiet trust line at the very top. */
+  .social-proof {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--brand-soft);
+    border: 1px solid var(--brand-line);
+    color: var(--text);
+    font-size: var(--step--1);
+    & svg { flex: none; inline-size: 18px; block-size: 18px; color: var(--brand-bright); }
+    & strong { color: var(--brand-bright); }
+  }
+
+  /* The headline that frames Pro against paying per item. */
+  .value-stack {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    line-height: var(--leading-snug);
+    color: var(--text);
+    text-wrap: balance;
+    & strong { color: var(--text); }
+  }
+  .value-stack__price { color: var(--premium) !important; white-space: nowrap; }
+
+  /* One-time unlock: emerald glass card with its own CTA. */
+  .once-offer {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--emerald) 18%, transparent), transparent 60%),
+      var(--glass-fill);
+    border: 1px solid var(--brand-line);
+    box-shadow: var(--glass-inset), 0 18px 40px -26px color-mix(in oklab, var(--emerald) 80%, transparent);
+  }
+  .once-offer__head { display: flex; gap: var(--space-4); align-items: flex-start; }
+  .once-offer__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: 50%;
+    color: var(--brand-bright);
+    background: var(--brand-soft);
+    border: 1px solid var(--brand-line);
+    box-shadow: var(--glow-brand);
+    & svg { inline-size: 22px; block-size: 22px; }
+  }
+  .once-offer__title { font-size: var(--step-1); line-height: var(--leading-snug); }
+  .once-offer__detail { color: var(--text-2); font-size: var(--step--1); margin-block-start: var(--space-1); }
+  .once-offer__fine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    color: var(--text-3);
+    font-size: var(--step--2);
+    text-align: center;
+    & svg { inline-size: 14px; block-size: 14px; flex: none; }
+  }
+
+  .paywall-modal__or {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--text-3);
+    font-size: var(--step--2);
+    font-weight: 700;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    &::before, &::after { content: ''; flex: 1; block-size: 1px; background: var(--line); }
+  }
 }
