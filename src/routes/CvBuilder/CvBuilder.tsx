@@ -14,9 +14,8 @@ import { usePlan } from '../../features/billing/PlanProvider';
 import { usePaywall } from '../../features/billing/PaywallModal';
 import { startCheckout } from '../../features/billing/paystack';
 import { fetchOneTimeProducts, PRODUCT_FALLBACK } from '../../features/billing/api';
-import { emptyDetails, fetchCv, fetchLatestCv, generateCv, isCvUnlocked, saveCvMarkdown, splitSkills, type CvDetails, type CvRow, type ExperienceKind } from '../../features/cv/api';
+import { cvErrorMessage, emptyDetails, fetchCv, fetchLatestCv, generateCv, isCvUnlocked, saveCvMarkdown, splitSkills, type CvDetails, type CvRow, type ExperienceKind } from '../../features/cv/api';
 import { Markdown } from '../../features/cv/Markdown';
-import { FunctionError, TIMEOUT_CODE } from '../../lib/functions';
 import { formatMoney } from '../../lib/money';
 import { errorMessage } from '../../lib/supabase';
 import { riseItem, staggerParent } from '../../lib/motion';
@@ -28,6 +27,7 @@ const LABEL_OF: Record<ExperienceKind, (typeof KIND_OPTIONS)[number]> = { job: '
 const ROLE_IDEAS = ['Scholarship Applicant', 'Data Analyst', 'Software Developer', 'Nurse', 'Marketing Assistant', 'Internship Applicant'];
 
 type View = 'loading' | 'form' | 'result';
+
 
 /**
  * /cv-builder — AI CV Builder. Everyone can fill in their details and generate a CV;
@@ -134,11 +134,7 @@ export default function CvBuilder() {
       setNotice(out.remaining_today > 0 ? `Your CV is ready. You can generate ${out.remaining_today} more today.` : 'Your CV is ready. That was your last generation for today; you can still edit the text.');
       window.scrollTo({ top: 0 });
     } catch (err) {
-      setError(
-        err instanceof FunctionError && err.code === TIMEOUT_CODE
-          ? 'The CV writer is taking too long. Your details are still here: try again in a minute.'
-          : errorMessage(err),
-      );
+      setError(cvErrorMessage(err));
     } finally {
       setBusy(null);
     }

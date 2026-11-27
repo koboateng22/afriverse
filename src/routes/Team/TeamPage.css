@@ -1,0 +1,85 @@
+@layer components {
+  .team { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+  .team__bar { display: flex; align-items: center; justify-content: space-between; }
+  .team__hero { display: grid; gap: var(--space-4); max-inline-size: 760px; padding-block-start: var(--space-6); }
+  .team__title { font-size: var(--step-4); line-height: 1.08; text-wrap: balance; }
+  .team__accent {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .team__lede { font-size: var(--step-1); color: var(--text-2); max-inline-size: 60ch; }
+
+  .team__grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+  .team-card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--emerald) 14%, transparent), transparent 60%),
+      var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
+    box-shadow: var(--glass-inset), var(--shadow-float);
+    transition: transform var(--dur-mid) var(--ease-out), border-color var(--dur-mid) var(--ease-out);
+    @media (hover: hover) {
+      &:hover { transform: translateY(-3px); border-color: var(--brand-line); }
+    }
+    /* Founders: an emerald → gold rim. */
+    &[data-lead]::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: -1;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, var(--brand-bright), var(--emerald) 45%, var(--gold));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+  }
+  .team-card__avatar {
+    display: grid;
+    place-items: center;
+    inline-size: 72px;
+    block-size: 72px;
+    margin-block-end: var(--space-2);
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--brand-bright) 55%, transparent), color-mix(in oklab, var(--emerald) 30%, transparent) 70%);
+    border: 1px solid var(--brand-line);
+    box-shadow: var(--glow-brand);
+  }
+  .team-card[data-lead] .team-card__avatar {
+    background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--gold) 60%, transparent), color-mix(in oklab, var(--emerald) 35%, transparent) 75%);
+  }
+  .team-card__name { font-size: var(--step-1); line-height: var(--leading-snug); color: var(--text); }
+  .team-card__title { color: var(--brand-bright); font-weight: 600; font-size: var(--step--1); }
+
+  .team__cta {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--glass-fill);
+    border: 1px solid var(--brand-line);
+    & p { font-size: var(--step-1); color: var(--text); max-inline-size: 40ch; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .team-card { transition: none; &:hover { transform: none; } }
+  }
+}

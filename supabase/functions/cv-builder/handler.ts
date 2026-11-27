@@ -9,7 +9,13 @@ import { oneOf, optStr, str, strArray, uuid } from '../_shared/validate.ts';
 
 /** Generations per rolling 24 hours. Each one is a paid AI call. */
 export const DAILY_LIMIT = { free: 3, pro: 10 };
-const CV_TIMEOUT_MS = 45_000;
+/**
+ * The AI gets 22 s, so the function always answers (with a CV or a JSON error) before the
+ * app's 30 s timeout. A full CV usually takes 5–10 s.
+ */
+export const CV_TIMEOUT_MS = 22_000;
+export const TOO_LONG = 'Generation took too long. Please try again.';
+export const AI_FAILED = 'The CV writer could not finish your CV. Please try again in a minute.';
 const MAX_MARKDOWN = 20_000;
 
 type Experience = { kind: 'job' | 'internship' | 'volunteer'; title: string; organisation: string; period: string; details: string };
@@ -103,11 +109,23 @@ async function unlocked(svc: SupabaseClient, userId: string, cvId: string, pro: 
 }
 
 export const handler = handle(async (req) => {
+  console.log('cv-builder: request received');
+  try {
+    return await generateCvResponse(req);
+  } catch (error) {
+    // Every failure is logged here and answered as JSON ({ error, message }) by handle().
+    console.error('cv-builder failed:', error instanceof HttpError ? `${error.status} ${error.code}: ${error.message}` : error);
+    throw error;
+  }
+});
+
+async function generateCvResponse(req: Request): Promise<Response> {
   const svc = serviceClient();
   const caller = await requireUser(req, svc);
   if (!isStudent(caller.role)) throw new HttpError(403, 'students_only', 'The CV Builder is for student accounts');
   const body = await readJson(req);
   const { targetRole, details } = readDetails(body);
+  console.log('Starting CV generation for:', targetRole);
   const cvId = body.cv_id ? uuid(body.cv_id, 'cv_id') : null;
   if (cvId) {
     const { data: mine } = await svc.from('cvs').select('id').eq('id', cvId).eq('user_id', caller.user.id).maybeSingle();
@@ -131,10 +149,12 @@ export const handler = handle(async (req) => {
       timeoutMs: CV_TIMEOUT_MS,
     });
     markdown = cleanMarkdown(raw);
-  } catch (err) {
-    console.error('cv-builder: AI error', err instanceof Error ? err.message : err);
-    if (err instanceof HttpError && err.status < 500) throw err;
-    throw new HttpError(503, 'ai_busy', 'The CV writer is busy right now. Your details are still here: try again in a minute.');
+  } catch (error) {
+    console.error('Groq Error:', error);
+    if (error instanceof HttpError && error.code === 'ai_timeout') throw new HttpError(504, 'generation_timeout', TOO_LONG);
+    if (error instanceof HttpError && error.code === 'ai_busy') throw new HttpError(503, 'ai_busy', 'The CV writer is busy right now. Please try again in a minute.');
+    if (error instanceof HttpError && error.code === 'not_configured') throw new HttpError(500, 'ai_not_configured', 'The CV writer is not set up yet (GROQ_API_KEY is missing).');
+    throw new HttpError(502, 'ai_failed', AI_FAILED);
   }
   if (markdown.length < 80) throw new HttpError(503, 'ai_busy', 'The CV writer returned an empty CV. Try again in a minute.');
 
@@ -143,9 +163,13 @@ export const handler = handle(async (req) => {
   const saved = cvId
     ? await svc.from('cvs').update(row).eq('id', cvId).eq('user_id', caller.user.id).select('id, target_role, details, markdown, generated_at, updated_at').single()
     : await svc.from('cvs').insert({ ...row, user_id: caller.user.id }).select('id, target_role, details, markdown, generated_at, updated_at').single();
-  if (saved.error) throw saved.error;
+  if (saved.error) {
+    console.error('cv-builder: could not save the CV', saved.error);
+    throw new HttpError(500, 'save_failed', `Your CV was written but could not be saved: ${saved.error.message}`);
+  }
   await svc.from('ai_usage').insert({ user_id: caller.user.id, kind: 'cv' });
 
   const cv = saved.data as { id: string };
+  console.log('cv-builder: CV ready', cv.id);
   return json({ cv: saved.data, unlocked: await unlocked(svc, caller.user.id, cv.id, pro), remaining_today: Math.max(0, limit - (used ?? 0) - 1) });
-});
+}

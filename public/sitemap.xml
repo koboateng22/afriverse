@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.afriversity.com/</loc></url>
-  <url><loc>https://www.afriversity.com/courses</loc></url>
-  <url><loc>https://www.afriversity.com/mentors</loc></url>
-  <url><loc>https://www.afriversity.com/apply</loc></url>
+  <url><loc>https://www.afriversity.com/</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/courses</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/mentors</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/apply-university</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/career-compass</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/cv-builder</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/opportunities</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/paywall</loc><lastmod>2026-11-27</lastmod></url>
+  <url><loc>https://www.afriversity.com/team</loc><lastmod>2026-11-27</lastmod></url>
 </urlset>

@@ -64,7 +64,7 @@ export async function invokeFunction<T>(name: string, body: Record<string, unkno
   // a usable answer — offline, or the function isn't deployed (its 404 has no CORS headers, so
   // the browser blocks it). Say so plainly, and name the function for whoever reads the console.
   console.error(`Could not reach edge function "${name}": ${error.message}`);
-  throw new FunctionError(0, 'network', UNREACHABLE_MESSAGE, {});
+  throw new FunctionError(0, 'network', UNREACHABLE_MESSAGE, { detail: error.message || String(error) });
 }
 
 export const NOT_DEPLOYED_CODE = 'not_deployed';

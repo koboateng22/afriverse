@@ -3,6 +3,7 @@ import { ArrowRight, BookOpenCheck, GraduationCap, Users } from 'lucide-react';
 import { PageTransition } from '../../components/PageTransition/PageTransition';
 import { ButtonLink } from '../../components/Button/Button';
 import { Emblem, Logo } from '../../components/Logo/Logo';
+import { SiteFooter } from '../../components/SiteFooter/SiteFooter';
 import { homeFor, useAuth } from '../../features/auth/useAuth';
 import { riseItem, staggerParent } from '../../lib/motion';
 import './Landing.css';
@@ -64,6 +65,8 @@ export default function Landing() {
             </motion.li>
           ))}
         </motion.ul>
+
+        <SiteFooter />
       </div>
     </PageTransition>
   );

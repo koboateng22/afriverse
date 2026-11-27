@@ -1,7 +1,7 @@
 // INTEGRATION: paystack — client side. The browser never sends an amount:
 // it says WHAT is being bought; paystack-init prices it from the database
 // (always GHS) and returns Paystack's hosted checkout URL.
-import { invokeFunction } from '../../lib/functions';
+import { FunctionError, invokeFunction } from '../../lib/functions';
 import { formatMoney } from '../../lib/money';
 
 export type CheckoutRequest =
@@ -37,7 +37,18 @@ export async function startCheckout(req: CheckoutRequest, guard: CheckoutGuard =
     throw new Error('Price error: amounts must be whole pesewas. Nothing was charged.');
   }
   const body = expectedCents === undefined ? req : { ...req, expected_amount_cents: expectedCents };
-  const res = await invokeFunction<InitResponse>('paystack-init', body);
+  let res: InitResponse;
+  try {
+    res = await invokeFunction<InitResponse>('paystack-init', body);
+  } catch (e) {
+    // An older paystack-init (before one-time purchases) rejects type 'purchase' with
+    // "type: must be one of: subscription, application, mentor". Nothing was charged.
+    if (e instanceof FunctionError && e.code === 'invalid_input' && e.body.field === 'type' && req.type === 'purchase') {
+      console.error('paystack-init on the server is out of date: redeploy it (supabase functions deploy paystack-init).');
+      throw new FunctionError(e.status, 'purchase_unavailable', 'One-time payments are being switched on. Nothing was charged; please try again a little later, or choose Pro.', e.body);
+    }
+    throw e;
+  }
   if (expectedCents !== undefined) {
     // Never send a student to pay a different amount from the one on screen.
     if (typeof res.amount_cents === 'number' && res.amount_cents !== expectedCents) {

@@ -1,5 +1,6 @@
 import { getSupabase } from '../../lib/supabase';
-import { invokeFunction } from '../../lib/functions';
+import { FunctionError, invokeFunction, TIMEOUT_CODE } from '../../lib/functions';
+import { errorMessage } from '../../lib/supabase';
 
 export type ExperienceKind = 'job' | 'internship' | 'volunteer';
 export type CvDetails = {
@@ -11,8 +12,8 @@ export type CvDetails = {
 export type CvRow = { id: string; target_role: string; details: CvDetails; markdown: string; generated_at: string | null; updated_at: string };
 export type Generated = { cv: CvRow; unlocked: boolean; remaining_today: number };
 
-/** The AI can take a while on a long CV; the function itself stops at 45 s. */
-export const CV_TIMEOUT_MS = 60_000;
+/** 30 s for a whole CV. The function gives the AI 22 s, so it always answers first. */
+export const CV_TIMEOUT_MS = 30_000;
 
 /** Writes (or rewrites, with cvId) the CV with AI and saves it. */
 export function generateCv(targetRole: string, details: CvDetails, cvId?: string): Promise<Generated> {
@@ -55,3 +56,19 @@ export const emptyDetails = (): CvDetails => ({
 
 /** "Excel, SQL ,  teamwork" → ['Excel', 'SQL', 'teamwork'] */
 export const splitSkills = (s: string) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 20);
+
+/**
+ * What went wrong, in the server's own words whenever it answered ({ error, message }).
+ * Only when no answer arrived at all do we say so, with the browser's error text.
+ */
+export function cvErrorMessage(err: unknown): string {
+  if (err instanceof FunctionError) {
+    if (err.code === TIMEOUT_CODE) return 'Generation took too long. Please try again. Your details are still here.';
+    if (err.code === 'network') {
+      const detail = typeof err.body.detail === 'string' ? err.body.detail : 'no response';
+      return `The CV service didn’t answer (${detail}). Please try again in a minute. Your details are still here.`;
+    }
+    return err.message; // exactly what cv-builder sent back
+  }
+  return errorMessage(err);
+}

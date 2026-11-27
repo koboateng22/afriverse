@@ -50,6 +50,7 @@ const Profile = lazy(loadProfile);
 const Paywall = lazy(loadPaywall);
 const Checkout = lazy(() => import('./routes/Checkout/Checkout'));
 const CvBuilder = lazy(() => import('./routes/CvBuilder/CvBuilder'));
+const TeamPage = lazy(() => import('./routes/Team/TeamPage'));
 const Counsellor = lazy(() => import('./routes/Counsellor/Counsellor'));
 const Scratch = lazy(() => import('./routes/Scratch/Scratch'));
 const NotFound = lazy(() => import('./routes/NotFound/NotFound'));
@@ -111,6 +112,7 @@ function AnimatedRoutes() {
           <Routes location={location}>
             {/* ── Public ─────────────────────────────────────────── */}
             <Route path="/" element={<Landing />} />
+            <Route path="/team" element={<TeamPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -130,6 +132,7 @@ function AnimatedRoutes() {
             />
             <Route path="/home" element={student(<Home />)} />
             <Route path="/discover" element={student(<Discover />)} />
+            <Route path="/opportunities" element={<Navigate to="/discover" replace />} />
             <Route path="/opportunity/:id" element={student(<OpportunityDetail />)} />
             <Route path="/career-compass" element={student(<CareerCompass />)} />
             <Route path="/courses" element={student(<Courses />)} />
